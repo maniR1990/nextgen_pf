@@ -1,9 +1,9 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
-import { AccountsShell } from './AccountsShell';
 import type { AccountGroupWithAccounts } from '@/modules/accounts/accounts.types';
 import type { FundSummary, FundsAggregateSummary } from '@/modules/funds/funds.types';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+import { AccountsShell } from './AccountsShell';
 
 const mockGroups: AccountGroupWithAccounts[] = [
   {

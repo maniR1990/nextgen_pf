@@ -1,18 +1,26 @@
 'use client';
 
 import { FormField } from '@/components/common/FormField';
-import { CommonFormFields } from './CommonFormFields';
-import type { TransactionFormValues, FormErrors } from '@/store/transactionFormStore';
+import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption } from '@/types/finance';
+import { CommonFormFields } from './CommonFormFields';
 
 interface ATMWithdrawalFormProps {
   values: TransactionFormValues;
   errors: FormErrors;
-  onChange: <K extends keyof TransactionFormValues>(key: K, value: TransactionFormValues[K]) => void;
+  onChange: <K extends keyof TransactionFormValues>(
+    key: K,
+    value: TransactionFormValues[K],
+  ) => void;
   paymentSources: PaymentSourceOption[];
 }
 
-export function ATMWithdrawalForm({ values, errors, onChange, paymentSources }: ATMWithdrawalFormProps) {
+export function ATMWithdrawalForm({
+  values,
+  errors,
+  onChange,
+  paymentSources,
+}: ATMWithdrawalFormProps) {
   return (
     <div className="tx-form tx-form--atm">
       {/* ATM Location | Purpose */}

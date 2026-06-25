@@ -1,6 +1,6 @@
-import { compose, withAuth, withValidation } from '@/lib/api/middleware';
 import { isApiError } from '@/lib/api/errors';
-import { v1Ok, v1FromApiError } from '@/lib/api/v1/envelope';
+import { compose, withAuth, withValidation } from '@/lib/api/middleware';
+import { v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { getLogger } from '@/lib/logger';
 import { DepositSchema } from './sinking-funds.schema';
 import { SinkingFundsService } from './sinking-funds.service';
@@ -24,7 +24,8 @@ export const v1Deposit = compose(
 )(async (req, ctx) => {
   try {
     const id = ctx.params?.id;
-    if (!id) return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
+    if (!id)
+      return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
     const { amount } = DepositSchema.parse(await req.json());
     const result = await SinkingFundsService.deposit(id, ctx.session!.id, amount);
     return v1Ok(result);

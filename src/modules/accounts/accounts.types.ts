@@ -1,5 +1,10 @@
-import type { AccountGroupType, AccountStatus, AccountType, FundAllocationType } from '@prisma/client';
 import type { AccountSort } from '@/constants/accounts';
+import type {
+  AccountGroupType,
+  AccountStatus,
+  AccountType,
+  FundAllocationType,
+} from '@prisma/client';
 
 export interface BillingCycleDto {
   startDay: number;

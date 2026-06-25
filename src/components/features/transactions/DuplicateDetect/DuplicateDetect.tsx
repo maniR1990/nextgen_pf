@@ -1,7 +1,7 @@
 'use client';
 
-import { AlertTriangle, X } from 'lucide-react';
 import type { DuplicateMatch } from '@/types/finance';
+import { AlertTriangle, X } from 'lucide-react';
 
 interface DuplicateDetectProps {
   duplicate: DuplicateMatch;

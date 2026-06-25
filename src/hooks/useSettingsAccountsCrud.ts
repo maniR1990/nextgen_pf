@@ -1,10 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
-import type { AccountType } from '@prisma/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CategoryHierarchyNodeJson } from '@/components/common/CategoryHierarchy/schemas';
 import type { CategoryHierarchyCrudHandlers } from '@/components/common/CategoryHierarchy/CategoryHierarchyTreeNode';
+import type { CategoryHierarchyNodeJson } from '@/components/common/CategoryHierarchy/schemas';
 import { useToast } from '@/components/common/ToastProvider/useToast';
 import {
   SETTINGS_ACCOUNT_TOAST_CREATE_ERROR,
@@ -26,6 +23,9 @@ import {
 import { queryKeys } from '@/lib/query/queryKeys';
 import type { AccountGroupWithAccounts } from '@/modules/accounts/accounts.types';
 import { mapAccountGroupsToHierarchy } from '@/modules/accounts/lib/map-account-groups-to-hierarchy';
+import type { AccountType } from '@prisma/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef } from 'react';
 
 const ACCOUNTS_LIST_PATH = '/api/v1/accounts?limit=100&sort=name_asc';
 
@@ -90,9 +90,7 @@ export function useSettingsAccountsCrud() {
 
       try {
         const path =
-          node.level === 0
-            ? `/api/v1/account-groups/${node.id}`
-            : `/api/v1/accounts/${node.id}`;
+          node.level === 0 ? `/api/v1/account-groups/${node.id}` : `/api/v1/accounts/${node.id}`;
         await apiPutV1(path, { name: nextName.trim() });
         toast.success(SETTINGS_ACCOUNT_TOAST_UPDATE_SUCCESS, { description: nextName.trim() });
         await invalidate();

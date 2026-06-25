@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import rawConfig from '@/config/settingsPage.json';
+import { describe, expect, it } from 'vitest';
 import { SettingsPageConfigSchema } from './schemas';
 
 describe('settingsPage.json', () => {

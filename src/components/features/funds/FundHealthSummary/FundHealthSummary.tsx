@@ -15,7 +15,9 @@ export interface FundHealthSummaryProps {
 
 export function FundHealthSummary({ summary, className = '' }: FundHealthSummaryProps) {
   const activeFunds = summary.fundHealthRadar.length;
-  const onTarget = summary.fundHealthRadar.filter((f) => f.health === 'healthy' || f.health === 'ok').length;
+  const onTarget = summary.fundHealthRadar.filter(
+    (f) => f.health === 'healthy' || f.health === 'ok',
+  ).length;
 
   return (
     <div className={['fund-health-summary', className].filter(Boolean).join(' ')}>
@@ -24,7 +26,9 @@ export function FundHealthSummary({ summary, className = '' }: FundHealthSummary
         <span className="fund-health-summary__label">Total Allocated</span>
       </div>
       <div className="fund-health-summary__stat fund-health-summary__stat--warn">
-        <span className="fund-health-summary__value">{formatCompact(summary.totalUnallocated)}</span>
+        <span className="fund-health-summary__value">
+          {formatCompact(summary.totalUnallocated)}
+        </span>
         <span className="fund-health-summary__label">Idle / Unallocated</span>
       </div>
       <div className="fund-health-summary__stat">
@@ -32,7 +36,9 @@ export function FundHealthSummary({ summary, className = '' }: FundHealthSummary
         <span className="fund-health-summary__label">Active Funds</span>
       </div>
       <div className="fund-health-summary__stat fund-health-summary__stat--good">
-        <span className="fund-health-summary__value">{onTarget}/{activeFunds}</span>
+        <span className="fund-health-summary__value">
+          {onTarget}/{activeFunds}
+        </span>
         <span className="fund-health-summary__label">On Target</span>
       </div>
     </div>

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import type { AccountGroupWithAccounts } from '@/modules/accounts/accounts.types';
 import type { FundAllocationInput } from '@/modules/funds/funds.types';
+import { useState } from 'react';
 
 export interface AllocationEditorProps {
   open: boolean;
@@ -70,7 +70,7 @@ export function AllocationEditor({
     const allocations: FundAllocationInput[] = rows.map((r) => ({
       accountId: r.accountId,
       type: r.type,
-      value: parseFloat(r.value) || 0,
+      value: Number.parseFloat(r.value) || 0,
       priority: r.priority,
     }));
     setError('');
@@ -91,7 +91,7 @@ export function AllocationEditor({
       const otherPct = otherFundsSources
         .filter((s) => s.accountId === r.accountId && s.type === 'PERCENTAGE')
         .reduce((sum, s) => sum + s.value, 0);
-      const totalPct = (parseFloat(r.value) || 0) + otherPct;
+      const totalPct = (Number.parseFloat(r.value) || 0) + otherPct;
       if (totalPct > 100) {
         const acc = allAccounts.find((a) => a.id === r.accountId);
         return [{ accountName: acc?.name ?? r.accountId, totalPct: Math.round(totalPct) }];
@@ -102,7 +102,9 @@ export function AllocationEditor({
   return (
     <Modal open={open} onClose={onClose} titleId={TITLE_ID} size="lg">
       <Modal.Header>
-        <h2 id={TITLE_ID} className="modal__title">Fund Allocation — {fundName}</h2>
+        <h2 id={TITLE_ID} className="modal__title">
+          Fund Allocation — {fundName}
+        </h2>
         <Modal.CloseButton />
       </Modal.Header>
       <Modal.Body>
@@ -132,7 +134,9 @@ export function AllocationEditor({
                 const acc = allAccounts.find((a) => a.id === row.accountId);
                 return (
                   <div key={row.accountId} className="allocation-editor__row">
-                    <span className="allocation-editor__row-name">{acc?.name ?? row.accountId}</span>
+                    <span className="allocation-editor__row-name">
+                      {acc?.name ?? row.accountId}
+                    </span>
                     <div className="allocation-editor__row-controls">
                       <input
                         type="number"
@@ -148,7 +152,9 @@ export function AllocationEditor({
                         className="allocation-editor__type-select"
                         value={row.type}
                         aria-label="Allocation type"
-                        onChange={(e) => updateRow(idx, { type: e.target.value as 'PERCENTAGE' | 'FIXED' })}
+                        onChange={(e) =>
+                          updateRow(idx, { type: e.target.value as 'PERCENTAGE' | 'FIXED' })
+                        }
                       >
                         <option value="PERCENTAGE">% of balance</option>
                         <option value="FIXED">₹ fixed amount</option>
@@ -172,17 +178,26 @@ export function AllocationEditor({
               <strong>Over-allocation warning</strong>
               {overAllocWarnings.map((w) => (
                 <span key={w.accountName}>
-                  {w.accountName} is allocated {w.totalPct}% across all funds — only 100% of a balance can be claimed.
+                  {w.accountName} is allocated {w.totalPct}% across all funds — only 100% of a
+                  balance can be claimed.
                 </span>
               ))}
             </div>
           )}
-          {error && <p className="form-field__error" role="alert">{error}</p>}
+          {error && (
+            <p className="form-field__error" role="alert">
+              {error}
+            </p>
+          )}
         </div>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
-        <Button loading={loading} onClick={handleSave}>Save Allocations</Button>
+        <Button variant="secondary" onClick={onClose} disabled={loading}>
+          Cancel
+        </Button>
+        <Button loading={loading} onClick={handleSave}>
+          Save Allocations
+        </Button>
       </Modal.Footer>
     </Modal>
   );

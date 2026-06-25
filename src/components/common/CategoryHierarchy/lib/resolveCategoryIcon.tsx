@@ -1,3 +1,11 @@
+import { Icon } from '@/components/ui/Icon';
+import type { HierarchyRootType } from '@/constants/category-hierarchy';
+import {
+  ACCOUNT_HIERARCHY_TYPE_ICON_KEYS,
+  CATEGORY_HIERARCHY_TYPE_ICON_KEYS,
+  getHierarchyMeta,
+} from '@/constants/category-hierarchy';
+import type { HierarchyVariant } from '@/constants/settings';
 import {
   ArrowLeftRight,
   Banknote,
@@ -8,21 +16,13 @@ import {
   Landmark,
   Lightbulb,
   LineChart,
+  type LucideIcon,
   Package,
   ShoppingBag,
   Sprout,
   Store,
   TrendingUp,
-  type LucideIcon,
 } from 'lucide-react';
-import type { HierarchyRootType } from '@/constants/category-hierarchy';
-import {
-  ACCOUNT_HIERARCHY_TYPE_ICON_KEYS,
-  CATEGORY_HIERARCHY_TYPE_ICON_KEYS,
-  getHierarchyMeta,
-} from '@/constants/category-hierarchy';
-import type { HierarchyVariant } from '@/constants/settings';
-import { Icon } from '@/components/ui/Icon';
 import type { CategoryHierarchyNodeJson } from '../schemas';
 
 const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
@@ -53,9 +53,7 @@ export function resolveLucideIcon(
 
   if (fallbackType) {
     const keys =
-      variant === 'account'
-        ? ACCOUNT_HIERARCHY_TYPE_ICON_KEYS
-        : CATEGORY_HIERARCHY_TYPE_ICON_KEYS;
+      variant === 'account' ? ACCOUNT_HIERARCHY_TYPE_ICON_KEYS : CATEGORY_HIERARCHY_TYPE_ICON_KEYS;
     const key = keys[fallbackType as keyof typeof keys];
     return LUCIDE_ICON_MAP[key as string] ?? Banknote;
   }
@@ -84,7 +82,9 @@ export function CategoryHierarchyIcon({
 
   const LucideComponent = resolveLucideIcon(node.icon, variant, rootType);
 
-  return <Icon icon={LucideComponent} size="sm" tone="inherit" className="cat-hierarchy__lucide-icon" />;
+  return (
+    <Icon icon={LucideComponent} size="sm" tone="inherit" className="cat-hierarchy__lucide-icon" />
+  );
 }
 
 export function getDefaultRootType(variant: HierarchyVariant): HierarchyRootType {

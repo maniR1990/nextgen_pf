@@ -1,9 +1,9 @@
 'use client';
 
-import { Plus, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import type { FundSummary, FundsAggregateSummary } from '@/modules/funds/funds.types';
 import type { FundGroupSummary } from '@/modules/fund-groups/fund-groups.types';
+import type { FundSummary, FundsAggregateSummary } from '@/modules/funds/funds.types';
+import { Plus, Zap } from 'lucide-react';
 import { FundCard } from '../FundCard';
 import { FundGroupCard } from '../FundGroupCard/FundGroupCard';
 import { FundHealthSummary } from '../FundHealthSummary';
@@ -25,7 +25,6 @@ export interface FundBucketBoardProps {
   onRestoreGroup?: (group: FundGroupSummary) => void;
   onRouting?: () => void;
 }
-
 
 export function FundBucketBoard({
   groups,
@@ -51,13 +50,19 @@ export function FundBucketBoard({
       <div className="fund-bucket-board__page-header">
         <nav className="fund-bucket-board__breadcrumb" aria-label="Breadcrumb">
           <span className="fund-bucket-board__breadcrumb-item">Settings</span>
-          <span className="fund-bucket-board__breadcrumb-sep" aria-hidden>›</span>
-          <span className="fund-bucket-board__breadcrumb-item fund-bucket-board__breadcrumb-item--active">Funds</span>
+          <span className="fund-bucket-board__breadcrumb-sep" aria-hidden>
+            ›
+          </span>
+          <span className="fund-bucket-board__breadcrumb-item fund-bucket-board__breadcrumb-item--active">
+            Funds
+          </span>
         </nav>
         <div className="fund-bucket-board__heading-row">
           <div>
             <h1 className="fund-bucket-board__heading">Fund Buckets</h1>
-            <p className="fund-bucket-board__heading-sub">Virtual allocation · every rupee has a purpose before it&apos;s spent</p>
+            <p className="fund-bucket-board__heading-sub">
+              Virtual allocation · every rupee has a purpose before it&apos;s spent
+            </p>
           </div>
           <div className="fund-bucket-board__header-actions">
             {onRouting && (
@@ -74,7 +79,9 @@ export function FundBucketBoard({
 
       {/* Stats + alert */}
       {summary && <FundHealthSummary summary={summary} />}
-      {summary && <UnallocatedCashAlert amount={summary.totalUnallocated} onAllocate={onAllocateIdle} />}
+      {summary && (
+        <UnallocatedCashAlert amount={summary.totalUnallocated} onAllocate={onAllocateIdle} />
+      )}
 
       {/* Fund card grid — always flat grid; groups shown in chip strip below */}
       <div className="fund-bucket-board__grid">

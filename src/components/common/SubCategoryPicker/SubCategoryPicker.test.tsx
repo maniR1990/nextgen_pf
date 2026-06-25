@@ -70,9 +70,9 @@ describe('SubCategoryPicker', () => {
   describe('selection state', () => {
     it('marks selected child with aria-selected=true', () => {
       render(<SubCategoryPicker categories={CATEGORIES} value="groceries" onChange={vi.fn()} />);
-      const selected = screen.getAllByRole('button', { name: /groceries/i }).find(
-        b => b.getAttribute('aria-selected') === 'true'
-      );
+      const selected = screen
+        .getAllByRole('button', { name: /groceries/i })
+        .find((b) => b.getAttribute('aria-selected') === 'true');
       expect(selected).toBeDefined();
     });
   });

@@ -1,8 +1,8 @@
 'use client';
 
+import { ICON_SIZES, ICON_STROKE_WIDTH, type IconSize } from '@/constants/icons';
 import type { LucideIcon } from 'lucide-react';
 import type { SVGProps } from 'react';
-import { ICON_SIZES, ICON_STROKE_WIDTH, type IconSize } from '@/constants/icons';
 
 export type IconTone = 'inherit' | 'muted' | 'brand' | 'success' | 'warning' | 'error';
 
@@ -29,12 +29,7 @@ export function iconClassName({
   tone?: IconTone;
   className?: string;
 }) {
-  return [
-    'icon',
-    `icon--${size}`,
-    tone !== 'inherit' && TONE_CLASS[tone],
-    className,
-  ]
+  return ['icon', `icon--${size}`, tone !== 'inherit' && TONE_CLASS[tone], className]
     .filter(Boolean)
     .join(' ');
 }
@@ -48,7 +43,7 @@ export function Icon({
   ...props
 }: IconProps) {
   const pixelSize = ICON_SIZES[size];
-  const ariaHidden = props['aria-label'] ? undefined : props['aria-hidden'] ?? true;
+  const ariaHidden = props['aria-label'] ? undefined : (props['aria-hidden'] ?? true);
 
   return (
     <LucideComponent

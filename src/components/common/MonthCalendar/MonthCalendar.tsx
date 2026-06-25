@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { addMonths, format, getDaysInMonth, getDay, isToday, parseISO } from 'date-fns';
+import { addMonths, format, getDay, getDaysInMonth, isToday, parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 
 export interface CalendarTransaction {
   id: string;
@@ -78,33 +78,49 @@ export function MonthCalendar({
   const selectedTxs = selectedDate ? (transactions[selectedDate] ?? []) : [];
   const dayTotals = selectedTxs.length > 0 ? computeDayTotal(selectedTxs) : null;
 
-  const panelDateLabel = selectedDate
-    ? format(parseISO(selectedDate), 'MMM d').toUpperCase()
-    : '';
+  const panelDateLabel = selectedDate ? format(parseISO(selectedDate), 'MMM d').toUpperCase() : '';
 
   return (
     <div className="month-cal">
       {/* Navigation */}
       <div className="month-cal__nav">
-        <button type="button" className="month-cal__nav-btn" onClick={prevMonth} aria-label="Previous month">
+        <button
+          type="button"
+          className="month-cal__nav-btn"
+          onClick={prevMonth}
+          aria-label="Previous month"
+        >
           <ChevronLeft size={16} />
         </button>
         <span className="month-cal__nav-label">
           {format(new Date(viewYear, viewMonth, 1), 'MMMM yyyy')}
         </span>
-        <button type="button" className="month-cal__nav-btn" onClick={nextMonth} aria-label="Next month">
+        <button
+          type="button"
+          className="month-cal__nav-btn"
+          onClick={nextMonth}
+          aria-label="Next month"
+        >
           <ChevronRight size={16} />
         </button>
       </div>
 
       {/* Calendar grid */}
-      <div className="month-cal__grid" role="grid" aria-label={format(new Date(viewYear, viewMonth, 1), 'MMMM yyyy')}>
-        {WEEKDAYS.map(w => (
-          <div key={w} className="month-cal__weekday" role="columnheader">{w}</div>
+      <div
+        className="month-cal__grid"
+        role="grid"
+        aria-label={format(new Date(viewYear, viewMonth, 1), 'MMMM yyyy')}
+      >
+        {WEEKDAYS.map((w) => (
+          <div key={w} className="month-cal__weekday" role="columnheader">
+            {w}
+          </div>
         ))}
         {cells.map((day, i) => {
           if (!day) {
-            return <div key={`e-${i}`} className="month-cal__day month-cal__day--empty" aria-hidden />;
+            return (
+              <div key={`e-${i}`} className="month-cal__day month-cal__day--empty" aria-hidden />
+            );
           }
           const iso = format(new Date(viewYear, viewMonth, day), 'yyyy-MM-dd');
           const todayDate = new Date(viewYear, viewMonth, day);
@@ -116,7 +132,9 @@ export function MonthCalendar({
             'month-cal__day',
             isToday(todayDate) && !isSelected ? 'month-cal__day--today' : '',
             isSelected ? 'month-cal__day--selected' : '',
-          ].filter(Boolean).join(' ');
+          ]
+            .filter(Boolean)
+            .join(' ');
 
           return (
             <button
@@ -131,7 +149,7 @@ export function MonthCalendar({
               <span className="month-cal__day-num">{day}</span>
               {txs.length > 0 && (
                 <div className="month-cal__dots" aria-hidden>
-                  {txs.slice(0, MAX_DOTS).map(tx => (
+                  {txs.slice(0, MAX_DOTS).map((tx) => (
                     <div key={tx.id} className={`month-cal__dot month-cal__dot--${tx.type}`} />
                   ))}
                   {overflowCount > 0 && (
@@ -157,7 +175,9 @@ export function MonthCalendar({
             <div className="month-cal__panel-summary-right">
               <span className="month-cal__panel-count">{selectedTxs.length} transactions</span>
               {dayTotals && (
-                <span className={`month-cal__panel-total month-cal__panel-total--${dayTotals.net >= 0 ? 'credit' : 'debit'}`}>
+                <span
+                  className={`month-cal__panel-total month-cal__panel-total--${dayTotals.net >= 0 ? 'credit' : 'debit'}`}
+                >
                   {dayTotals.net >= 0
                     ? `+₹${dayTotals.net.toLocaleString('en-IN')}`
                     : `−₹${Math.abs(dayTotals.net).toLocaleString('en-IN')}`}
@@ -171,11 +191,16 @@ export function MonthCalendar({
             {selectedTxs.length === 0 ? (
               <div className="month-cal__panel-empty">No transactions</div>
             ) : (
-              selectedTxs.map(tx => (
+              selectedTxs.map((tx) => (
                 <div key={tx.id} className="month-cal__panel-tx">
-                  <span className={`month-cal__panel-tx-dot month-cal__panel-tx-dot--${tx.type}`} aria-hidden />
+                  <span
+                    className={`month-cal__panel-tx-dot month-cal__panel-tx-dot--${tx.type}`}
+                    aria-hidden
+                  />
                   <span className="month-cal__panel-tx-merchant">{tx.merchant}</span>
-                  <span className={`month-cal__panel-tx-amount month-cal__panel-tx-amount--${tx.type}`}>
+                  <span
+                    className={`month-cal__panel-tx-amount month-cal__panel-tx-amount--${tx.type}`}
+                  >
                     {formatAmount(tx)}
                   </span>
                 </div>

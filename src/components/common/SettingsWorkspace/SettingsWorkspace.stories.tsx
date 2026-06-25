@@ -1,15 +1,15 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { SegmentChipTabs } from '@/components/common/SegmentChipTabs';
 import {
   chromaticBaseline,
   storySectionStyle,
   viewportDesktop,
   viewportMobile,
 } from '@/components/ui/storyLayout';
-import { SegmentChipTabs } from '@/components/common/SegmentChipTabs';
+import rawConfig from '@/config/settingsPage.json';
+import type { Meta, StoryObj } from '@storybook/react';
+import { useState } from 'react';
 import { SettingsWorkspace } from './SettingsWorkspace';
 import { SettingsPageConfigSchema } from './schemas';
-import rawConfig from '@/config/settingsPage.json';
 
 const config = SettingsPageConfigSchema.parse(rawConfig);
 

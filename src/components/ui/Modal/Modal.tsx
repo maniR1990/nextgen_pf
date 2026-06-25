@@ -1,18 +1,18 @@
 'use client';
 
+import { MODAL_ANIMATION_MS, MODAL_CLOSE_LABEL } from '@/constants/modal';
 import { X } from 'lucide-react';
 import {
+  type ButtonHTMLAttributes,
+  type HTMLAttributes,
+  type ReactNode,
+  type RefObject,
   createContext,
   useContext,
   useEffect,
   useRef,
   useState,
-  type ButtonHTMLAttributes,
-  type HTMLAttributes,
-  type ReactNode,
-  type RefObject,
 } from 'react';
-import { MODAL_ANIMATION_MS, MODAL_CLOSE_LABEL } from '@/constants/modal';
 import { ModalPortal } from './ModalPortal';
 import { useModalBehavior } from './useModalBehavior';
 
@@ -69,8 +69,16 @@ export function modalClassName({
     .join(' ');
 }
 
-export function modalOverlayClassName({ isVisible = false, className = '' }: { isVisible?: boolean; className?: string }) {
-  return ['modal-overlay', isVisible && 'modal-overlay--visible', className].filter(Boolean).join(' ');
+export function modalOverlayClassName({
+  isVisible = false,
+  className = '',
+}: {
+  isVisible?: boolean;
+  className?: string;
+}) {
+  return ['modal-overlay', isVisible && 'modal-overlay--visible', className]
+    .filter(Boolean)
+    .join(' ');
 }
 
 function ModalRoot({
@@ -156,7 +164,9 @@ function ModalHeader({ className = '', title, subtitle, children, ...props }: Mo
           <h2 className="modal__title">{title}</h2>
           {subtitle && <p className="modal__subtitle">{subtitle}</p>}
         </div>
-      ) : children}
+      ) : (
+        children
+      )}
     </div>
   );
 }

@@ -1,8 +1,8 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import type { AppHeaderData } from '@/lib/schemas/appHeader';
 import { queryKeys } from '@/lib/query/queryKeys';
+import type { AppHeaderData } from '@/lib/schemas/appHeader';
+import { useQuery } from '@tanstack/react-query';
 
 async function fetchHeaderData(): Promise<AppHeaderData> {
   const res = await fetch('/api/v1/dashboard/summary', { credentials: 'include' });

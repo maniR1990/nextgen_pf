@@ -105,7 +105,10 @@ describe('CategoryPicker', () => {
       const user = userEvent.setup();
       render(<CategoryPicker options={OPTIONS} value="c1" onChange={vi.fn()} />);
       await user.click(screen.getByRole('button'));
-      expect(screen.getByRole('option', { name: /groceries/i })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByRole('option', { name: /groceries/i })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
     });
   });
 

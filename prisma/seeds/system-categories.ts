@@ -168,7 +168,7 @@ async function upsertNode(
   idByKey: Map<string, string>,
 ) {
   const path = buildPath(node.type, node.slug, parentPath);
-  const parentId = node.parentKey ? idByKey.get(node.parentKey) ?? null : null;
+  const parentId = node.parentKey ? (idByKey.get(node.parentKey) ?? null) : null;
 
   const existing = await prisma.category.findFirst({
     where: { userId: null, isSystem: true, slug: node.slug },

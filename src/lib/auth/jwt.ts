@@ -1,5 +1,5 @@
-import { SignJWT, jwtVerify } from 'jose';
 import { AUTH } from '@/constants/auth';
+import { SignJWT, jwtVerify } from 'jose';
 
 export interface AccessTokenPayload {
   sub: string;
@@ -27,7 +27,9 @@ function getRefreshSecret() {
   );
 }
 
-export async function signAccessToken(payload: Omit<AccessTokenPayload, 'type' | 'jti'> & { jti?: string }) {
+export async function signAccessToken(
+  payload: Omit<AccessTokenPayload, 'type' | 'jti'> & { jti?: string },
+) {
   const jti = payload.jti ?? crypto.randomUUID();
   const token = await new SignJWT({
     email: payload.email,

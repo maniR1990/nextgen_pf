@@ -1,7 +1,5 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   TRANSACTION_DEFAULT_SORT,
   TRANSACTION_FILTER_ALL,
@@ -10,6 +8,8 @@ import {
   chipToApiTypes,
 } from '@/constants/transactions';
 import type { TransactionListFilters } from '@/lib/query/queryKeys';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useMemo } from 'react';
 
 function parseIntParam(value: string | null, fallback: number): number {
   if (!value) return fallback;
@@ -85,10 +85,7 @@ export function useTransactionFilters() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const filters = useMemo(
-    () => parseTransactionFilters(searchParams),
-    [searchParams],
-  );
+  const filters = useMemo(() => parseTransactionFilters(searchParams), [searchParams]);
 
   const setFilters = useCallback(
     (patch: Partial<TransactionListFilters>) => {

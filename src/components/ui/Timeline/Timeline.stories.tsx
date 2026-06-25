@@ -1,4 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import {
   chromaticBaseline,
   storySectionStyle,
@@ -6,6 +5,7 @@ import {
   viewportMobile,
 } from '@/components/ui/storyLayout';
 import { TIMELINE_DENSITY } from '@/constants/timeline';
+import type { Meta, StoryObj } from '@storybook/react';
 import { Timeline } from './Timeline';
 import auditSample from './samples/audit.timeline.json';
 import milestoneSample from './samples/milestone.timeline.json';

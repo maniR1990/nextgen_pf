@@ -1,8 +1,8 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { apiGetV1 } from '@/lib/query/fetcher';
 import { queryKeys } from '@/lib/query/queryKeys';
+import { useQuery } from '@tanstack/react-query';
 
 export interface ReportKpiData {
   totalIncomeMinor: number;
@@ -23,8 +23,7 @@ export interface ReportKpiData {
 export function useReportKpiData(year: number, month: number) {
   return useQuery<ReportKpiData>({
     queryKey: queryKeys.reports.kpi(year, month),
-    queryFn: () =>
-      apiGetV1<ReportKpiData>(`/api/v1/reports/kpi?year=${year}&month=${month}`),
+    queryFn: () => apiGetV1<ReportKpiData>(`/api/v1/reports/kpi?year=${year}&month=${month}`),
     staleTime: 60_000,
     retry: 1,
   });

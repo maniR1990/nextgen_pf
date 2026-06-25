@@ -1,17 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ArchiveConfirmModal } from './ArchiveConfirmModal';
 
 describe('ArchiveConfirmModal', () => {
   it('renders account name in prompt', () => {
     render(
-      <ArchiveConfirmModal
-        open
-        onClose={vi.fn()}
-        accountName="HDFC Salary"
-        onConfirm={vi.fn()}
-      />,
+      <ArchiveConfirmModal open onClose={vi.fn()} accountName="HDFC Salary" onConfirm={vi.fn()} />,
     );
     expect(screen.getByText(/HDFC Salary/)).toBeInTheDocument();
   });
@@ -35,12 +30,7 @@ describe('ArchiveConfirmModal', () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     render(
-      <ArchiveConfirmModal
-        open
-        onClose={onClose}
-        accountName="HDFC Salary"
-        onConfirm={vi.fn()}
-      />,
+      <ArchiveConfirmModal open onClose={onClose} accountName="HDFC Salary" onConfirm={vi.fn()} />,
     );
     await user.click(screen.getByRole('button', { name: /cancel/i }));
     expect(onClose).toHaveBeenCalled();

@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useMemo } from 'react';
 
 export interface ReportFilters {
   year: number;
@@ -9,8 +9,18 @@ export interface ReportFilters {
 }
 
 const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 function currentPeriod(): ReportFilters {
@@ -20,7 +30,7 @@ function currentPeriod(): ReportFilters {
 
 function parseIntParam(value: string | null, fallback: number): number {
   if (!value) return fallback;
-  const n = parseInt(value, 10);
+  const n = Number.parseInt(value, 10);
   return Number.isFinite(n) ? n : fallback;
 }
 
@@ -51,14 +61,20 @@ export function useReportFilters() {
   const goPrev = useCallback(() => {
     let { year, month } = filters;
     month -= 1;
-    if (month < 1) { month = 12; year -= 1; }
+    if (month < 1) {
+      month = 12;
+      year -= 1;
+    }
     setFilters({ year, month });
   }, [filters, setFilters]);
 
   const goNext = useCallback(() => {
     let { year, month } = filters;
     month += 1;
-    if (month > 12) { month = 1; year += 1; }
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
     setFilters({ year, month });
   }, [filters, setFilters]);
 

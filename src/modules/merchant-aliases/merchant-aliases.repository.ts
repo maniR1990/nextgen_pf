@@ -1,5 +1,5 @@
-import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import type { Prisma } from '@prisma/client';
 
 export const MerchantAliasesRepository = {
   findByUserId: async (userId: string) => {
@@ -20,6 +20,5 @@ export const MerchantAliasesRepository = {
     );
   },
 
-  create: (data: Prisma.MerchantAliasCreateInput) =>
-    prisma.merchantAlias.create({ data }),
+  create: (data: Prisma.MerchantAliasCreateInput) => prisma.merchantAlias.create({ data }),
 };

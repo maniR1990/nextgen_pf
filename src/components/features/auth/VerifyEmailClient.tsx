@@ -1,8 +1,5 @@
 'use client';
 
-import { Mail } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { AuthFormFooter } from '@/components/ui/AuthFormFooter';
 import { AuthFormHeader } from '@/components/ui/AuthFormHeader';
@@ -11,6 +8,9 @@ import { TextLink } from '@/components/ui/TextLink';
 import { AUTH_MESSAGES } from '@/constants/auth';
 import { ROUTES } from '@/constants/routes';
 import { parseClientError } from '@/lib/api/parseClientError';
+import { Mail } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 type VerifyState = 'loading' | 'success' | 'error';
 
@@ -19,9 +19,7 @@ export function VerifyEmailClient() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
   const [state, setState] = useState<VerifyState>(token ? 'loading' : 'error');
-  const [message, setMessage] = useState(
-    token ? '' : AUTH_MESSAGES.verifyLinkExpired,
-  );
+  const [message, setMessage] = useState(token ? '' : AUTH_MESSAGES.verifyLinkExpired);
 
   useEffect(() => {
     if (!token) return;

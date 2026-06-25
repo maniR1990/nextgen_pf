@@ -1,9 +1,9 @@
-import type { AccountType } from '@prisma/client';
 import {
   ACCOUNT_TYPE_CODE_PREFIX,
-  isLiabilityAccountType,
   UTILISATION_ACCOUNT_TYPES,
+  isLiabilityAccountType,
 } from '@/constants/accounts';
+import type { AccountType } from '@prisma/client';
 import type { AccountHealth, UpcomingEventItem } from '../accounts.types';
 
 interface HealthInput {
@@ -20,7 +20,11 @@ export function buildAccountCode(
   type: AccountType,
   sequence: number,
 ): string {
-  const inst = (institutionShortName ?? 'ACC').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) || 'ACC';
+  const inst =
+    (institutionShortName ?? 'ACC')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 4) || 'ACC';
   const typeAbbrev = ACCOUNT_TYPE_CODE_PREFIX[type] ?? 'GEN';
   return `${inst}-${typeAbbrev}-${String(sequence).padStart(2, '0')}`;
 }
@@ -37,9 +41,7 @@ export function computeAccountHealth(input: HealthInput): AccountHealth {
 
   let score = 100;
   const utilisationPercent =
-    UTILISATION_ACCOUNT_TYPES.includes(input.type) &&
-    input.creditLimit &&
-    input.creditLimit > 0
+    UTILISATION_ACCOUNT_TYPES.includes(input.type) && input.creditLimit && input.creditLimit > 0
       ? Math.round((Math.abs(input.balance) / input.creditLimit) * 100)
       : null;
 

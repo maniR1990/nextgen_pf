@@ -1,7 +1,7 @@
 'use client';
 
-import { AlertCircle } from 'lucide-react';
 import type { FormErrors } from '@/store/transactionFormStore';
+import { AlertCircle } from 'lucide-react';
 
 interface ValidationSummaryProps {
   errors: FormErrors;

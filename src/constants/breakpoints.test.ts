@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BREAKPOINT_ORDER, BREAKPOINTS, MOBILE_DESIGN_WIDTH } from './breakpoints';
+import { BREAKPOINTS, BREAKPOINT_ORDER, MOBILE_DESIGN_WIDTH } from './breakpoints';
 
 describe('breakpoints', () => {
   it('defines mobile-first min-width scale', () => {

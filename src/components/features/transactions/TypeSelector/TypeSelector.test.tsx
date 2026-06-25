@@ -1,8 +1,8 @@
+import { TX_TYPE_GROUPS } from '@/constants/finance';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TypeSelector } from './TypeSelector';
-import { TX_TYPE_GROUPS } from '@/constants/finance';
 
 afterEach(() => cleanup());
 

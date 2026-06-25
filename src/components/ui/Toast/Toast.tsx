@@ -1,8 +1,8 @@
 'use client';
 
-import { Info, SquareCheck, TriangleAlert, X, type LucideIcon } from 'lucide-react';
-import type { HTMLAttributes, ReactNode } from 'react';
 import { Icon } from '@/components/ui/Icon';
+import { Info, type LucideIcon, SquareCheck, TriangleAlert, X } from 'lucide-react';
+import type { HTMLAttributes, ReactNode } from 'react';
 
 export type ToastVariant = 'success' | 'error' | 'warning' | 'info';
 
@@ -74,7 +74,12 @@ export function Toast({
         {description && <p className="toast__description">{description}</p>}
       </div>
       {onDismiss && (
-        <button type="button" className="toast__dismiss" onClick={onDismiss} aria-label={dismissLabel}>
+        <button
+          type="button"
+          className="toast__dismiss"
+          onClick={onDismiss}
+          aria-label={dismissLabel}
+        >
           <Icon icon={X} size="sm" tone="muted" />
         </button>
       )}

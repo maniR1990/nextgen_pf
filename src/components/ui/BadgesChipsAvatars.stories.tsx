@@ -1,5 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from 'storybook/test';
 import { Avatar, AvatarGroup } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Chip } from '@/components/ui/Chip';
@@ -11,6 +9,8 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from 'storybook/test';
 
 const meta: Meta = {
   title: 'UI/Badges, Chips & Avatars',

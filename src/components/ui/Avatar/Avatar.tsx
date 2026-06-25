@@ -87,10 +87,7 @@ export function Avatar({
         </span>
       )}
       {status && (
-        <span
-          className={['avatar__status', STATUS_CLASS[status]].join(' ')}
-          aria-hidden
-        />
+        <span className={['avatar__status', STATUS_CLASS[status]].join(' ')} aria-hidden />
       )}
     </span>
   );

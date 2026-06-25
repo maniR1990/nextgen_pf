@@ -30,7 +30,9 @@ export const CATEGORY_STATS_TREND_MONTHS = 6;
 export const CATEGORY_TOP_TRANSACTIONS_LIMIT = 10;
 
 /** Map API ?type= slug → Prisma CategoryFlowType */
-export function toCategoryFlowType(slug: CategoryFlowTypeSlug): (typeof CATEGORY_FLOW_TYPES)[number] {
+export function toCategoryFlowType(
+  slug: CategoryFlowTypeSlug,
+): (typeof CATEGORY_FLOW_TYPES)[number] {
   const map = {
     income: 'INCOME',
     expense: 'EXPENSE',

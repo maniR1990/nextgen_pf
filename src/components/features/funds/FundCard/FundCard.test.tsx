@@ -1,8 +1,8 @@
+import type { FundSummary } from '@/modules/funds/funds.types';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { FundCard } from './FundCard';
-import type { FundSummary } from '@/modules/funds/funds.types';
 
 const mockFund: FundSummary = {
   id: 'fund-1',

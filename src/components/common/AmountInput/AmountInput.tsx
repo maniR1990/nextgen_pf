@@ -1,10 +1,11 @@
 'use client';
 
-import type { InputHTMLAttributes } from 'react';
-import { QUICK_AMOUNT_CHIPS } from '@/constants/finance';
 import { FormField } from '@/components/common/FormField';
+import { QUICK_AMOUNT_CHIPS } from '@/constants/finance';
+import type { InputHTMLAttributes } from 'react';
 
-export interface AmountInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
+export interface AmountInputProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
   value: string;
   onChange: (value: string) => void;
   error?: string;
@@ -13,22 +14,35 @@ export interface AmountInputProps extends Omit<InputHTMLAttributes<HTMLInputElem
   showChips?: boolean;
 }
 
-export function AmountInput({ value, onChange, error, hint, label = 'AMOUNT (₹)', showChips = true, disabled, ...props }: AmountInputProps) {
+export function AmountInput({
+  value,
+  onChange,
+  error,
+  hint,
+  label = 'AMOUNT (₹)',
+  showChips = true,
+  disabled,
+  ...props
+}: AmountInputProps) {
   const handleChip = (chip: number) => {
-    const current = parseFloat(value) || 0;
+    const current = Number.parseFloat(value) || 0;
     onChange(String(current + chip));
   };
 
   return (
     <FormField label={label} htmlFor="tx-amount" error={error} hint={hint}>
       <div className="amount-input">
-        <span className="amount-input__prefix" aria-hidden>₹</span>
+        <span className="amount-input__prefix" aria-hidden>
+          ₹
+        </span>
         <input
           id="tx-amount"
           type="number"
           min="0"
           step="0.01"
-          className={['amount-input__control', error && 'amount-input__control--error'].filter(Boolean).join(' ')}
+          className={['amount-input__control', error && 'amount-input__control--error']
+            .filter(Boolean)
+            .join(' ')}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0.00"

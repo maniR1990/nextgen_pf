@@ -2,15 +2,18 @@
 
 import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
-import { CommonFormFields } from './CommonFormFields';
-import { ASSET_CLASSES, TAX_SECTIONS, MF_PLANS } from '@/constants/finance';
-import type { TransactionFormValues, FormErrors } from '@/store/transactionFormStore';
+import { ASSET_CLASSES, MF_PLANS, TAX_SECTIONS } from '@/constants/finance';
+import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption } from '@/types/finance';
+import { CommonFormFields } from './CommonFormFields';
 
 interface InvestmentFormProps {
   values: TransactionFormValues;
   errors: FormErrors;
-  onChange: <K extends keyof TransactionFormValues>(key: K, value: TransactionFormValues[K]) => void;
+  onChange: <K extends keyof TransactionFormValues>(
+    key: K,
+    value: TransactionFormValues[K],
+  ) => void;
   paymentSources: PaymentSourceOption[];
 }
 
@@ -37,7 +40,9 @@ export function InvestmentForm({ values, errors, onChange, paymentSources }: Inv
               <input
                 id="tx-fund-name"
                 type="text"
-                className={['form-input', errors.fundName && 'form-input--error'].filter(Boolean).join(' ')}
+                className={['form-input', errors.fundName && 'form-input--error']
+                  .filter(Boolean)
+                  .join(' ')}
                 value={values.fundName}
                 placeholder="e.g. Parag Parikh Flexicap"
                 onChange={(e) => onChange('fundName', e.target.value)}
@@ -66,7 +71,9 @@ export function InvestmentForm({ values, errors, onChange, paymentSources }: Inv
             type="number"
             step="0.0001"
             min="0"
-            className={['form-input', errors.units && 'form-input--error'].filter(Boolean).join(' ')}
+            className={['form-input', errors.units && 'form-input--error']
+              .filter(Boolean)
+              .join(' ')}
             value={values.units}
             placeholder="0.0000"
             onChange={(e) => onChange('units', e.target.value)}

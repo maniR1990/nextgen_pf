@@ -2,15 +2,18 @@
 
 import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
-import { PAYMENT_METHODS } from '@/constants/finance';
 import { RecurringConfig } from '@/components/features/transactions/RecurringConfig';
-import type { TransactionFormValues, FormErrors } from '@/store/transactionFormStore';
+import { PAYMENT_METHODS } from '@/constants/finance';
+import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption } from '@/types/finance';
 
 interface CommonFormFieldsProps {
   values: TransactionFormValues;
   errors: FormErrors;
-  onChange: <K extends keyof TransactionFormValues>(key: K, value: TransactionFormValues[K]) => void;
+  onChange: <K extends keyof TransactionFormValues>(
+    key: K,
+    value: TransactionFormValues[K],
+  ) => void;
   paymentSources: PaymentSourceOption[];
   showDate?: boolean;
   showAccount?: boolean;
@@ -48,7 +51,9 @@ export function CommonFormFields({
               <input
                 id="tx-date"
                 type="date"
-                className={['form-input', errors.date && 'form-input--error'].filter(Boolean).join(' ')}
+                className={['form-input', errors.date && 'form-input--error']
+                  .filter(Boolean)
+                  .join(' ')}
                 value={values.date}
                 onChange={(e) => onChange('date', e.target.value)}
               />

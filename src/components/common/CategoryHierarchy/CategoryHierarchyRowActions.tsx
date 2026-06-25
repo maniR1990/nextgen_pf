@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
+import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import type { CategoryHierarchyNodeJson } from '../schemas';
 
 export interface CategoryHierarchyRowAction {
@@ -17,10 +17,7 @@ interface CategoryHierarchyRowActionsProps {
   actions: CategoryHierarchyRowAction[];
 }
 
-export function CategoryHierarchyRowActions({
-  node,
-  actions,
-}: CategoryHierarchyRowActionsProps) {
+export function CategoryHierarchyRowActions({ node, actions }: CategoryHierarchyRowActionsProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -66,8 +63,12 @@ export function CategoryHierarchyRowActions({
               }}
             >
               {action.id === 'edit' && <Icon icon={Pencil} size="xs" tone="inherit" aria-hidden />}
-              {action.id === 'delete' && <Icon icon={Trash2} size="xs" tone="inherit" aria-hidden />}
-              {action.id === 'add-child' && <Icon icon={Plus} size="xs" tone="inherit" aria-hidden />}
+              {action.id === 'delete' && (
+                <Icon icon={Trash2} size="xs" tone="inherit" aria-hidden />
+              )}
+              {action.id === 'add-child' && (
+                <Icon icon={Plus} size="xs" tone="inherit" aria-hidden />
+              )}
               {action.label}
             </button>
           ))}

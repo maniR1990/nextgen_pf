@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SinkingFundsService } from './sinking-funds.service';
-import { SinkingFundsRepository } from './sinking-funds.repository';
 import { NotFoundError } from '@/lib/api/errors';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SinkingFundsRepository } from './sinking-funds.repository';
+import { SinkingFundsService } from './sinking-funds.service';
 
 vi.mock('./sinking-funds.repository');
 
@@ -47,9 +47,10 @@ describe('SinkingFundsService.deposit', () => {
   });
 
   it('throws NotFoundError when fund belongs to another user', async () => {
-    vi.mocked(SinkingFundsRepository.findById).mockResolvedValue(
-      { ...mockFund, userId: 'other' } as never,
-    );
+    vi.mocked(SinkingFundsRepository.findById).mockResolvedValue({
+      ...mockFund,
+      userId: 'other',
+    } as never);
     await expect(SinkingFundsService.deposit('sf1', 'u1', 5000)).rejects.toThrow(NotFoundError);
   });
 });

@@ -1,7 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AttachmentsService } from './attachments.service';
+import {
+  AttachmentLimitError,
+  FileTooLargeError,
+  NotFoundError,
+  UnsupportedFileTypeError,
+} from '@/lib/api/errors';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AttachmentsRepository } from './attachments.repository';
-import { NotFoundError, FileTooLargeError, UnsupportedFileTypeError, AttachmentLimitError } from '@/lib/api/errors';
+import { AttachmentsService } from './attachments.service';
 
 vi.mock('./attachments.repository');
 
@@ -35,23 +40,41 @@ describe('AttachmentsService.create', () => {
   });
 
   it('throws NotFoundError when tx belongs to another user', async () => {
-    vi.mocked(AttachmentsRepository.findTransaction).mockResolvedValue({ ...mockTx, userId: 'other' } as never);
+    vi.mocked(AttachmentsRepository.findTransaction).mockResolvedValue({
+      ...mockTx,
+      userId: 'other',
+    } as never);
     await expect(
-      AttachmentsService.create('tx1', 'u1', { filename: 'r.pdf', url: 'x', mimeType: 'application/pdf', sizeBytes: 100 }),
+      AttachmentsService.create('tx1', 'u1', {
+        filename: 'r.pdf',
+        url: 'x',
+        mimeType: 'application/pdf',
+        sizeBytes: 100,
+      }),
     ).rejects.toThrow(NotFoundError);
   });
 
   it('throws FileTooLargeError when file exceeds 10MB', async () => {
     vi.mocked(AttachmentsRepository.findTransaction).mockResolvedValue(mockTx as never);
     await expect(
-      AttachmentsService.create('tx1', 'u1', { filename: 'big.pdf', url: 'x', mimeType: 'application/pdf', sizeBytes: 11 * 1024 * 1024 }),
+      AttachmentsService.create('tx1', 'u1', {
+        filename: 'big.pdf',
+        url: 'x',
+        mimeType: 'application/pdf',
+        sizeBytes: 11 * 1024 * 1024,
+      }),
     ).rejects.toThrow(FileTooLargeError);
   });
 
   it('throws UnsupportedFileTypeError for disallowed mime types', async () => {
     vi.mocked(AttachmentsRepository.findTransaction).mockResolvedValue(mockTx as never);
     await expect(
-      AttachmentsService.create('tx1', 'u1', { filename: 'script.exe', url: 'x', mimeType: 'application/x-msdownload', sizeBytes: 1000 }),
+      AttachmentsService.create('tx1', 'u1', {
+        filename: 'script.exe',
+        url: 'x',
+        mimeType: 'application/x-msdownload',
+        sizeBytes: 1000,
+      }),
     ).rejects.toThrow(UnsupportedFileTypeError);
   });
 
@@ -59,7 +82,12 @@ describe('AttachmentsService.create', () => {
     vi.mocked(AttachmentsRepository.findTransaction).mockResolvedValue(mockTx as never);
     vi.mocked(AttachmentsRepository.countByTxId).mockResolvedValue(5);
     await expect(
-      AttachmentsService.create('tx1', 'u1', { filename: 'r.pdf', url: 'x', mimeType: 'application/pdf', sizeBytes: 100 }),
+      AttachmentsService.create('tx1', 'u1', {
+        filename: 'r.pdf',
+        url: 'x',
+        mimeType: 'application/pdf',
+        sizeBytes: 100,
+      }),
     ).rejects.toThrow(AttachmentLimitError);
   });
 });
@@ -76,7 +104,10 @@ describe('AttachmentsService.list', () => {
 describe('AttachmentsService.remove', () => {
   it('soft-deletes an attachment', async () => {
     vi.mocked(AttachmentsRepository.findTransaction).mockResolvedValue(mockTx as never);
-    vi.mocked(AttachmentsRepository.softDelete).mockResolvedValue({ ...mockAttachment, deletedAt: new Date() } as never);
+    vi.mocked(AttachmentsRepository.softDelete).mockResolvedValue({
+      ...mockAttachment,
+      deletedAt: new Date(),
+    } as never);
     const result = await AttachmentsService.remove('tx1', 'u1', 'att1');
     expect(result.deletedAt).toBeTruthy();
   });

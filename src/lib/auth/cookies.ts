@@ -3,13 +3,7 @@ import { AUTH } from '@/constants/auth';
 const isProd = process.env.NODE_ENV === 'production';
 
 function cookieOptions(maxAgeSec: number) {
-  return [
-    'Path=/',
-    'HttpOnly',
-    'SameSite=Strict',
-    isProd ? 'Secure' : '',
-    `Max-Age=${maxAgeSec}`,
-  ]
+  return ['Path=/', 'HttpOnly', 'SameSite=Strict', isProd ? 'Secure' : '', `Max-Age=${maxAgeSec}`]
     .filter(Boolean)
     .join('; ');
 }

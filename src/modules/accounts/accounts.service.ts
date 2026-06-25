@@ -1,15 +1,15 @@
 import {
+  BALANCE_ADJUSTMENT_MERCHANT,
+  RECENT_ACTIVITY_LIMIT,
+  UPCOMING_EVENTS_DAYS,
+} from '@/constants/accounts';
+import {
   AccountArchiveBlockedError,
   AccountNotFoundError,
   ConflictError,
   NotFoundError,
 } from '@/lib/api/errors';
 import { buildMeta } from '@/lib/api/pagination';
-import {
-  BALANCE_ADJUSTMENT_MERCHANT,
-  RECENT_ACTIVITY_LIMIT,
-  UPCOMING_EVENTS_DAYS,
-} from '@/constants/accounts';
 import { AccountsRepository } from './accounts.repository';
 import type {
   AccountDetail,
@@ -384,8 +384,8 @@ export const AccountsService = {
       throw new AccountArchiveBlockedError('pending EMIs remain on this loan account');
     }
 
-    const hasActiveAllocations = (account.fundAllocations ?? []).some(
-      (row) => row.type === 'FIXED' ? row.value > 0 : row.value > 0,
+    const hasActiveAllocations = (account.fundAllocations ?? []).some((row) =>
+      row.type === 'FIXED' ? row.value > 0 : row.value > 0,
     );
     if (hasActiveAllocations) {
       throw new AccountArchiveBlockedError('active fund allocations exist on this account');

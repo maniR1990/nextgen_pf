@@ -26,7 +26,7 @@ export async function readV1Json<T>(res: Response): Promise<T> {
 
 async function fetchWithSession(path: string, init?: RequestInit): Promise<Response> {
   const options: RequestInit = { credentials: 'include', ...init };
-  let res = await fetch(path, options);
+  const res = await fetch(path, options);
   if (res.status !== 401) return res;
 
   const refreshed = await fetch('/api/auth/refresh', {

@@ -98,10 +98,7 @@ function sumSection(node: BudgetLedgerNode): BudgetLedgerMetrics {
   return computeBudgetMetrics(plannedMinor, spentMinor);
 }
 
-function findSection(
-  roots: BudgetLedgerNode[],
-  variant: string,
-): BudgetLedgerNode | undefined {
+function findSection(roots: BudgetLedgerNode[], variant: string): BudgetLedgerNode | undefined {
   return roots.find((r) => r.variant === variant);
 }
 
@@ -124,11 +121,8 @@ export function buildBudgetSummaries(roots: BudgetLedgerNode[]): BudgetSummaryRo
   const incomeMetrics = income ? sumSection(income) : computeBudgetMetrics(0, 0);
 
   const essential = sumVariants(roots, BUDGET_ESSENTIAL_VARIANTS);
-  const investments =
-    findSection(roots, BUDGET_SECTION_VARIANT.INVESTMENTS) ?? null;
-  const investmentsMetrics = investments
-    ? sumSection(investments)
-    : computeBudgetMetrics(0, 0);
+  const investments = findSection(roots, BUDGET_SECTION_VARIANT.INVESTMENTS) ?? null;
+  const investmentsMetrics = investments ? sumSection(investments) : computeBudgetMetrics(0, 0);
 
   const expenseVariants = [
     ...BUDGET_ESSENTIAL_VARIANTS,

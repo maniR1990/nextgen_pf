@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, getDay, getDaysInYear, parseISO, startOfYear } from 'date-fns';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 const CELL_SIZE = 12;
 const GAP = 3;
@@ -25,7 +25,20 @@ export interface YearHeatmapProps {
   maxYear?: number;
 }
 
-const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_LABELS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
 function getLevel(amount: number, max: number): 0 | 1 | 2 | 3 | 4 {
   if (amount === 0 || max === 0) return 0;
@@ -48,7 +61,12 @@ export function YearHeatmap({
 }: YearHeatmapProps) {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(yearProp ?? currentYear);
-  const [tooltip, setTooltip] = useState<{ date: string; amount: number; x: number; y: number } | null>(null);
+  const [tooltip, setTooltip] = useState<{
+    date: string;
+    amount: number;
+    x: number;
+    y: number;
+  } | null>(null);
 
   function changeYear(next: number) {
     setYear(next);
@@ -89,9 +107,9 @@ export function YearHeatmap({
       allCells.push({ date: iso, amount });
     }
 
-    const max = Math.max(...data.map(d => d.amount), 0);
+    const max = Math.max(...data.map((d) => d.amount), 0);
     return {
-      cells: allCells.map(c => ({ ...c, level: getLevel(c.amount, max) })),
+      cells: allCells.map((c) => ({ ...c, level: getLevel(c.amount, max) })),
       monthColOffsets: offsets,
       monthTotals: totals,
       totalSpend,
@@ -111,7 +129,10 @@ export function YearHeatmap({
   }
 
   return (
-    <div className={`year-heatmap year-heatmap--${colorScheme}`} aria-label={`Spending heatmap for ${year}`}>
+    <div
+      className={`year-heatmap year-heatmap--${colorScheme}`}
+      aria-label={`Spending heatmap for ${year}`}
+    >
       {/* Header: year nav + summary stats */}
       <div className="year-heatmap__header">
         <div className="year-heatmap__year-nav">
@@ -164,7 +185,13 @@ export function YearHeatmap({
         >
           {cells.map((cell, i) => {
             if (!cell.date) {
-              return <div key={`e-${i}`} className="year-heatmap__cell year-heatmap__cell--l0" aria-hidden />;
+              return (
+                <div
+                  key={`e-${i}`}
+                  className="year-heatmap__cell year-heatmap__cell--l0"
+                  aria-hidden
+                />
+              );
             }
             return (
               <button
@@ -187,7 +214,9 @@ export function YearHeatmap({
         {tooltip && (
           <div
             className="year-heatmap__tooltip"
-            style={{ '--tip-x': `${tooltip.x}px`, '--tip-y': `${tooltip.y}px` } as React.CSSProperties}
+            style={
+              { '--tip-x': `${tooltip.x}px`, '--tip-y': `${tooltip.y}px` } as React.CSSProperties
+            }
             aria-hidden
           >
             <strong>{format(parseISO(tooltip.date), 'MMM d, yyyy')}</strong>
@@ -216,7 +245,7 @@ export function YearHeatmap({
       {/* Legend */}
       <div className="year-heatmap__legend" aria-hidden>
         <span>Less</span>
-        {([0, 1, 2, 3, 4] as const).map(l => (
+        {([0, 1, 2, 3, 4] as const).map((l) => (
           <div key={l} className={`year-heatmap__cell year-heatmap__cell--l${l}`} />
         ))}
         <span>More</span>

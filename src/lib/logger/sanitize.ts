@@ -9,7 +9,9 @@ const SENSITIVE_KEYS = new Set([
   'secret',
 ]);
 
-export function sanitizeContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
+export function sanitizeContext(
+  context?: Record<string, unknown>,
+): Record<string, unknown> | undefined {
   if (!context) return undefined;
 
   const sanitized: Record<string, unknown> = {};

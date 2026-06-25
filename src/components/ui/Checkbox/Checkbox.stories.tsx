@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { chromaticBaseline, storyRowStyle, storySectionStyle } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
 import { Checkbox } from './Checkbox';
 
 const meta: Meta<typeof Checkbox> = {

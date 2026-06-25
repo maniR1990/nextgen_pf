@@ -1,8 +1,8 @@
 'use client';
 
-import { formatINR, formatINRCompact, formatChangePct } from '@/lib/utils/format';
 import type { PulseMetric } from '@/lib/schemas/appHeader';
 import type { AppHeaderData } from '@/lib/schemas/appHeader';
+import { formatChangePct, formatINR, formatINRCompact } from '@/lib/utils/format';
 
 interface PulseStripProps {
   metrics: PulseMetric[];
@@ -16,14 +16,24 @@ function formatMetricValue(metric: PulseMetric, data: AppHeaderData): string {
   const raw = data[metric.dataKey as keyof AppHeaderData];
   const value = typeof raw === 'number' ? raw : 0;
   switch (metric.format) {
-    case 'currency-inr-compact': return formatINRCompact(value);
-    case 'currency-inr':         return formatINR(value);
-    case 'days':                 return String(value);
-    default:                     return String(raw ?? '—');
+    case 'currency-inr-compact':
+      return formatINRCompact(value);
+    case 'currency-inr':
+      return formatINR(value);
+    case 'days':
+      return String(value);
+    default:
+      return String(raw ?? '—');
   }
 }
 
-export function PulseStrip({ metrics, marketSymbols, marketLabels, data, collapsed }: PulseStripProps) {
+export function PulseStrip({
+  metrics,
+  marketSymbols,
+  marketLabels,
+  data,
+  collapsed,
+}: PulseStripProps) {
   return (
     <div
       className={['pulse-strip', collapsed && 'pulse-strip--collapsed'].filter(Boolean).join(' ')}
@@ -32,7 +42,9 @@ export function PulseStrip({ metrics, marketSymbols, marketLabels, data, collaps
       <div className="pulse-strip__metrics">
         {metrics.map((m) => {
           const value = formatMetricValue(m, data);
-          const change = m.changeKey ? (data[m.changeKey as keyof AppHeaderData] as number | undefined) : undefined;
+          const change = m.changeKey
+            ? (data[m.changeKey as keyof AppHeaderData] as number | undefined)
+            : undefined;
           const meta = m.metaKey ? String(data[m.metaKey as keyof AppHeaderData] ?? '') : undefined;
           const isZeroAlert = m.alertWhenZero && value === '₹0';
 
@@ -43,7 +55,9 @@ export function PulseStrip({ metrics, marketSymbols, marketLabels, data, collaps
                 className={[
                   'pulse-strip__metric-value',
                   isZeroAlert && 'pulse-strip__metric-value--alert',
-                ].filter(Boolean).join(' ')}
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
               >
                 {value}
                 {m.unit && <span className="pulse-strip__metric-unit"> {m.unit}</span>}
@@ -52,7 +66,9 @@ export function PulseStrip({ metrics, marketSymbols, marketLabels, data, collaps
                 <span
                   className={[
                     'pulse-strip__metric-change',
-                    change >= 0 ? 'pulse-strip__metric-change--up' : 'pulse-strip__metric-change--down',
+                    change >= 0
+                      ? 'pulse-strip__metric-change--up'
+                      : 'pulse-strip__metric-change--down',
                   ].join(' ')}
                 >
                   {formatChangePct(change)}
@@ -78,7 +94,9 @@ export function PulseStrip({ metrics, marketSymbols, marketLabels, data, collaps
               <span
                 className={[
                   'pulse-strip__ticker-change',
-                  entry.changePct >= 0 ? 'pulse-strip__ticker-change--up' : 'pulse-strip__ticker-change--down',
+                  entry.changePct >= 0
+                    ? 'pulse-strip__ticker-change--up'
+                    : 'pulse-strip__ticker-change--down',
                 ].join(' ')}
               >
                 {formatChangePct(entry.changePct)}

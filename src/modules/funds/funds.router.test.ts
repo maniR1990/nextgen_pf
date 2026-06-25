@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Handler } from '@/lib/api/middleware/types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { v1CreateFund, v1ListFunds } from './funds.router';
 import { FundsService } from './funds.service';
-import { v1ListFunds, v1CreateFund } from './funds.router';
 
 vi.mock('./funds.service');
 
@@ -141,7 +141,12 @@ describe('POST /api/v1/funds (v1CreateFund)', () => {
   });
 
   it('creates a fund assigned to a group', async () => {
-    const fundWithGroup = { ...baseFund, groupId: 'fg1', groupName: 'Emergency', groupSlug: 'emergency' };
+    const fundWithGroup = {
+      ...baseFund,
+      groupId: 'fg1',
+      groupName: 'Emergency',
+      groupSlug: 'emergency',
+    };
     vi.mocked(FundsService.create).mockResolvedValue(fundWithGroup);
 
     const req = makeRequest('POST', 'http://localhost:3000/api/v1/funds', {

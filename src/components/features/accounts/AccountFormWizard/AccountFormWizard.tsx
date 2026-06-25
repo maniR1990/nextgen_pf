@@ -1,15 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import type { AccountType } from '@prisma/client';
-import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
+import { AmountInput } from '@/components/common/AmountInput';
 import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
-import { AmountInput } from '@/components/common/AmountInput';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import {
+  ACCOUNT_TYPE_META,
+  type AccountTypeMeta,
+  isLiabilityAccountType,
+} from '@/constants/accounts';
 import type { AccountGroupWithAccounts } from '@/modules/accounts/accounts.types';
 import type { CreateAccountDto } from '@/modules/accounts/accounts.types';
-import { ACCOUNT_TYPE_META, isLiabilityAccountType, type AccountTypeMeta } from '@/constants/accounts';
+import type { AccountType } from '@prisma/client';
+import { useState } from 'react';
 import { AccountTypeGrid } from '../AccountTypeGrid';
 import { InstitutionSelector } from '../InstitutionSelector';
 
@@ -85,7 +89,10 @@ export function AccountFormWizard({
 
   function handleNext() {
     const err = validate();
-    if (err) { setError(err); return; }
+    if (err) {
+      setError(err);
+      return;
+    }
     setError('');
     setStep((s) => Math.min(s + 1, 5));
   }
@@ -107,14 +114,14 @@ export function AccountFormWizard({
         name: state.name.trim(),
         type: state.type,
         groupId: state.groupId,
-        balance: parseFloat(state.balance) || 0,
-        openingBalance: parseFloat(state.openingBalance) || 0,
+        balance: Number.parseFloat(state.balance) || 0,
+        openingBalance: Number.parseFloat(state.openingBalance) || 0,
         accountNumber: state.accountNumber || undefined,
         ifscCode: state.ifscCode || undefined,
-        creditLimit: state.creditLimit ? parseFloat(state.creditLimit) : undefined,
-        interestRate: state.interestRate ? parseFloat(state.interestRate) : undefined,
-        emi: state.emi ? parseFloat(state.emi) : undefined,
-        remainingEmis: state.remainingEmis ? parseInt(state.remainingEmis) : undefined,
+        creditLimit: state.creditLimit ? Number.parseFloat(state.creditLimit) : undefined,
+        interestRate: state.interestRate ? Number.parseFloat(state.interestRate) : undefined,
+        emi: state.emi ? Number.parseFloat(state.emi) : undefined,
+        remainingEmis: state.remainingEmis ? Number.parseInt(state.remainingEmis) : undefined,
         note: state.note || undefined,
       };
       await onSubmit(dto);
@@ -139,8 +146,12 @@ export function AccountFormWizard({
     <Modal open={open} onClose={handleClose} titleId={TITLE_ID} size="lg">
       <Modal.Header>
         <div className="account-wizard__header">
-          <h2 id={TITLE_ID} className="modal__title">{STEPS[step - 1]}</h2>
-          <span className="account-wizard__step-label">Step {step} of {STEPS.length}</span>
+          <h2 id={TITLE_ID} className="modal__title">
+            {STEPS[step - 1]}
+          </h2>
+          <span className="account-wizard__step-label">
+            Step {step} of {STEPS.length}
+          </span>
         </div>
 
         {/* Step progress bar */}
@@ -166,14 +177,15 @@ export function AccountFormWizard({
       </Modal.Header>
 
       <Modal.Body>
-        {error && <p className="form-field__error" role="alert">{error}</p>}
+        {error && (
+          <p className="form-field__error" role="alert">
+            {error}
+          </p>
+        )}
 
         {/* Step 1: Select Type */}
         {step === 1 && (
-          <AccountTypeGrid
-            selected={state.type ?? undefined}
-            onSelect={(t) => set({ type: t })}
-          />
+          <AccountTypeGrid selected={state.type ?? undefined} onSelect={(t) => set({ type: t })} />
         )}
 
         {/* Step 2: Institution */}
@@ -187,7 +199,9 @@ export function AccountFormWizard({
               <div className="account-wizard__type-hint">
                 <strong>{typeMeta.name}</strong>
                 {typeMeta.wealthRole && <p>{typeMeta.wealthRole}</p>}
-                {typeMeta.strategy && <p className="account-wizard__strategy">{typeMeta.strategy}</p>}
+                {typeMeta.strategy && (
+                  <p className="account-wizard__strategy">{typeMeta.strategy}</p>
+                )}
               </div>
             )}
           </div>
@@ -229,32 +243,33 @@ export function AccountFormWizard({
                 showChips={false}
               />
             )}
-            {state.type && ['BANK_SALARY', 'BANK_SAVINGS', 'BANK_CURRENT', 'BANK_NRE'].includes(state.type) && (
-              <>
-                <FormField label="Account Number" htmlFor="acc-number">
-                  <input
-                    id="acc-number"
-                    type="text"
-                    className="select-field__control"
-                    value={state.accountNumber}
-                    onChange={(e) => set({ accountNumber: e.target.value })}
-                    maxLength={20}
-                    placeholder="Last 4 digits or full number"
-                  />
-                </FormField>
-                <FormField label="IFSC Code" htmlFor="acc-ifsc">
-                  <input
-                    id="acc-ifsc"
-                    type="text"
-                    className="select-field__control"
-                    value={state.ifscCode}
-                    onChange={(e) => set({ ifscCode: e.target.value.toUpperCase() })}
-                    maxLength={11}
-                    placeholder="e.g. HDFC0001234"
-                  />
-                </FormField>
-              </>
-            )}
+            {state.type &&
+              ['BANK_SALARY', 'BANK_SAVINGS', 'BANK_CURRENT', 'BANK_NRE'].includes(state.type) && (
+                <>
+                  <FormField label="Account Number" htmlFor="acc-number">
+                    <input
+                      id="acc-number"
+                      type="text"
+                      className="select-field__control"
+                      value={state.accountNumber}
+                      onChange={(e) => set({ accountNumber: e.target.value })}
+                      maxLength={20}
+                      placeholder="Last 4 digits or full number"
+                    />
+                  </FormField>
+                  <FormField label="IFSC Code" htmlFor="acc-ifsc">
+                    <input
+                      id="acc-ifsc"
+                      type="text"
+                      className="select-field__control"
+                      value={state.ifscCode}
+                      onChange={(e) => set({ ifscCode: e.target.value.toUpperCase() })}
+                      maxLength={11}
+                      placeholder="e.g. HDFC0001234"
+                    />
+                  </FormField>
+                </>
+              )}
             {isLiability && state.type === 'CREDIT_CARD' && (
               <>
                 <AmountInput
@@ -278,27 +293,30 @@ export function AccountFormWizard({
                 </FormField>
               </>
             )}
-            {isLiability && ['LOAN_HOME', 'LOAN_CAR', 'LOAN_PERSONAL', 'LOAN_EDUCATION'].includes(state.type ?? '') && (
-              <>
-                <AmountInput
-                  value={state.emi}
-                  onChange={(v) => set({ emi: v })}
-                  label="EMI Amount (₹)"
-                  showChips={false}
-                />
-                <FormField label="Remaining EMIs" htmlFor="acc-emis">
-                  <input
-                    id="acc-emis"
-                    type="number"
-                    className="select-field__control"
-                    value={state.remainingEmis}
-                    onChange={(e) => set({ remainingEmis: e.target.value })}
-                    min="0"
-                    placeholder="e.g. 180"
+            {isLiability &&
+              ['LOAN_HOME', 'LOAN_CAR', 'LOAN_PERSONAL', 'LOAN_EDUCATION'].includes(
+                state.type ?? '',
+              ) && (
+                <>
+                  <AmountInput
+                    value={state.emi}
+                    onChange={(v) => set({ emi: v })}
+                    label="EMI Amount (₹)"
+                    showChips={false}
                   />
-                </FormField>
-              </>
-            )}
+                  <FormField label="Remaining EMIs" htmlFor="acc-emis">
+                    <input
+                      id="acc-emis"
+                      type="number"
+                      className="select-field__control"
+                      value={state.remainingEmis}
+                      onChange={(e) => set({ remainingEmis: e.target.value })}
+                      min="0"
+                      placeholder="e.g. 180"
+                    />
+                  </FormField>
+                </>
+              )}
             <FormField label="Note (optional)" htmlFor="acc-note">
               <input
                 id="acc-note"
@@ -317,9 +335,9 @@ export function AccountFormWizard({
         {step === 4 && (
           <div className="account-wizard__step-body account-wizard__step-body--info">
             <p className="account-wizard__info-text">
-              Fund links can be configured after the account is created.
-              You'll be able to allocate percentages or fixed amounts from this account
-              to your fund buckets (Emergency, Ops, Goals, etc.).
+              Fund links can be configured after the account is created. You'll be able to allocate
+              percentages or fixed amounts from this account to your fund buckets (Emergency, Ops,
+              Goals, etc.).
             </p>
           </div>
         )}
@@ -346,7 +364,7 @@ export function AccountFormWizard({
               </div>
               <div className="account-wizard__review-row">
                 <dt>Current Balance</dt>
-                <dd>₹{parseFloat(state.balance || '0').toLocaleString('en-IN')}</dd>
+                <dd>₹{Number.parseFloat(state.balance || '0').toLocaleString('en-IN')}</dd>
               </div>
               {state.accountNumber && (
                 <div className="account-wizard__review-row">
@@ -357,13 +375,13 @@ export function AccountFormWizard({
               {state.creditLimit && (
                 <div className="account-wizard__review-row">
                   <dt>Credit Limit</dt>
-                  <dd>₹{parseFloat(state.creditLimit).toLocaleString('en-IN')}</dd>
+                  <dd>₹{Number.parseFloat(state.creditLimit).toLocaleString('en-IN')}</dd>
                 </div>
               )}
               {state.emi && (
                 <div className="account-wizard__review-row">
                   <dt>EMI</dt>
-                  <dd>₹{parseFloat(state.emi).toLocaleString('en-IN')}</dd>
+                  <dd>₹{Number.parseFloat(state.emi).toLocaleString('en-IN')}</dd>
                 </div>
               )}
               {state.note && (

@@ -1,5 +1,5 @@
-import { compose, withAuth, withValidation } from '@/lib/api/middleware';
 import { isApiError } from '@/lib/api/errors';
+import { compose, withAuth, withValidation } from '@/lib/api/middleware';
 import { v1Created, v1FromApiError, v1NoContent, v1Ok } from '@/lib/api/v1/envelope';
 import { getLogger } from '@/lib/logger';
 import { CreateFundGroupSchema, UpdateFundGroupSchema } from './fund-groups.schema';
@@ -24,35 +24,37 @@ export const v1ListFundGroups = compose(withAuth())(async (req, ctx) => {
   }
 });
 
-export const v1CreateFundGroup = compose(withAuth(), withValidation(CreateFundGroupSchema))(
-  async (req, ctx) => {
-    try {
-      const dto = CreateFundGroupSchema.parse(await req.json());
-      const result = await FundGroupsService.create(ctx.session!.id, dto);
-      return v1Created(result);
-    } catch (err) {
-      log.error('v1CreateFundGroup', { err });
-      if (isApiError(err)) return v1FromApiError(err);
-      throw err;
-    }
-  },
-);
+export const v1CreateFundGroup = compose(
+  withAuth(),
+  withValidation(CreateFundGroupSchema),
+)(async (req, ctx) => {
+  try {
+    const dto = CreateFundGroupSchema.parse(await req.json());
+    const result = await FundGroupsService.create(ctx.session!.id, dto);
+    return v1Created(result);
+  } catch (err) {
+    log.error('v1CreateFundGroup', { err });
+    if (isApiError(err)) return v1FromApiError(err);
+    throw err;
+  }
+});
 
-export const v1UpdateFundGroup = compose(withAuth(), withValidation(UpdateFundGroupSchema))(
-  async (req, ctx) => {
-    try {
-      const id = ctx.params?.id;
-      if (!id) return missingId();
-      const dto = UpdateFundGroupSchema.parse(await req.json());
-      const result = await FundGroupsService.update(id, ctx.session!.id, dto);
-      return v1Ok(result);
-    } catch (err) {
-      log.error('v1UpdateFundGroup', { err });
-      if (isApiError(err)) return v1FromApiError(err);
-      throw err;
-    }
-  },
-);
+export const v1UpdateFundGroup = compose(
+  withAuth(),
+  withValidation(UpdateFundGroupSchema),
+)(async (req, ctx) => {
+  try {
+    const id = ctx.params?.id;
+    if (!id) return missingId();
+    const dto = UpdateFundGroupSchema.parse(await req.json());
+    const result = await FundGroupsService.update(id, ctx.session!.id, dto);
+    return v1Ok(result);
+  } catch (err) {
+    log.error('v1UpdateFundGroup', { err });
+    if (isApiError(err)) return v1FromApiError(err);
+    throw err;
+  }
+});
 
 export const v1DeleteFundGroup = compose(withAuth())(async (_req, ctx) => {
   try {

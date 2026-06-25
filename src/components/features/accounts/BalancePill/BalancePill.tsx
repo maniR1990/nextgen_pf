@@ -26,7 +26,11 @@ export function BalancePill({
   const isNegative = amount < 0;
 
   const sizeClass = size === 'sm' ? 'balance-pill--sm' : size === 'lg' ? 'balance-pill--lg' : '';
-  const signClass = isPositive ? 'balance-pill--positive' : isNegative ? 'balance-pill--negative' : '';
+  const signClass = isPositive
+    ? 'balance-pill--positive'
+    : isNegative
+      ? 'balance-pill--negative'
+      : '';
 
   return (
     <span
@@ -37,7 +41,11 @@ export function BalancePill({
       <span className="balance-pill__symbol" aria-hidden>
         {currency === 'INR' ? '₹' : currency}
       </span>
-      {isNegative && <span className="balance-pill__sign" aria-hidden>−</span>}
+      {isNegative && (
+        <span className="balance-pill__sign" aria-hidden>
+          −
+        </span>
+      )}
       <span className="balance-pill__amount">{formatINR(amount)}</span>
     </span>
   );

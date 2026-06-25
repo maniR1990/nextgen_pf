@@ -1,8 +1,8 @@
-import { cleanup, render } from '@testing-library/react';
-import { Home } from 'lucide-react';
-import { axe, toHaveNoViolations } from 'jest-axe';
-import { afterEach, describe, expect, it } from 'vitest';
 import { ICON_SIZES, ICON_STROKE_WIDTH } from '@/constants/icons';
+import { cleanup, render } from '@testing-library/react';
+import { axe, toHaveNoViolations } from 'jest-axe';
+import { Home } from 'lucide-react';
+import { afterEach, describe, expect, it } from 'vitest';
 import { Icon, iconClassName } from './Icon';
 
 expect.extend(toHaveNoViolations);
@@ -17,7 +17,10 @@ describe('Icon', () => {
 
   it('uses 1.5px stroke width by default', () => {
     const { container } = render(<Icon icon={Home} />);
-    expect(container.querySelector('svg')).toHaveAttribute('stroke-width', String(ICON_STROKE_WIDTH));
+    expect(container.querySelector('svg')).toHaveAttribute(
+      'stroke-width',
+      String(ICON_STROKE_WIDTH),
+    );
   });
 
   it('applies tone class', () => {

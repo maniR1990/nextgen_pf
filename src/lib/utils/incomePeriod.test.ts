@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getIncomePeriodData, formatAmountShort } from './incomePeriod';
+import { formatAmountShort, getIncomePeriodData } from './incomePeriod';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 

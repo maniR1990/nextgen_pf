@@ -70,7 +70,9 @@ describe('DatePicker', () => {
     });
 
     it('shows range start when only start is provided', () => {
-      render(<DatePicker mode="range" rangeStart="2026-06-10" rangeEnd={null} onRangeChange={vi.fn()} />);
+      render(
+        <DatePicker mode="range" rangeStart="2026-06-10" rangeEnd={null} onRangeChange={vi.fn()} />,
+      );
       expect(screen.getByText(/Jun 10, 2026/)).toBeInTheDocument();
     });
 
@@ -81,7 +83,7 @@ describe('DatePicker', () => {
           rangeStart="2026-06-10"
           rangeEnd="2026-06-20"
           onRangeChange={vi.fn()}
-        />
+        />,
       );
       expect(screen.getByText(/Jun 10, 2026.*Jun 20, 2026/)).toBeInTheDocument();
     });

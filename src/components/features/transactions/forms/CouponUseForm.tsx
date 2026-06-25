@@ -1,32 +1,41 @@
 'use client';
 
 import { FormField } from '@/components/common/FormField';
-import { CommonFormFields } from './CommonFormFields';
-import type { TransactionFormValues, FormErrors } from '@/store/transactionFormStore';
+import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption } from '@/types/finance';
+import { CommonFormFields } from './CommonFormFields';
 
 interface CouponUseFormProps {
   values: TransactionFormValues;
   errors: FormErrors;
-  onChange: <K extends keyof TransactionFormValues>(key: K, value: TransactionFormValues[K]) => void;
+  onChange: <K extends keyof TransactionFormValues>(
+    key: K,
+    value: TransactionFormValues[K],
+  ) => void;
   paymentSources: PaymentSourceOption[];
 }
 
 export function CouponUseForm({ values, errors, onChange, paymentSources }: CouponUseFormProps) {
-  const origNum = parseFloat(values.origPrice);
-  const discountNum = parseFloat(values.amount);
-  const finalPrice =
-    !isNaN(origNum) && !isNaN(discountNum) ? origNum - discountNum : null;
+  const origNum = Number.parseFloat(values.origPrice);
+  const discountNum = Number.parseFloat(values.amount);
+  const finalPrice = !isNaN(origNum) && !isNaN(discountNum) ? origNum - discountNum : null;
 
   return (
     <div className="tx-form tx-form--coupon">
       {/* Merchant | Original Price */}
       <div className="tx-form__row tx-form__row--2">
-        <FormField label="Merchant / Platform" htmlFor="tx-merchant" error={errors.merchant} required>
+        <FormField
+          label="Merchant / Platform"
+          htmlFor="tx-merchant"
+          error={errors.merchant}
+          required
+        >
           <input
             id="tx-merchant"
             type="text"
-            className={['form-input', errors.merchant && 'form-input--error'].filter(Boolean).join(' ')}
+            className={['form-input', errors.merchant && 'form-input--error']
+              .filter(Boolean)
+              .join(' ')}
             value={values.merchant}
             placeholder="e.g. Zomato, BigBasket"
             onChange={(e) => onChange('merchant', e.target.value)}

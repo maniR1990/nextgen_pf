@@ -25,7 +25,13 @@ export const BudgetEngineRepository = {
   findOverrides: (userId: string, year: number, month: number) =>
     prisma.budgetOverride.findMany({ where: { userId, year, month } }),
 
-  upsertOverride: (userId: string, year: number, month: number, categoryId: string, planned: number) =>
+  upsertOverride: (
+    userId: string,
+    year: number,
+    month: number,
+    categoryId: string,
+    planned: number,
+  ) =>
     prisma.budgetOverride.upsert({
       where: { userId_year_month_categoryId: { userId, year, month, categoryId } },
       create: { userId, year, month, categoryId, planned },

@@ -1,5 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { AppIcons, Icon } from '@/components/ui/Icon';
 import {
   chromaticBaseline,
   storySectionStyle,
@@ -7,7 +6,8 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
-import { AppIcons, Icon } from '@/components/ui/Icon';
+import type { Meta, StoryObj } from '@storybook/react';
+import { useState } from 'react';
 import { Nav, type NavItem } from './Nav';
 
 const NAV_ITEMS: NavItem[] = [
@@ -36,12 +36,7 @@ function StoryPanel({ children }: { children: React.ReactNode }) {
 function NavDemo({ orientation = 'vertical' as const }) {
   const [activeId, setActiveId] = useState('dashboard');
   return (
-    <Nav
-      items={NAV_ITEMS}
-      activeId={activeId}
-      onSelect={setActiveId}
-      orientation={orientation}
-    />
+    <Nav items={NAV_ITEMS} activeId={activeId} onSelect={setActiveId} orientation={orientation} />
   );
 }
 
@@ -89,7 +84,12 @@ export const WithDisabled: Story = {
       <Nav
         items={[
           ...NAV_ITEMS.slice(0, 2),
-          { id: 'reports', label: 'Reports', icon: <Icon icon={AppIcons.chart} size="md" />, disabled: true },
+          {
+            id: 'reports',
+            label: 'Reports',
+            icon: <Icon icon={AppIcons.chart} size="md" />,
+            disabled: true,
+          },
         ]}
         activeId="dashboard"
       />

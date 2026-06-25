@@ -11,7 +11,10 @@ export class ApiError extends Error {
 }
 
 export class ValidationError extends ApiError {
-  constructor(message = 'Invalid input', public errors?: unknown) {
+  constructor(
+    message = 'Invalid input',
+    public errors?: unknown,
+  ) {
     super(message, 422, 'VALIDATION_ERROR');
   }
 }
@@ -173,7 +176,9 @@ export class CategoryNotFoundError extends NotFoundError {
 
 export class CategoryHasTransactionsError extends ConflictError {
   constructor(count: number) {
-    super(`Cannot delete category with ${count} linked transaction(s). Reassign transactions first.`);
+    super(
+      `Cannot delete category with ${count} linked transaction(s). Reassign transactions first.`,
+    );
     Object.assign(this, { code: 'CATEGORY_HAS_TRANSACTIONS' });
   }
 }

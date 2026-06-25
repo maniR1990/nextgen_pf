@@ -63,7 +63,10 @@ function findMongosh(): string | null {
 async function isMongodRunning(): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = createConnection({ host: MONGO_HOST, port: MONGO_PORT });
-    const finish = (ok: boolean) => { socket.destroy(); resolve(ok); };
+    const finish = (ok: boolean) => {
+      socket.destroy();
+      resolve(ok);
+    };
     socket.once('connect', () => finish(true));
     socket.once('error', () => finish(false));
     socket.setTimeout(1000, () => finish(false));
@@ -203,8 +206,7 @@ async function main() {
 
 main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : 'Unknown database error';
-  const isReplicaSetError =
-    error instanceof Error && error.message.includes('replica set');
+  const isReplicaSetError = error instanceof Error && error.message.includes('replica set');
   if (isReplicaSetError) {
     console.error(`✗ ${message}`);
     console.error(

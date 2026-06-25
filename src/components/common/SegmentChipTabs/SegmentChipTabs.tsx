@@ -39,10 +39,7 @@ export function SegmentChipTabs({
             role="tab"
             aria-selected={active}
             disabled={item.disabled}
-            className={[
-              'segment-chip-tabs__chip',
-              active && 'segment-chip-tabs__chip--active',
-            ]
+            className={['segment-chip-tabs__chip', active && 'segment-chip-tabs__chip--active']
               .filter(Boolean)
               .join(' ')}
             onClick={() => onChange(item.id)}

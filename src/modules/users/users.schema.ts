@@ -1,7 +1,7 @@
+import { registry } from '@/lib/openapi/registry';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { Role } from '@prisma/client';
 import { z } from 'zod';
-import { registry } from '@/lib/openapi/registry';
 
 extendZodWithOpenApi(z);
 

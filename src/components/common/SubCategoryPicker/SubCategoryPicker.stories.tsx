@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, within } from 'storybook/test';
 import { useState } from 'react';
+import { expect, fn, userEvent, within } from 'storybook/test';
 import { SubCategoryPicker } from './SubCategoryPicker';
 import type { ParentCategory } from './SubCategoryPicker';
 
@@ -79,7 +79,12 @@ export const Desktop: Story = {
     const [val, setVal] = useState<string | null>(null);
     return (
       <div style={{ width: 440 }}>
-        <SubCategoryPicker categories={CATEGORIES} label="Category" value={val} onChange={(id) => setVal(id)} />
+        <SubCategoryPicker
+          categories={CATEGORIES}
+          label="Category"
+          value={val}
+          onChange={(id) => setVal(id)}
+        />
       </div>
     );
   },
@@ -89,7 +94,14 @@ export const Mobile: Story = {
   parameters: { viewport: { defaultViewport: 'mobile375' }, ...chromatic },
   render: () => {
     const [val, setVal] = useState<string | null>(null);
-    return <SubCategoryPicker categories={CATEGORIES} label="Category" value={val} onChange={(id) => setVal(id)} />;
+    return (
+      <SubCategoryPicker
+        categories={CATEGORIES}
+        label="Category"
+        value={val}
+        onChange={(id) => setVal(id)}
+      />
+    );
   },
 };
 
@@ -104,7 +116,14 @@ export const DarkMode: Story = {
   ],
   render: () => {
     const [val, setVal] = useState<string | null>(null);
-    return <SubCategoryPicker categories={CATEGORIES} label="Category" value={val} onChange={(id) => setVal(id)} />;
+    return (
+      <SubCategoryPicker
+        categories={CATEGORIES}
+        label="Category"
+        value={val}
+        onChange={(id) => setVal(id)}
+      />
+    );
   },
 };
 

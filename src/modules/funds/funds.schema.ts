@@ -1,6 +1,6 @@
-import { FundPurpose } from '@prisma/client';
-import { z } from 'zod';
 import { FUND_ALLOCATION_TYPES, FUND_PURPOSES, FUND_SORT_OPTIONS } from '@/constants/funds';
+import type { FundPurpose } from '@prisma/client';
+import { z } from 'zod';
 
 const fundAllocationSchema = z.object({
   accountId: z.string().min(1),

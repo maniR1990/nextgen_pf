@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
 import type { BudgetImpact, CategoryOption } from '@/types/finance';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
   categoryId: string;
@@ -19,7 +19,7 @@ export function useBudgetImpact({ categoryId, amount, categories }: Props): Budg
       return;
     }
 
-    const amountNum = parseFloat(amount) || 0;
+    const amountNum = Number.parseFloat(amount) || 0;
     const category = categories.find((c) => c.id === categoryId);
     if (!category) {
       setImpact(null);
@@ -49,7 +49,10 @@ export function useBudgetImpact({ categoryId, amount, categories }: Props): Budg
         if (!d) return;
 
         const planned = d.planned ?? category.plannedAmount ?? 0;
-        if (planned === 0) { setImpact(null); return; }
+        if (planned === 0) {
+          setImpact(null);
+          return;
+        }
 
         const newSpent = d.spent + amountNum;
         const remaining = planned - newSpent;
@@ -71,7 +74,10 @@ export function useBudgetImpact({ categoryId, amount, categories }: Props): Budg
       } catch {
         // Fallback to local calculation from category data
         const planned = category.plannedAmount ?? 0;
-        if (!planned) { setImpact(null); return; }
+        if (!planned) {
+          setImpact(null);
+          return;
+        }
         setImpact({
           categoryId,
           categoryLabel: category.label,
@@ -85,7 +91,9 @@ export function useBudgetImpact({ categoryId, amount, categories }: Props): Budg
       }
     }, 500);
 
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [categoryId, amount, categories]);
 
   return impact;

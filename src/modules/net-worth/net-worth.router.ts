@@ -1,5 +1,5 @@
-import { compose, withAuth } from '@/lib/api/middleware';
 import { isApiError } from '@/lib/api/errors';
+import { compose, withAuth } from '@/lib/api/middleware';
 import { v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { getLogger } from '@/lib/logger';
 import { NetWorthRepository } from './net-worth.repository';
@@ -13,7 +13,10 @@ export const v1GetNetWorth = compose(withAuth())(async (_req, ctx) => {
     const userId = ctx.session!.id;
     const accounts = await NetWorthRepository.findAccountsWithGroups(userId);
 
-    const groupTotals = new Map<string, { id: string; name: string; type: string; totalBalance: number; accountCount: number }>();
+    const groupTotals = new Map<
+      string,
+      { id: string; name: string; type: string; totalBalance: number; accountCount: number }
+    >();
 
     let totalAssets = 0;
     let totalLiabilities = 0;
@@ -98,10 +101,17 @@ export const v1GetNetWorthHistory = compose(withAuth())(async (_req, ctx) => {
 
     // Build history walking backward from current month
     const now = new Date();
-    const history: Array<{ year: number; month: number; totalAssets: number; totalLiabilities: number; netWorth: number; currency: string }> = [];
+    const history: Array<{
+      year: number;
+      month: number;
+      totalAssets: number;
+      totalLiabilities: number;
+      netWorth: number;
+      currency: string;
+    }> = [];
 
     let runningAssets = currentAssets;
-    let runningLiabilities = currentLiabilities;
+    const runningLiabilities = currentLiabilities;
 
     for (let i = 0; i < 12; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);

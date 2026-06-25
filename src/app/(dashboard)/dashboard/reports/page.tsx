@@ -1,6 +1,6 @@
-import { Suspense } from 'react';
-import type { SearchParams } from 'next/dist/server/request/search-params';
 import { ReportKpiBar, ReportKpiBarSkeleton } from '@/components/reports/ReportKpiBar';
+import type { SearchParams } from 'next/dist/server/request/search-params';
+import { Suspense } from 'react';
 
 interface ReportsPageProps {
   searchParams: Promise<SearchParams>;
@@ -8,9 +8,9 @@ interface ReportsPageProps {
 
 export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const params = await searchParams;
-  const now    = new Date();
-  const year   = Number(params['year']  ?? now.getFullYear());
-  const month  = Number(params['month'] ?? (now.getMonth() + 1));
+  const now = new Date();
+  const year = Number(params['year'] ?? now.getFullYear());
+  const month = Number(params['month'] ?? now.getMonth() + 1);
 
   return (
     <div className="tx-page__content">

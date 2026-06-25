@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/db/prisma';
 import { v1Ok } from '@/lib/api/v1/envelope';
+import { prisma } from '@/lib/db/prisma';
 import type { Middleware } from './types';
 
 /**

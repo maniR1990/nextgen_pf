@@ -72,9 +72,7 @@ export function BudgetLineFormModal({
             label="Spent (minor units)"
             type="number"
             value={values.spentMinor}
-            onChange={(e) =>
-              setValues((v) => ({ ...v, spentMinor: Number(e.target.value) || 0 }))
-            }
+            onChange={(e) => setValues((v) => ({ ...v, spentMinor: Number(e.target.value) || 0 }))}
             min={0}
           />
           <Input

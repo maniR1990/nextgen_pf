@@ -10,8 +10,7 @@ export const AuthRepository = {
   findVerificationToken: (token: string) =>
     prisma.emailVerificationToken.findUnique({ where: { token }, include: { user: true } }),
 
-  deleteVerificationToken: (id: string) =>
-    prisma.emailVerificationToken.delete({ where: { id } }),
+  deleteVerificationToken: (id: string) => prisma.emailVerificationToken.delete({ where: { id } }),
 
   deletePasswordResetTokensByUserId: (userId: string) =>
     prisma.passwordResetToken.deleteMany({ where: { userId } }),
@@ -22,8 +21,7 @@ export const AuthRepository = {
   findPasswordResetToken: (token: string) =>
     prisma.passwordResetToken.findUnique({ where: { token }, include: { user: true } }),
 
-  deletePasswordResetToken: (id: string) =>
-    prisma.passwordResetToken.delete({ where: { id } }),
+  deletePasswordResetToken: (id: string) => prisma.passwordResetToken.delete({ where: { id } }),
 
   markPasswordResetUsed: (id: string) =>
     prisma.passwordResetToken.update({ where: { id }, data: { used: true } }),

@@ -1,8 +1,8 @@
 import {
-  NotFoundError,
-  FileTooLargeError,
-  UnsupportedFileTypeError,
   AttachmentLimitError,
+  FileTooLargeError,
+  NotFoundError,
+  UnsupportedFileTypeError,
 } from '@/lib/api/errors';
 import { getLogger } from '@/lib/logger';
 import { AttachmentsRepository } from './attachments.repository';

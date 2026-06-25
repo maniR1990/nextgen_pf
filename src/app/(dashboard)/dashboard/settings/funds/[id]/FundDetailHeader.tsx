@@ -1,5 +1,5 @@
-import { CheckCircle2, AlertCircle, Circle } from 'lucide-react';
 import type { FundSummary } from '@/modules/funds/funds.types';
+import { AlertCircle, CheckCircle2, Circle } from 'lucide-react';
 
 const PURPOSE_LABEL: Record<string, string> = {
   EMERGENCY: 'Safety',
@@ -17,9 +17,29 @@ function formatINR(n: number) {
 }
 
 function HealthIcon({ pct }: { pct: number }) {
-  if (pct >= 100) return <CheckCircle2 size={13} className="fund-detail__health-icon fund-detail__health-icon--healthy" aria-hidden />;
-  if (pct >= 50) return <Circle size={13} className="fund-detail__health-icon fund-detail__health-icon--ok" aria-hidden />;
-  return <AlertCircle size={13} className="fund-detail__health-icon fund-detail__health-icon--low" aria-hidden />;
+  if (pct >= 100)
+    return (
+      <CheckCircle2
+        size={13}
+        className="fund-detail__health-icon fund-detail__health-icon--healthy"
+        aria-hidden
+      />
+    );
+  if (pct >= 50)
+    return (
+      <Circle
+        size={13}
+        className="fund-detail__health-icon fund-detail__health-icon--ok"
+        aria-hidden
+      />
+    );
+  return (
+    <AlertCircle
+      size={13}
+      className="fund-detail__health-icon fund-detail__health-icon--low"
+      aria-hidden
+    />
+  );
 }
 
 export function FundDetailHeader({ fund }: { fund: FundSummary }) {
@@ -32,7 +52,11 @@ export function FundDetailHeader({ fund }: { fund: FundSummary }) {
   return (
     <div className="fund-detail__header">
       <div className="fund-detail__header-left">
-        {fund.icon && <span className="fund-detail__icon" aria-hidden>{fund.icon}</span>}
+        {fund.icon && (
+          <span className="fund-detail__icon" aria-hidden>
+            {fund.icon}
+          </span>
+        )}
         <div className="fund-detail__header-info">
           <div className="fund-detail__title-row">
             <h1 className="fund-detail__title">{fund.name}</h1>

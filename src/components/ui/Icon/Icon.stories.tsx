@@ -1,5 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { ICON_SIZE_USAGE, ICON_SIZES, type IconSize } from '@/constants/icons';
 import {
   chromaticBaseline,
   storyRowStyle,
@@ -8,8 +6,10 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
-import { AppIcons } from './appIcons';
+import { ICON_SIZES, ICON_SIZE_USAGE, type IconSize } from '@/constants/icons';
+import type { Meta, StoryObj } from '@storybook/react';
 import { Icon } from './Icon';
+import { AppIcons } from './appIcons';
 
 const SIZES = Object.keys(ICON_SIZES) as IconSize[];
 
@@ -31,7 +31,8 @@ const meta: Meta<typeof Icon> = {
     ...chromaticBaseline,
     docs: {
       description: {
-        component: 'Lucide React icon system — 1.5px stroke, semantic token colors via currentColor.',
+        component:
+          'Lucide React icon system — 1.5px stroke, semantic token colors via currentColor.',
       },
     },
   },

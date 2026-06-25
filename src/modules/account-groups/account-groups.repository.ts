@@ -1,6 +1,6 @@
 import type { AccountGroupSort } from '@/constants/account-groups';
-import type { AccountGroupType, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import type { AccountGroupType, Prisma } from '@prisma/client';
 
 const GROUP_SELECT = {
   id: true,
@@ -56,10 +56,7 @@ export const AccountGroupsRepository = {
       take: options.take,
     }),
 
-  countMany: (
-    userId: string,
-    options: { includeArchived?: boolean; type?: AccountGroupType },
-  ) =>
+  countMany: (userId: string, options: { includeArchived?: boolean; type?: AccountGroupType }) =>
     prisma.accountGroup.count({
       where: {
         userId,

@@ -1,6 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
-import { fn } from 'storybook/test';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import {
@@ -15,6 +12,9 @@ import {
   MODAL_DEMO_DELETE_TITLE,
   MODAL_DEMO_TITLE,
 } from '@/constants/modal';
+import type { Meta, StoryObj } from '@storybook/react';
+import { useState } from 'react';
+import { fn } from 'storybook/test';
 import { Modal } from './Modal';
 
 const meta: Meta<typeof Modal> = {

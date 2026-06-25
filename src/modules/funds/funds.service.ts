@@ -1,11 +1,7 @@
-import {
-  FundAllocationNotFoundError,
-  FundNotFoundError,
-  NotFoundError,
-} from '@/lib/api/errors';
+import { FundAllocationNotFoundError, FundNotFoundError, NotFoundError } from '@/lib/api/errors';
 import { buildMeta } from '@/lib/api/pagination';
-import type { FundAllocation } from '@prisma/client';
 import { FundGroupsRepository } from '@/modules/fund-groups/fund-groups.repository';
+import type { FundAllocation } from '@prisma/client';
 import { FundsRepository } from './funds.repository';
 import type {
   AllocateFundDto,
@@ -31,14 +27,70 @@ const DEFAULT_FUNDS: Array<{
   color: string;
   order: number;
 }> = [
-  { name: 'Emergency Fund',     purpose: 'EMERGENCY',  groupSlug: 'emergency',  targetAmount: 600000,   color: '#ef4444', order: 0 },
-  { name: 'Monthly Buffer',     purpose: 'OPS',        groupSlug: 'ops',        targetAmount: 150000,   color: '#f97316', order: 1 },
-  { name: 'Home Down Payment',  purpose: 'GOAL',       groupSlug: 'goal',       targetAmount: 5000000,  color: '#3b82f6', order: 2 },
-  { name: 'Tax Provision FY26', purpose: 'TAX',        groupSlug: 'tax',        targetAmount: 150000,   color: '#8b5cf6', order: 3 },
-  { name: 'Insurance Premiums', purpose: 'INSURANCE',  groupSlug: 'insurance',  targetAmount: 50000,    color: '#06b6d4', order: 4 },
-  { name: 'Car Upgrade',        purpose: 'SINKING',    groupSlug: 'sinking',    targetAmount: 1000000,  color: '#10b981', order: 5 },
-  { name: 'Investment Pool',    purpose: 'INVESTMENT', groupSlug: 'investment', targetAmount: 500000,   color: '#6366f1', order: 6 },
-  { name: 'Wealth Corpus',      purpose: 'WEALTH',     groupSlug: 'wealth',     targetAmount: 10000000, color: '#f59e0b', order: 7 },
+  {
+    name: 'Emergency Fund',
+    purpose: 'EMERGENCY',
+    groupSlug: 'emergency',
+    targetAmount: 600000,
+    color: '#ef4444',
+    order: 0,
+  },
+  {
+    name: 'Monthly Buffer',
+    purpose: 'OPS',
+    groupSlug: 'ops',
+    targetAmount: 150000,
+    color: '#f97316',
+    order: 1,
+  },
+  {
+    name: 'Home Down Payment',
+    purpose: 'GOAL',
+    groupSlug: 'goal',
+    targetAmount: 5000000,
+    color: '#3b82f6',
+    order: 2,
+  },
+  {
+    name: 'Tax Provision FY26',
+    purpose: 'TAX',
+    groupSlug: 'tax',
+    targetAmount: 150000,
+    color: '#8b5cf6',
+    order: 3,
+  },
+  {
+    name: 'Insurance Premiums',
+    purpose: 'INSURANCE',
+    groupSlug: 'insurance',
+    targetAmount: 50000,
+    color: '#06b6d4',
+    order: 4,
+  },
+  {
+    name: 'Car Upgrade',
+    purpose: 'SINKING',
+    groupSlug: 'sinking',
+    targetAmount: 1000000,
+    color: '#10b981',
+    order: 5,
+  },
+  {
+    name: 'Investment Pool',
+    purpose: 'INVESTMENT',
+    groupSlug: 'investment',
+    targetAmount: 500000,
+    color: '#6366f1',
+    order: 6,
+  },
+  {
+    name: 'Wealth Corpus',
+    purpose: 'WEALTH',
+    groupSlug: 'wealth',
+    targetAmount: 10000000,
+    color: '#f59e0b',
+    order: 7,
+  },
 ];
 
 const DEFAULT_GROUPS: Array<{
@@ -49,14 +101,70 @@ const DEFAULT_GROUPS: Array<{
   color: string;
   order: number;
 }> = [
-  { name: 'Emergency',       description: 'Safety net — 3-6 months expenses',     slug: 'emergency',  purposeHint: 'EMERGENCY',  color: '#ef4444', order: 0 },
-  { name: 'Operations',      description: 'Monthly cash flow buffer',              slug: 'ops',        purposeHint: 'OPS',        color: '#f97316', order: 1 },
-  { name: 'Goals',           description: 'Targeted savings goals',                slug: 'goal',       purposeHint: 'GOAL',       color: '#3b82f6', order: 2 },
-  { name: 'Tax',             description: 'Tax provisions & advance tax',          slug: 'tax',        purposeHint: 'TAX',        color: '#8b5cf6', order: 3 },
-  { name: 'Insurance',       description: 'Premium reserves',                      slug: 'insurance',  purposeHint: 'INSURANCE',  color: '#06b6d4', order: 4 },
-  { name: 'Sinking',         description: 'Planned large expenses',                slug: 'sinking',    purposeHint: 'SINKING',    color: '#10b981', order: 5 },
-  { name: 'Investment Pool', description: 'Cash earmarked for deployment',         slug: 'investment', purposeHint: 'INVESTMENT', color: '#6366f1', order: 6 },
-  { name: 'Wealth',          description: 'Long-term wealth accumulation',         slug: 'wealth',     purposeHint: 'WEALTH',     color: '#f59e0b', order: 7 },
+  {
+    name: 'Emergency',
+    description: 'Safety net — 3-6 months expenses',
+    slug: 'emergency',
+    purposeHint: 'EMERGENCY',
+    color: '#ef4444',
+    order: 0,
+  },
+  {
+    name: 'Operations',
+    description: 'Monthly cash flow buffer',
+    slug: 'ops',
+    purposeHint: 'OPS',
+    color: '#f97316',
+    order: 1,
+  },
+  {
+    name: 'Goals',
+    description: 'Targeted savings goals',
+    slug: 'goal',
+    purposeHint: 'GOAL',
+    color: '#3b82f6',
+    order: 2,
+  },
+  {
+    name: 'Tax',
+    description: 'Tax provisions & advance tax',
+    slug: 'tax',
+    purposeHint: 'TAX',
+    color: '#8b5cf6',
+    order: 3,
+  },
+  {
+    name: 'Insurance',
+    description: 'Premium reserves',
+    slug: 'insurance',
+    purposeHint: 'INSURANCE',
+    color: '#06b6d4',
+    order: 4,
+  },
+  {
+    name: 'Sinking',
+    description: 'Planned large expenses',
+    slug: 'sinking',
+    purposeHint: 'SINKING',
+    color: '#10b981',
+    order: 5,
+  },
+  {
+    name: 'Investment Pool',
+    description: 'Cash earmarked for deployment',
+    slug: 'investment',
+    purposeHint: 'INVESTMENT',
+    color: '#6366f1',
+    order: 6,
+  },
+  {
+    name: 'Wealth',
+    description: 'Long-term wealth accumulation',
+    slug: 'wealth',
+    purposeHint: 'WEALTH',
+    color: '#f59e0b',
+    order: 7,
+  },
 ];
 
 function assertOwned(fund: { userId: string }, userId: string) {
@@ -80,9 +188,12 @@ async function loadAccountMap(userId: string, accountIds: string[]) {
 
 async function loadGroupMap(groupIds: string[]) {
   const unique = [...new Set(groupIds.filter(Boolean))];
-  if (unique.length === 0) return new Map<string, { name: string; slug: string; description: string | null }>();
+  if (unique.length === 0)
+    return new Map<string, { name: string; slug: string; description: string | null }>();
   const groups = await FundGroupsRepository.findByIds(unique);
-  return new Map(groups.map((g) => [g.id, { name: g.name, slug: g.slug, description: g.description }]));
+  return new Map(
+    groups.map((g) => [g.id, { name: g.name, slug: g.slug, description: g.description }]),
+  );
 }
 
 async function enrichFund(
@@ -120,11 +231,16 @@ async function enrichFund(
   };
 }
 
-async function enrichMany(userId: string, funds: Awaited<ReturnType<typeof FundsRepository.findMany>>) {
+async function enrichMany(
+  userId: string,
+  funds: Awaited<ReturnType<typeof FundsRepository.findMany>>,
+) {
   const allAccountIds = [...new Set(funds.flatMap((f) => f.sources.map((s) => s.accountId)))];
   const accountMap = await loadAccountMap(userId, allAccountIds);
   const balanceMap = new Map([...accountMap.entries()].map(([id, a]) => [id, a.balance]));
-  const groupMap = await loadGroupMap(funds.map((f) => f.groupId).filter((id): id is string => !!id));
+  const groupMap = await loadGroupMap(
+    funds.map((f) => f.groupId).filter((id): id is string => !!id),
+  );
 
   return funds.map((fund) => {
     const currentAmount = computeFundCurrentAmount(fund.sources, balanceMap);
@@ -194,7 +310,7 @@ export const FundsService = {
     }
 
     const maxOrder = await FundsRepository.maxOrder(userId);
-    const order = dto.order ?? ((maxOrder._max?.order ?? -1) + 1);
+    const order = dto.order ?? (maxOrder._max?.order ?? -1) + 1;
 
     const created = await FundsRepository.create({
       user: { connect: { id: userId } },

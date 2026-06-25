@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import {
   chromaticBaseline,
   storySectionStyle,
   viewportDesktop,
   viewportMobile,
 } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
 import { SideMenu } from './SideMenu';
 import sampleConfig from './sampleSideMenu.json';
 import { SideMenuConfigSchema } from './schemas';
@@ -41,7 +41,12 @@ export const Expanded: Story = {
   parameters: chromaticBaseline,
   render: () => (
     <ShellFrame>
-      <SideMenu config={config} defaultCollapsed={false} activeId="dashboard" variant="standalone" />
+      <SideMenu
+        config={config}
+        defaultCollapsed={false}
+        activeId="dashboard"
+        variant="standalone"
+      />
     </ShellFrame>
   ),
 };

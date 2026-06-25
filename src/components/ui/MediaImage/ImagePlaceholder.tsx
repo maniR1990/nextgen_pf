@@ -1,5 +1,5 @@
-import type { HTMLAttributes } from 'react';
 import type { ImageAspect, ImageRadius } from '@/constants/media';
+import type { HTMLAttributes } from 'react';
 
 export interface ImagePlaceholderProps extends HTMLAttributes<HTMLDivElement> {
   aspect?: ImageAspect;

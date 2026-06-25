@@ -1,5 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
 import {
   chromaticBaseline,
   storySectionStyle,
@@ -7,7 +5,9 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
-import { Tabs, type TabItem } from './Tabs';
+import type { Meta, StoryObj } from '@storybook/react';
+import { useState } from 'react';
+import { type TabItem, Tabs } from './Tabs';
 
 const TAB_ITEMS: TabItem[] = [
   { id: 'overview', label: 'Overview' },

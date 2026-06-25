@@ -24,14 +24,7 @@ describe('Breadcrumb', () => {
   });
 
   it('marks last item as current by default', () => {
-    render(
-      <Breadcrumb
-        items={[
-          { label: 'Home', href: '/' },
-          { label: 'Settings' },
-        ]}
-      />,
-    );
+    render(<Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Settings' }]} />);
     expect(screen.getByText('Settings')).toHaveAttribute('aria-current', 'page');
   });
 

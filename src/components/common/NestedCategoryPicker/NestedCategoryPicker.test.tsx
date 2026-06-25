@@ -92,7 +92,10 @@ describe('NestedCategoryPicker', () => {
 
     it('marks selected item with aria-selected=true', () => {
       render(<NestedCategoryPicker categories={CATEGORIES} value="transport" onChange={vi.fn()} />);
-      expect(screen.getByRole('button', { name: /transport/i })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByRole('button', { name: /transport/i })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
     });
   });
 });

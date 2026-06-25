@@ -16,12 +16,14 @@ export function computeFundCurrentAmount(
   sources: FundAllocation[],
   accountBalances: Map<string, number>,
 ): number {
-  return Math.round(
-    sources.reduce((sum, src) => {
-      const balance = accountBalances.get(src.accountId) ?? 0;
-      return sum + computeAllocationAmount(src.type, src.value, balance);
-    }, 0) * 100,
-  ) / 100;
+  return (
+    Math.round(
+      sources.reduce((sum, src) => {
+        const balance = accountBalances.get(src.accountId) ?? 0;
+        return sum + computeAllocationAmount(src.type, src.value, balance);
+      }, 0) * 100,
+    ) / 100
+  );
 }
 
 export function computePercentFilled(currentAmount: number, targetAmount: number): number {
@@ -59,10 +61,7 @@ export function computeIdleCash(
   for (const src of allSources) {
     const balance = accountBalances.get(src.accountId) ?? 0;
     const amount = computeAllocationAmount(src.type, src.value, balance);
-    allocatedByAccount.set(
-      src.accountId,
-      (allocatedByAccount.get(src.accountId) ?? 0) + amount,
-    );
+    allocatedByAccount.set(src.accountId, (allocatedByAccount.get(src.accountId) ?? 0) + amount);
   }
 
   let idle = 0;

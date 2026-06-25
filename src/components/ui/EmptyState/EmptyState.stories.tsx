@@ -1,7 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from 'storybook/test';
-import { Mailbox } from 'lucide-react';
-import type { ReactNode } from 'react';
 import { Card } from '@/components/ui/Card';
 import {
   chromaticBaseline,
@@ -15,6 +11,10 @@ import {
   EMPTY_STATE_DEMO_TRANSACTIONS_DESCRIPTION,
   EMPTY_STATE_DEMO_TRANSACTIONS_TITLE,
 } from '@/constants/emptyState';
+import type { Meta, StoryObj } from '@storybook/react';
+import { Mailbox } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { fn } from 'storybook/test';
 import { EmptyState } from './EmptyState';
 
 const meta: Meta<typeof EmptyState> = {

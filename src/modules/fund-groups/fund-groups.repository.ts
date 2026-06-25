@@ -1,5 +1,5 @@
-import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import type { Prisma } from '@prisma/client';
 
 const notArchived = { NOT: { archivedAt: { isSet: true, not: null } } } as const;
 
@@ -26,11 +26,9 @@ export const FundGroupsRepository = {
       orderBy: [{ archivedAt: 'asc' }, { order: 'asc' }],
     }),
 
-  findById: (id: string) =>
-    prisma.fundGroup.findUniqueOrThrow({ where: { id }, select: SELECT }),
+  findById: (id: string) => prisma.fundGroup.findUniqueOrThrow({ where: { id }, select: SELECT }),
 
-  create: (data: Prisma.FundGroupCreateInput) =>
-    prisma.fundGroup.create({ data, select: SELECT }),
+  create: (data: Prisma.FundGroupCreateInput) => prisma.fundGroup.create({ data, select: SELECT }),
 
   update: (id: string, data: Prisma.FundGroupUpdateInput) =>
     prisma.fundGroup.update({ where: { id }, data, select: SELECT }),
@@ -42,8 +40,7 @@ export const FundGroupsRepository = {
     });
   },
 
-  countFunds: (groupId: string) =>
-    prisma.fund.count({ where: { groupId, ...notArchived } }),
+  countFunds: (groupId: string) => prisma.fund.count({ where: { groupId, ...notArchived } }),
 
   findByIds: (ids: string[]) => {
     if (ids.length === 0) return Promise.resolve([]);

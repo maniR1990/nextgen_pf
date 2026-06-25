@@ -1,7 +1,7 @@
-import { Engine } from 'json-rules-engine';
 import { FraudDetectedError } from '@/lib/api/errors';
-import { fraudRules } from './rules/fraud.rules';
+import { Engine } from 'json-rules-engine';
 import type { FraudFacts } from './rules.types';
+import { fraudRules } from './rules/fraud.rules';
 
 export async function evaluateFraud(facts: FraudFacts) {
   const engine = new Engine(fraudRules);

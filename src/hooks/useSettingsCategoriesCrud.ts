@@ -1,11 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { toCategoryFlowType } from '@/constants/categories';
-import type { CategoryHierarchyNodeJson } from '@/components/common/CategoryHierarchy/schemas';
 import type { CategoryHierarchyCrudHandlers } from '@/components/common/CategoryHierarchy/CategoryHierarchyTreeNode';
+import type { CategoryHierarchyNodeJson } from '@/components/common/CategoryHierarchy/schemas';
 import { useToast } from '@/components/common/ToastProvider/useToast';
+import { toCategoryFlowType } from '@/constants/categories';
 import {
   SETTINGS_TOAST_CREATE_ERROR,
   SETTINGS_TOAST_CREATE_SUCCESS,
@@ -23,8 +21,10 @@ import {
   getFetchErrorMessage,
 } from '@/lib/query/fetcher';
 import { queryKeys } from '@/lib/query/queryKeys';
-import { mapCategoryTreeToHierarchy } from '@/modules/categories/lib/map-category-tree-to-hierarchy';
 import type { CategoryTreeNode } from '@/modules/categories/categories.types';
+import { mapCategoryTreeToHierarchy } from '@/modules/categories/lib/map-category-tree-to-hierarchy';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef } from 'react';
 
 const CATEGORIES_LIST_PATH = '/api/v1/categories?limit=500&sort=order_asc';
 

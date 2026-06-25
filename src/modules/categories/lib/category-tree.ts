@@ -11,11 +11,7 @@ export function slugify(name: string): string {
   );
 }
 
-export function buildPath(
-  type: string,
-  slug: string,
-  parentPath?: string | null,
-): string {
+export function buildPath(type: string, slug: string, parentPath?: string | null): string {
   if (parentPath) return `${parentPath}/${slug}`;
   return `${type.toLowerCase()}/${slug}`;
 }

@@ -1,13 +1,16 @@
 'use client';
 
-import { RECURRENCE_FREQUENCIES } from '@/constants/finance';
-import { SelectField } from '@/components/common/SelectField';
 import { FormField } from '@/components/common/FormField';
+import { SelectField } from '@/components/common/SelectField';
+import { RECURRENCE_FREQUENCIES } from '@/constants/finance';
 import type { TransactionFormValues } from '@/store/transactionFormStore';
 
 interface RecurringConfigProps {
   values: TransactionFormValues;
-  onChange: <K extends keyof TransactionFormValues>(key: K, value: TransactionFormValues[K]) => void;
+  onChange: <K extends keyof TransactionFormValues>(
+    key: K,
+    value: TransactionFormValues[K],
+  ) => void;
   errors: Partial<Record<keyof TransactionFormValues, string>>;
 }
 
@@ -54,7 +57,7 @@ function nextOccurrences(frequency: string, startDate: string, every: number, co
 
 export function RecurringConfig({ values, onChange, errors }: RecurringConfigProps) {
   const { recFrequency, recEvery, recEndCondition, recCount, recEndDate, date } = values;
-  const preview = nextOccurrences(recFrequency, date, parseInt(recEvery) || 1);
+  const preview = nextOccurrences(recFrequency, date, Number.parseInt(recEvery) || 1);
 
   return (
     <div className="recurring-config">

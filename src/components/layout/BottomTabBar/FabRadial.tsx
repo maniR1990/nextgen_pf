@@ -12,7 +12,7 @@ interface FabRadialProps {
 // Spread 4 actions over 180° arc above the FAB (left arc: 90°→270° in CSS coords)
 function calcPosition(index: number, total: number, radiusPx: number) {
   const start = 225; // degrees — lower-left
-  const end   = -45; // degrees — lower-right (going counter-clockwise)
+  const end = -45; // degrees — lower-right (going counter-clockwise)
   const spread = 180;
   const step = total > 1 ? spread / (total - 1) : 0;
   const angle = ((start - step * index) * Math.PI) / 180;
@@ -23,10 +23,10 @@ function calcPosition(index: number, total: number, radiusPx: number) {
 }
 
 const COLOR_CLASS: Record<string, string> = {
-  error:   'fab-action--error',
+  error: 'fab-action--error',
   success: 'fab-action--success',
-  info:    'fab-action--info',
-  purple:  'fab-action--purple',
+  info: 'fab-action--info',
+  purple: 'fab-action--purple',
   warning: 'fab-action--warning',
 };
 
@@ -58,9 +58,7 @@ export function FabRadial({ config, open, onAction, onClose }: FabRadialProps) {
               aria-label={action.label}
             >
               <span className="fab-action__label">{action.label}</span>
-              {action.subtitle && (
-                <span className="fab-action__subtitle">{action.subtitle}</span>
-              )}
+              {action.subtitle && <span className="fab-action__subtitle">{action.subtitle}</span>}
             </button>
           );
         })}

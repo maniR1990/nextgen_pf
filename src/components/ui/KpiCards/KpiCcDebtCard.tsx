@@ -1,7 +1,7 @@
 import { Icon } from '@/components/ui/Icon';
 import { Check } from 'lucide-react';
-import { formatKpiMoney } from './formatKpiMoney';
 import { KpiCardShell } from './KpiCardShell';
+import { formatKpiMoney } from './formatKpiMoney';
 import type { KpiCcDebtData } from './schemas';
 import type { KpiCardComponentProps } from './types';
 

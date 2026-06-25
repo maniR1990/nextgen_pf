@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useId, useRef, useState } from 'react';
 import { Check, ChevronDown, Loader2, Plus, Search, X } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 export interface CategoryPickerOption {
   id: string;
@@ -44,12 +45,13 @@ export function CategoryPicker({
   const listRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
 
-  const selected = options.find(o => o.id === value);
+  const selected = options.find((o) => o.id === value);
 
   const filtered = query.trim()
-    ? options.filter(o =>
-        o.label.toLowerCase().includes(query.toLowerCase()) ||
-        o.parentLabel?.toLowerCase().includes(query.toLowerCase())
+    ? options.filter(
+        (o) =>
+          o.label.toLowerCase().includes(query.toLowerCase()) ||
+          o.parentLabel?.toLowerCase().includes(query.toLowerCase()),
       )
     : options;
 
@@ -70,7 +72,9 @@ export function CategoryPicker({
     function onOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
     }
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false); }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
     if (open) {
       document.addEventListener('mousedown', onOutside);
       document.addEventListener('keydown', onKey);
@@ -92,10 +96,10 @@ export function CategoryPicker({
     if (!open) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setFocusedIndex(i => Math.min(i + 1, flatOptions.length - 1));
+      setFocusedIndex((i) => Math.min(i + 1, flatOptions.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setFocusedIndex(i => Math.max(i - 1, 0));
+      setFocusedIndex((i) => Math.max(i - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (focusedIndex >= 0 && flatOptions[focusedIndex]) {
@@ -124,7 +128,11 @@ export function CategoryPicker({
 
   return (
     <div className="cat-picker" ref={containerRef}>
-      {label && <label className="cat-picker__label" htmlFor={`cat-trigger-${listboxId}`}>{label}</label>}
+      {label && (
+        <label className="cat-picker__label" htmlFor={`cat-trigger-${listboxId}`}>
+          {label}
+        </label>
+      )}
       <button
         id={`cat-trigger-${listboxId}`}
         type="button"
@@ -132,8 +140,10 @@ export function CategoryPicker({
           'cat-picker__trigger',
           open ? 'cat-picker__trigger--open' : '',
           error ? 'cat-picker__trigger--error' : '',
-        ].filter(Boolean).join(' ')}
-        onClick={() => setOpen(v => !v)}
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listboxId : undefined}
@@ -147,7 +157,9 @@ export function CategoryPicker({
               {selected.icon}
             </span>
           )}
-          <span className={`cat-picker__trigger-text${!selected ? ' cat-picker__trigger-text--placeholder' : ''}`}>
+          <span
+            className={`cat-picker__trigger-text${!selected ? ' cat-picker__trigger-text--placeholder' : ''}`}
+          >
             {selected?.label ?? placeholder}
           </span>
         </div>
@@ -158,7 +170,10 @@ export function CategoryPicker({
               role="button"
               aria-label="Clear selection"
               onClick={handleClear}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClear(e as unknown as React.MouseEvent); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ')
+                  handleClear(e as unknown as React.MouseEvent);
+              }}
               tabIndex={0}
             >
               <X size={13} />
@@ -171,10 +186,19 @@ export function CategoryPicker({
           />
         </div>
       </button>
-      {error && <span className="cat-picker__error" role="alert">{error}</span>}
+      {error && (
+        <span className="cat-picker__error" role="alert">
+          {error}
+        </span>
+      )}
 
       {open && (
-        <div id={listboxId} className="cat-picker__dropdown" role="listbox" aria-label={label ?? 'Category'}>
+        <div
+          id={listboxId}
+          className="cat-picker__dropdown"
+          role="listbox"
+          aria-label={label ?? 'Category'}
+        >
           <div className="cat-picker__search">
             <Search size={14} className="cat-picker__search-icon" aria-hidden />
             <input
@@ -182,7 +206,10 @@ export function CategoryPicker({
               type="text"
               placeholder="Search categories…"
               value={query}
-              onChange={e => { setQuery(e.target.value); setFocusedIndex(-1); }}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setFocusedIndex(-1);
+              }}
               onKeyDown={handleSearchKeyDown}
               aria-label="Search categories"
               aria-autocomplete="list"
@@ -199,81 +226,90 @@ export function CategoryPicker({
             {!loading && filtered.length === 0 && !onCreate && (
               <div className="cat-picker__empty">No categories found</div>
             )}
-            {!loading && Object.entries(grouped).map(([groupKey, opts]) => (
-              <div key={groupKey}>
-                {groupKey && (
-                  <div className="cat-picker__group-label" aria-hidden>{groupKey}</div>
-                )}
-                {opts.map(opt => {
-                  const flatIdx = flatOptions.indexOf(opt);
-                  const isFocused = flatIdx === focusedIndex;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      role="option"
-                      aria-selected={opt.id === value}
-                      className={[
-                        'cat-picker__option',
-                        opt.id === value ? 'cat-picker__option--selected' : '',
-                        isFocused ? 'cat-picker__option--focused' : '',
-                      ].filter(Boolean).join(' ')}
-                      onMouseEnter={() => setFocusedIndex(flatIdx)}
-                      onClick={() => selectOption(opt.id)}
-                    >
-                      <div className="cat-picker__option-left">
-                        <span
-                          className="cat-picker__option-dot"
-                          style={{ background: opt.color ?? 'var(--color-text-muted)' }}
-                          aria-hidden
-                        />
-                        {opt.icon && (
+            {!loading &&
+              Object.entries(grouped).map(([groupKey, opts]) => (
+                <div key={groupKey}>
+                  {groupKey && (
+                    <div className="cat-picker__group-label" aria-hidden>
+                      {groupKey}
+                    </div>
+                  )}
+                  {opts.map((opt) => {
+                    const flatIdx = flatOptions.indexOf(opt);
+                    const isFocused = flatIdx === focusedIndex;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        role="option"
+                        aria-selected={opt.id === value}
+                        className={[
+                          'cat-picker__option',
+                          opt.id === value ? 'cat-picker__option--selected' : '',
+                          isFocused ? 'cat-picker__option--focused' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        onMouseEnter={() => setFocusedIndex(flatIdx)}
+                        onClick={() => selectOption(opt.id)}
+                      >
+                        <div className="cat-picker__option-left">
                           <span
-                            className="cat-picker__option-icon"
-                            style={{
-                              background: opt.color
-                                ? `color-mix(in srgb, ${opt.color} 14%, transparent)`
-                                : 'var(--color-bg-subtle)',
-                              color: opt.color ?? 'var(--color-text-muted)',
-                            }}
-                          >
-                            {opt.icon}
-                          </span>
-                        )}
-                        <div className="cat-picker__option-text">
-                          <span className="cat-picker__option-name">{opt.label}</span>
-                          {opt.parentLabel && (
-                            <span className="cat-picker__option-parent">{opt.parentLabel}</span>
+                            className="cat-picker__option-dot"
+                            style={{ background: opt.color ?? 'var(--color-text-muted)' }}
+                            aria-hidden
+                          />
+                          {opt.icon && (
+                            <span
+                              className="cat-picker__option-icon"
+                              style={{
+                                background: opt.color
+                                  ? `color-mix(in srgb, ${opt.color} 14%, transparent)`
+                                  : 'var(--color-bg-subtle)',
+                                color: opt.color ?? 'var(--color-text-muted)',
+                              }}
+                            >
+                              {opt.icon}
+                            </span>
                           )}
+                          <div className="cat-picker__option-text">
+                            <span className="cat-picker__option-name">{opt.label}</span>
+                            {opt.parentLabel && (
+                              <span className="cat-picker__option-parent">{opt.parentLabel}</span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      {opt.id === value && <Check size={14} className="cat-picker__check" aria-hidden />}
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
+                        {opt.id === value && (
+                          <Check size={14} className="cat-picker__check" aria-hidden />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
 
-            {!loading && onCreate && query.trim() &&
-              !filtered.some(o => o.label.toLowerCase() === query.trim().toLowerCase()) && (
-              <button
-                type="button"
-                className="cat-picker__create-option"
-                disabled={creating}
-                onClick={async () => {
-                  setCreating(true);
-                  try {
-                    const newId = await onCreate(query.trim());
-                    selectOption(newId);
-                  } finally {
-                    setCreating(false);
-                  }
-                }}
-              >
-                <Plus size={13} aria-hidden />
-                {creating ? 'Creating…' : `Create "${query.trim()}"`}
-              </button>
-            )}
+            {!loading &&
+              onCreate &&
+              query.trim() &&
+              !filtered.some((o) => o.label.toLowerCase() === query.trim().toLowerCase()) && (
+                <button
+                  type="button"
+                  className="cat-picker__create-option"
+                  disabled={creating}
+                  onClick={async () => {
+                    setCreating(true);
+                    try {
+                      const newId = await onCreate(query.trim());
+                      selectOption(newId);
+                    } finally {
+                      setCreating(false);
+                    }
+                  }}
+                >
+                  <Plus size={13} aria-hidden />
+                  {creating ? 'Creating…' : `Create "${query.trim()}"`}
+                </button>
+              )}
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 'use client';
 
-import type { InputHTMLAttributes } from 'react';
 import { FieldMessage } from '@/components/ui/FieldMessage';
+import type { InputHTMLAttributes } from 'react';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;

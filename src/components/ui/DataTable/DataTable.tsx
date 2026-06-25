@@ -1,22 +1,22 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
 import { DataTableColumnSettings } from './DataTableColumnSettings';
 import { DataTableEmpty } from './DataTableEmpty';
 import { DataTablePagination } from './DataTablePagination';
 import { DataTableRowMenu } from './DataTableRowMenu';
 import { DataTableToolbar } from './DataTableToolbar';
 import { renderDataTableCell } from './cellRenderers';
-import { useDataTableState } from './useDataTableState';
 import type {
   DataTableBulkAction,
   DataTableColumnDef,
   DataTableEmptyState,
   DataTableRowAction,
 } from './types';
+import { useDataTableState } from './useDataTableState';
 
 export interface DataTableProps<T extends Record<string, unknown> & { id: string }> {
   tableId: string;
@@ -41,12 +41,7 @@ function SortIndicator({
 }) {
   if (!active) return <Icon icon={ChevronsUpDown} size="xs" tone="muted" aria-hidden />;
   return (
-    <Icon
-      icon={direction === 'asc' ? ArrowUp : ArrowDown}
-      size="xs"
-      tone="brand"
-      aria-hidden
-    />
+    <Icon icon={direction === 'asc' ? ArrowUp : ArrowDown} size="xs" tone="brand" aria-hidden />
   );
 }
 
@@ -91,16 +86,13 @@ export function DataTable<T extends Record<string, unknown> & { id: string }>({
 
   const allPageSelected =
     pageRowIds.length > 0 && pageRowIds.every((id) => state.selectedIds.has(id));
-  const somePageSelected =
-    pageRowIds.some((id) => state.selectedIds.has(id)) && !allPageSelected;
+  const somePageSelected = pageRowIds.some((id) => state.selectedIds.has(id)) && !allPageSelected;
 
   const frozenColumnKey = state.displayColumns.find((col) => col.frozen)?.key;
 
   const onResizeStart = (key: string, event: { clientX: number }) => {
     const width =
-      state.columnWidths[key] ??
-      state.displayColumns.find((col) => col.key === key)?.width ??
-      160;
+      state.columnWidths[key] ?? state.displayColumns.find((col) => col.key === key)?.width ?? 160;
     resizeState.current = { key, startX: event.clientX, startWidth: width };
 
     const onMove = (moveEvent: MouseEvent) => {
@@ -214,7 +206,7 @@ export function DataTable<T extends Record<string, unknown> & { id: string }>({
                           <span>{column.header}</span>
                           <SortIndicator
                             active={isSorted}
-                            direction={isSorted ? state.sort?.direction ?? null : null}
+                            direction={isSorted ? (state.sort?.direction ?? null) : null}
                           />
                         </button>
                       ) : (
@@ -249,7 +241,9 @@ export function DataTable<T extends Record<string, unknown> & { id: string }>({
                         <select
                           className="data-table__filter-select"
                           value={state.columnFilters[column.key] ?? ''}
-                          onChange={(event) => state.setColumnFilter(column.key, event.target.value)}
+                          onChange={(event) =>
+                            state.setColumnFilter(column.key, event.target.value)
+                          }
                           aria-label={`Filter ${column.header}`}
                         >
                           <option value="">All</option>

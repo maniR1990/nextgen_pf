@@ -1,6 +1,6 @@
 import { Chip } from '@/components/ui/Chip';
-import { formatKpiMoney } from './formatKpiMoney';
 import { KpiCardShell } from './KpiCardShell';
+import { formatKpiMoney } from './formatKpiMoney';
 import type { KpiMonthlySurplusData } from './schemas';
 import type { KpiCardComponentProps } from './types';
 

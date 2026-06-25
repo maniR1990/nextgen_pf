@@ -1,7 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import { BottomTabBar } from './BottomTabBar';
 import type { MobileConfig } from '@/lib/schemas/appHeader';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { BottomTabBar } from './BottomTabBar';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/dashboard',
@@ -10,20 +10,44 @@ vi.mock('next/navigation', () => ({
 
 const mockConfig: MobileConfig = {
   tabBar: [
-    { id: 'home',    label: 'Home',   icon: 'home',      href: '/dashboard' },
-    { id: 'budget',  label: 'Budget', icon: 'bar-chart', href: '/dashboard/budget' },
-    { id: 'fab',     label: '',       icon: 'plus',      isFab: true },
-    { id: 'goals',   label: 'Goals',  icon: 'target',    href: '/dashboard/goals' },
-    { id: 'profile', label: 'Profile',icon: 'user',      href: '/dashboard/profile' },
+    { id: 'home', label: 'Home', icon: 'home', href: '/dashboard' },
+    { id: 'budget', label: 'Budget', icon: 'bar-chart', href: '/dashboard/budget' },
+    { id: 'fab', label: '', icon: 'plus', isFab: true },
+    { id: 'goals', label: 'Goals', icon: 'target', href: '/dashboard/goals' },
+    { id: 'profile', label: 'Profile', icon: 'user', href: '/dashboard/profile' },
   ],
   fabRadial: {
     radiusPx: 80,
     animationMs: 200,
     actions: [
-      { id: 'expense',    label: 'Expense',    icon: 'arrow-down-left',  color: 'error',   transactionType: 'EXPENSE' },
-      { id: 'income',     label: 'Income',     icon: 'arrow-up-right',   color: 'success', transactionType: 'INCOME' },
-      { id: 'transfer',   label: 'Transfer',   icon: 'arrow-left-right', color: 'info',    transactionType: 'TRANSFER' },
-      { id: 'investment', label: 'Investment', icon: 'trending-up',      color: 'purple',  transactionType: 'INVESTMENT' },
+      {
+        id: 'expense',
+        label: 'Expense',
+        icon: 'arrow-down-left',
+        color: 'error',
+        transactionType: 'EXPENSE',
+      },
+      {
+        id: 'income',
+        label: 'Income',
+        icon: 'arrow-up-right',
+        color: 'success',
+        transactionType: 'INCOME',
+      },
+      {
+        id: 'transfer',
+        label: 'Transfer',
+        icon: 'arrow-left-right',
+        color: 'info',
+        transactionType: 'TRANSFER',
+      },
+      {
+        id: 'investment',
+        label: 'Investment',
+        icon: 'trending-up',
+        color: 'purple',
+        transactionType: 'INVESTMENT',
+      },
     ],
   },
 };

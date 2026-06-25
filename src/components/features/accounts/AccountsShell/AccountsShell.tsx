@@ -1,30 +1,44 @@
 'use client';
 
-import { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Plus, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { SETTINGS_TAB_QUERY_KEY } from '@/constants/settings';
 import { ACCOUNT_TYPE_META } from '@/constants/accounts';
-import type { AccountGroupWithAccounts, AccountDetail, AccountSummary, TransactionPage } from '@/modules/accounts/accounts.types';
-import type { FundSummary, FundsAggregateSummary, CreateFundDto, FundAllocationInput } from '@/modules/funds/funds.types';
-import type { FundGroupSummary, CreateFundGroupDto, UpdateFundGroupDto } from '@/modules/fund-groups/fund-groups.types';
-import { computeNetWorth } from '@/modules/accounts/lib/net-worth';
-import { NetWorthBanner } from '../NetWorthBanner';
-import { BalancePill } from '../BalancePill';
-import { AccountGroupSection } from '../AccountGroupSection';
-import { AccountDetailDrawer } from '../AccountDetailDrawer';
-import { AccountFormWizard } from '../AccountFormWizard';
-import { TransferModal } from '../TransferModal';
-import { ArchiveConfirmModal } from '../ArchiveConfirmModal';
-import type { TransferPayload } from '../TransferModal';
+import { SETTINGS_TAB_QUERY_KEY } from '@/constants/settings';
+import type {
+  AccountDetail,
+  AccountGroupWithAccounts,
+  AccountSummary,
+  TransactionPage,
+} from '@/modules/accounts/accounts.types';
 import type { CreateAccountDto } from '@/modules/accounts/accounts.types';
+import { computeNetWorth } from '@/modules/accounts/lib/net-worth';
+import type {
+  CreateFundGroupDto,
+  FundGroupSummary,
+  UpdateFundGroupDto,
+} from '@/modules/fund-groups/fund-groups.types';
+import type {
+  CreateFundDto,
+  FundAllocationInput,
+  FundSummary,
+  FundsAggregateSummary,
+} from '@/modules/funds/funds.types';
+import { CreditCard, Plus } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { AllocationEditor } from '../../funds/AllocationEditor';
 import { FundBucketBoard } from '../../funds/FundBucketBoard';
 import { FundFormDrawer } from '../../funds/FundFormDrawer';
 import { FundGroupFormDialog } from '../../funds/FundGroupFormDialog';
-import { AllocationEditor } from '../../funds/AllocationEditor';
+import { AccountDetailDrawer } from '../AccountDetailDrawer';
+import { AccountFormWizard } from '../AccountFormWizard';
 import { AccountGroupFormModal, type AccountGroupFormPayload } from '../AccountGroupFormModal';
+import { AccountGroupSection } from '../AccountGroupSection';
+import { ArchiveConfirmModal } from '../ArchiveConfirmModal';
+import { BalancePill } from '../BalancePill';
+import { NetWorthBanner } from '../NetWorthBanner';
+import { TransferModal } from '../TransferModal';
+import type { TransferPayload } from '../TransferModal';
 
 const DELETE_GROUP_TITLE_ID = 'delete-group-modal-title';
 
@@ -163,7 +177,11 @@ export function AccountsShell({
   async function handleLoadMoreAccounts() {
     if (!onLoadMoreAccounts) return;
     setLoadingMoreAccounts(true);
-    try { await onLoadMoreAccounts(); } finally { setLoadingMoreAccounts(false); }
+    try {
+      await onLoadMoreAccounts();
+    } finally {
+      setLoadingMoreAccounts(false);
+    }
   }
 
   function openEditFund(fund: FundSummary) {
@@ -258,12 +276,25 @@ export function AccountsShell({
             totalLiabilities={netWorth.totalLiabilities}
             netWorth={netWorth.netWorth}
           />
-          {drawerLoading && <div className="accounts-shell__mobile-loading" role="progressbar" aria-label="Loading account" />}
+          {drawerLoading && (
+            <div
+              className="accounts-shell__mobile-loading"
+              role="progressbar"
+              aria-label="Loading account"
+            />
+          )}
           <div className="accounts-shell__split">
             {/* Left: compact account list */}
             <div className="accounts-shell__list-pane">
               <div className="accounts-shell__toolbar">
-                <Button size="sm" variant="ghost" onClick={() => { setEditingGroup(null); setGroupModalOpen(true); }}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setEditingGroup(null);
+                    setGroupModalOpen(true);
+                  }}
+                >
                   <Plus size={14} aria-hidden /> Add Group
                 </Button>
                 <Button size="sm" onClick={() => setWizardOpen(true)}>
@@ -281,7 +312,10 @@ export function AccountsShell({
                     onArchive={openArchive}
                     onDelete={onDeleteAccount ? openDeleteAccount : undefined}
                     onAddAccount={() => setWizardOpen(true)}
-                    onEditGroup={(g) => { setEditingGroup(g); setGroupModalOpen(true); }}
+                    onEditGroup={(g) => {
+                      setEditingGroup(g);
+                      setGroupModalOpen(true);
+                    }}
                     onDeleteGroup={setDeletingGroup}
                     onAccountHover={(account) => {
                       if (!drawerAccount && !drawerLoading) setPreviewAccount(account);
@@ -294,7 +328,13 @@ export function AccountsShell({
                 {accountGroups.length === 0 && (
                   <div className="accounts-shell__empty">
                     <p>No account groups yet. Create a group first, then add accounts to it.</p>
-                    <Button size="sm" onClick={() => { setEditingGroup(null); setGroupModalOpen(true); }}>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEditingGroup(null);
+                        setGroupModalOpen(true);
+                      }}
+                    >
                       Create your first group
                     </Button>
                   </div>
@@ -302,7 +342,12 @@ export function AccountsShell({
               </div>
               {hasMoreAccounts && (
                 <div className="accounts-shell__load-more">
-                  <Button size="sm" variant="ghost" loading={loadingMoreAccounts} onClick={handleLoadMoreAccounts}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    loading={loadingMoreAccounts}
+                    onClick={handleLoadMoreAccounts}
+                  >
                     Load more accounts
                   </Button>
                 </div>
@@ -312,7 +357,11 @@ export function AccountsShell({
             {/* Right: detail pane (desktop only — hidden on mobile via CSS) */}
             <div className="accounts-shell__detail-pane">
               {drawerLoading && (
-                <div className="accounts-shell__detail-loading" role="status" aria-label="Loading account details">
+                <div
+                  className="accounts-shell__detail-loading"
+                  role="status"
+                  aria-label="Loading account details"
+                >
                   <div className="accounts-shell__detail-skeleton" />
                   <div className="accounts-shell__detail-skeleton accounts-shell__detail-skeleton--body" />
                   <div className="accounts-shell__detail-skeleton accounts-shell__detail-skeleton--body" />
@@ -341,7 +390,11 @@ export function AccountsShell({
                     <span className="accounts-shell__preview-type">
                       {ACCOUNT_TYPE_META[previewAccount.type]?.name ?? previewAccount.type}
                     </span>
-                    <BalancePill amount={previewAccount.balance} currency={previewAccount.currency} size="lg" />
+                    <BalancePill
+                      amount={previewAccount.balance}
+                      currency={previewAccount.currency}
+                      size="lg"
+                    />
                   </div>
                   <p className="accounts-shell__preview-hint">Click to open full details</p>
                 </div>
@@ -381,9 +434,7 @@ export function AccountsShell({
       {/* ── Categories Tab ── */}
       {activeTab === 'categories' && (
         <div className="accounts-shell__panel" role="tabpanel" aria-label="Categories">
-          {categoriesPanel ?? (
-            <p className="accounts-shell__empty">Categories editor</p>
-          )}
+          {categoriesPanel ?? <p className="accounts-shell__empty">Categories editor</p>}
         </div>
       )}
 
@@ -392,9 +443,19 @@ export function AccountsShell({
       {/* Create / Edit group */}
       <AccountGroupFormModal
         open={groupModalOpen}
-        onClose={() => { setGroupModalOpen(false); setEditingGroup(null); }}
+        onClose={() => {
+          setGroupModalOpen(false);
+          setEditingGroup(null);
+        }}
         onSubmit={handleGroupSubmit}
-        initialValues={editingGroup ? { name: editingGroup.name, type: editingGroup.type.toLowerCase() as 'asset' | 'liability' } : undefined}
+        initialValues={
+          editingGroup
+            ? {
+                name: editingGroup.name,
+                type: editingGroup.type.toLowerCase() as 'asset' | 'liability',
+              }
+            : undefined
+        }
       />
 
       {/* Delete group confirm */}
@@ -414,7 +475,11 @@ export function AccountsShell({
           </p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setDeletingGroup(null)} disabled={deletingGroupLoading}>
+          <Button
+            variant="secondary"
+            onClick={() => setDeletingGroup(null)}
+            disabled={deletingGroupLoading}
+          >
             Cancel
           </Button>
           <Button
@@ -439,11 +504,16 @@ export function AccountsShell({
         </Modal.Header>
         <Modal.Body>
           <p className="accounts-shell__confirm-text">
-            This will permanently delete the account and all its data. Consider archiving instead to preserve history.
+            This will permanently delete the account and all its data. Consider archiving instead to
+            preserve history.
           </p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setDeleteAccountTarget(null)} disabled={deletingAccount}>
+          <Button
+            variant="secondary"
+            onClick={() => setDeleteAccountTarget(null)}
+            disabled={deletingAccount}
+          >
             Cancel
           </Button>
           <Button variant="danger" loading={deletingAccount} onClick={handleDeleteAccountConfirm}>
@@ -467,7 +537,11 @@ export function AccountsShell({
           </p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setDeleteFundTarget(null)} disabled={deletingFundLoading}>
+          <Button
+            variant="secondary"
+            onClick={() => setDeleteFundTarget(null)}
+            disabled={deletingFundLoading}
+          >
             Cancel
           </Button>
           <Button variant="danger" loading={deletingFundLoading} onClick={handleDeleteFundConfirm}>
@@ -516,7 +590,11 @@ export function AccountsShell({
 
       <FundFormDrawer
         open={fundDrawerOpen}
-        onClose={() => { setFundDrawerOpen(false); setEditingFund(null); setFundDrawerGroupId(undefined); }}
+        onClose={() => {
+          setFundDrawerOpen(false);
+          setEditingFund(null);
+          setFundDrawerGroupId(undefined);
+        }}
         initial={editingFund ?? undefined}
         initialGroupId={fundDrawerGroupId}
         groups={fundGroups}
@@ -531,15 +609,15 @@ export function AccountsShell({
 
       <FundGroupFormDialog
         open={fundGroupDialogOpen}
-        onClose={() => { setFundGroupDialogOpen(false); setEditingFundGroup(null); }}
+        onClose={() => {
+          setFundGroupDialogOpen(false);
+          setEditingFundGroup(null);
+        }}
         initial={editingFundGroup ?? undefined}
         onSubmit={handleFundGroupFormSubmit}
       />
 
-      <Modal
-        open={Boolean(deletingFundGroup)}
-        onClose={() => setDeletingFundGroup(null)}
-      >
+      <Modal open={Boolean(deletingFundGroup)} onClose={() => setDeletingFundGroup(null)}>
         <Modal.Header title={`Delete "${deletingFundGroup?.name}"?`} />
         <Modal.Body>
           <p className="accounts-shell__confirm-text">
@@ -547,10 +625,18 @@ export function AccountsShell({
           </p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setDeletingFundGroup(null)} disabled={deletingFundGroupLoading}>
+          <Button
+            variant="secondary"
+            onClick={() => setDeletingFundGroup(null)}
+            disabled={deletingFundGroupLoading}
+          >
             Cancel
           </Button>
-          <Button variant="danger" loading={deletingFundGroupLoading} onClick={handleDeleteFundGroupConfirm}>
+          <Button
+            variant="danger"
+            loading={deletingFundGroupLoading}
+            onClick={handleDeleteFundGroupConfirm}
+          >
             Delete Group
           </Button>
         </Modal.Footer>
@@ -567,7 +653,9 @@ export function AccountsShell({
           onSave={(allocations) => onSaveAllocations(allocationFund.id, allocations)}
           otherFundsSources={funds
             .filter((f) => f.id !== allocationFund.id && !f.archivedAt)
-            .flatMap((f) => f.sources.map((s) => ({ accountId: s.accountId, type: s.type, value: s.value })))}
+            .flatMap((f) =>
+              f.sources.map((s) => ({ accountId: s.accountId, type: s.type, value: s.value })),
+            )}
         />
       )}
     </div>

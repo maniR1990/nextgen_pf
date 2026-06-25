@@ -9,10 +9,8 @@ export type KpiCashRunwayCardProps = KpiCardComponentProps<KpiCashRunwayData>;
 
 export function KpiCashRunwayCard({ data, density }: KpiCashRunwayCardProps) {
   const variant = data.variant === 'warning' ? 'warning' : 'default';
-  const currentLabel =
-    data.progress.currentLabel ?? `${data.progress.current} ${data.unit}`;
-  const targetLabel =
-    data.progress.targetLabel ?? `${data.progress.target} ${data.unit}`;
+  const currentLabel = data.progress.currentLabel ?? `${data.progress.current} ${data.unit}`;
+  const targetLabel = data.progress.targetLabel ?? `${data.progress.target} ${data.unit}`;
 
   return (
     <KpiCardShell

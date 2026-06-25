@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { LogIn, Clock } from 'lucide-react';
-import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { Clock, LogIn } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const TITLE_ID = 'session-expired-title';
 
@@ -34,7 +34,9 @@ export function SessionExpiredModal() {
             <Clock size={28} />
           </div>
           <div>
-            <h2 className="modal__title" id={TITLE_ID}>Session Expired</h2>
+            <h2 className="modal__title" id={TITLE_ID}>
+              Session Expired
+            </h2>
             <p className="modal__subtitle">You have been signed out</p>
           </div>
         </div>

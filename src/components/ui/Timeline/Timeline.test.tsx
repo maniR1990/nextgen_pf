@@ -1,7 +1,7 @@
+import { TIMELINE_DENSITY } from '@/constants/timeline';
 import { cleanup, render, screen } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { afterEach, describe, expect, it } from 'vitest';
-import { TIMELINE_DENSITY } from '@/constants/timeline';
 import { Timeline } from './Timeline';
 import auditSample from './samples/audit.timeline.json';
 import milestoneSample from './samples/milestone.timeline.json';

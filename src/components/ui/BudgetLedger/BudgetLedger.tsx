@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { BUDGET_LINE_KIND } from '@/constants/budget';
 import { Inbox, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import type { z } from 'zod';
 import { BudgetLedgerCategoryCell, budgetSectionRowClassName } from './BudgetLedgerCategoryCell';
 import { BudgetLedgerMobileCard } from './BudgetLedgerMobileCard';
 import { BudgetLedgerSummaries } from './BudgetLedgerSummaries';
@@ -14,7 +15,6 @@ import { BudgetPercentBar } from './BudgetPercentBar';
 import { formatBudgetMoney } from './formatBudgetMoney';
 import type { BudgetLedgerPayloadSchema, BudgetLineFormValues } from './schemas';
 import { useBudgetLedgerTable } from './useBudgetLedgerTable';
-import type { z } from 'zod';
 
 export type BudgetLedgerPayloadJson = z.infer<typeof BudgetLedgerPayloadSchema>;
 
@@ -161,13 +161,9 @@ export function BudgetLedger({
                   <td>
                     <BudgetLedgerCategoryCell row={row} />
                   </td>
-                  <td className="budget-ledger__money">
-                    {formatBudgetMoney(node.plannedMinor)}
-                  </td>
+                  <td className="budget-ledger__money">{formatBudgetMoney(node.plannedMinor)}</td>
                   <td className="budget-ledger__money">{formatBudgetMoney(node.spentMinor)}</td>
-                  <td className="budget-ledger__money">
-                    {formatBudgetMoney(node.remainingMinor)}
-                  </td>
+                  <td className="budget-ledger__money">{formatBudgetMoney(node.remainingMinor)}</td>
                   <td>
                     <BudgetPercentBar percent={node.percent} label={`${node.title} usage`} />
                   </td>

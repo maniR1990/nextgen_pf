@@ -1,8 +1,8 @@
-import bcrypt from 'bcryptjs';
-import { Prisma } from '@prisma/client';
 import { ConflictError, NotFoundError } from '@/lib/api/errors';
 import { buildMeta } from '@/lib/api/pagination';
 import { getLogger } from '@/lib/logger';
+import { Prisma } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { UserRepository } from './users.repository';
 import type { CreateUserDto, GetUsersQuery, UpdateUserDto } from './users.types';
 

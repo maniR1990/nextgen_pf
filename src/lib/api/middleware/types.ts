@@ -12,9 +12,6 @@ export interface RouteContext {
   correlationId?: string;
 }
 
-export type Handler = (
-  req: Request,
-  ctx: RouteContext,
-) => Response | Promise<Response>;
+export type Handler = (req: Request, ctx: RouteContext) => Response | Promise<Response>;
 
 export type Middleware = (handler: Handler) => Handler;

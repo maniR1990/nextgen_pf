@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MoreHorizontal } from 'lucide-react';
 import type { FundSummary } from '@/modules/funds/funds.types';
+import { MoreHorizontal } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 const PURPOSE_LABEL: Record<string, string> = {
   EMERGENCY: 'Safety',
@@ -58,13 +58,26 @@ export function FundCard({ fund, onEdit, onAllocate, onArchive, onDelete }: Fund
       onClick={handleCardClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(); } }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}
       aria-label={`View ${fund.name} details`}
     >
       <div className="fund-card__header">
-        {fund.icon && <span className="fund-card__icon" aria-hidden>{fund.icon}</span>}
+        {fund.icon && (
+          <span className="fund-card__icon" aria-hidden>
+            {fund.icon}
+          </span>
+        )}
         <span className="fund-card__name">{fund.name}</span>
-        <div className="fund-card__menu-wrap" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        <div
+          className="fund-card__menu-wrap"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
           <button
             type="button"
             className="fund-card__menu-trigger"
@@ -81,7 +94,10 @@ export function FundCard({ fund, onEdit, onAllocate, onArchive, onDelete }: Fund
                   type="button"
                   role="menuitem"
                   className="fund-card__menu-item"
-                  onClick={() => { setMenuOpen(false); onEdit(fund); }}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onEdit(fund);
+                  }}
                 >
                   Edit
                 </button>
@@ -91,7 +107,10 @@ export function FundCard({ fund, onEdit, onAllocate, onArchive, onDelete }: Fund
                   type="button"
                   role="menuitem"
                   className="fund-card__menu-item"
-                  onClick={() => { setMenuOpen(false); onAllocate(fund); }}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onAllocate(fund);
+                  }}
                 >
                   Allocate
                 </button>
@@ -101,7 +120,10 @@ export function FundCard({ fund, onEdit, onAllocate, onArchive, onDelete }: Fund
                   type="button"
                   role="menuitem"
                   className="fund-card__menu-item fund-card__menu-item--danger"
-                  onClick={() => { setMenuOpen(false); onArchive(fund); }}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onArchive(fund);
+                  }}
                 >
                   Archive
                 </button>
@@ -111,7 +133,10 @@ export function FundCard({ fund, onEdit, onAllocate, onArchive, onDelete }: Fund
                   type="button"
                   role="menuitem"
                   className="fund-card__menu-item fund-card__menu-item--danger"
-                  onClick={() => { setMenuOpen(false); onDelete(fund); }}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onDelete(fund);
+                  }}
                 >
                   Delete
                 </button>
@@ -130,7 +155,9 @@ export function FundCard({ fund, onEdit, onAllocate, onArchive, onDelete }: Fund
       <div className="fund-card__amounts">
         <span className="fund-card__current-amount">₹{formatINR(fund.currentAmount)}</span>
         <span className="fund-card__target-amount">
-          {fund.targetAmount > 0 ? `₹${formatINR(fund.targetAmount)}${isComplete ? ' ✓' : ''}` : 'No cap ∞'}
+          {fund.targetAmount > 0
+            ? `₹${formatINR(fund.targetAmount)}${isComplete ? ' ✓' : ''}`
+            : 'No cap ∞'}
         </span>
       </div>
 
@@ -139,7 +166,8 @@ export function FundCard({ fund, onEdit, onAllocate, onArchive, onDelete }: Fund
           {shownSources.map((src) => (
             <div key={src.accountId} className="fund-card__source-row">
               <span className="fund-card__source-name">
-                {src.accountName} · {src.type === 'PERCENTAGE' ? `${src.value}%` : `₹${formatINR(src.value)}`}
+                {src.accountName} ·{' '}
+                {src.type === 'PERCENTAGE' ? `${src.value}%` : `₹${formatINR(src.value)}`}
               </span>
               <span className="fund-card__source-amount">₹{formatINR(src.allocatedAmount)}</span>
             </div>

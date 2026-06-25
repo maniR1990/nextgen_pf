@@ -47,7 +47,9 @@ export function FundGroupPicker({ groups, value, flow, onChange }: FundGroupPick
       >
         <option value="">— None —</option>
         {groups.map((g) => (
-          <option key={g.id} value={g.id}>{g.name}</option>
+          <option key={g.id} value={g.id}>
+            {g.name}
+          </option>
         ))}
       </select>
 

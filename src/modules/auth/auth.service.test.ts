@@ -1,8 +1,8 @@
+import { UserRepository } from '@/modules/users/users.repository';
 import bcrypt from 'bcryptjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthService } from './auth.service';
-import { UserRepository } from '@/modules/users/users.repository';
 import { AuthRepository } from './auth.repository';
+import { AuthService } from './auth.service';
 
 vi.mock('@/modules/users/users.repository');
 vi.mock('./auth.repository');

@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/common/ToastProvider/useToast';
-import { apiGetV1, apiPutV1, apiPatchV1, getFetchErrorMessage } from '@/lib/query/fetcher';
+import { apiGetV1, apiPatchV1, apiPutV1, getFetchErrorMessage } from '@/lib/query/fetcher';
 import { queryKeys } from '@/lib/query/queryKeys';
 import type { AccountDetail } from '@/modules/accounts/accounts.types';
 import type { UpdateAccountDto } from '@/modules/accounts/accounts.types';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 export function useAccountDetail(accountId: string | null) {
   const toast = useToast();
@@ -40,7 +40,10 @@ export function useAccountDetail(accountId: string | null) {
   );
 
   const transfer = useCallback(
-    async (id: string, payload: { toAccountId: string; amount: number; note?: string; date?: string }) => {
+    async (
+      id: string,
+      payload: { toAccountId: string; amount: number; note?: string; date?: string },
+    ) => {
       try {
         await apiPatchV1(`/api/v1/accounts/${id}/transfer`, payload);
         toast.success('Transfer complete');

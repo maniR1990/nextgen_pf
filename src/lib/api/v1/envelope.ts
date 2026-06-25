@@ -67,6 +67,11 @@ export function v1Error(payload: V1ErrorPayload, status: number, headers?: Recor
 
 // ── Guard ────────────────────────────────────────────────────────────────────
 
-export function v1FromApiError(err: { message: string; status: number; code: string; headers?: Record<string, string> }) {
+export function v1FromApiError(err: {
+  message: string;
+  status: number;
+  code: string;
+  headers?: Record<string, string>;
+}) {
   return v1Error({ code: err.code, message: err.message }, err.status, err.headers);
 }

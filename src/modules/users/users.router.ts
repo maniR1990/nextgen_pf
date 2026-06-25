@@ -1,8 +1,8 @@
-import { Role } from '@prisma/client';
+import { isApiError } from '@/lib/api/errors';
 import { compose, withAuth, withRateLimit, withRole, withValidation } from '@/lib/api/middleware';
 import { parsePagination } from '@/lib/api/pagination';
 import { created, error, ok, paginated } from '@/lib/api/response';
-import { isApiError } from '@/lib/api/errors';
+import { Role } from '@prisma/client';
 import { CreateUserSchema, UpdateUserSchema } from './users.schema';
 import { UserService } from './users.service';
 
@@ -62,7 +62,10 @@ export const handleUpdateUser = compose(
   }
 });
 
-export const handleDeleteUser = compose(withAuth(), withRole(Role.ADMIN))(async (_req, ctx) => {
+export const handleDeleteUser = compose(
+  withAuth(),
+  withRole(Role.ADMIN),
+)(async (_req, ctx) => {
   try {
     await UserService.deleteUser(ctx.params!.id);
     return ok({ deleted: true });

@@ -2,13 +2,16 @@
 
 import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
-import type { TransactionFormValues, FormErrors } from '@/store/transactionFormStore';
+import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption, SinkingFundOption } from '@/types/finance';
 
 interface SinkingDepositFormProps {
   values: TransactionFormValues;
   errors: FormErrors;
-  onChange: <K extends keyof TransactionFormValues>(key: K, value: TransactionFormValues[K]) => void;
+  onChange: <K extends keyof TransactionFormValues>(
+    key: K,
+    value: TransactionFormValues[K],
+  ) => void;
   paymentSources: PaymentSourceOption[];
   sinkingFunds: SinkingFundOption[];
 }

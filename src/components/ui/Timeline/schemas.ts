@@ -32,7 +32,9 @@ export const TimelineItemSchema = z.object({
 });
 
 export const TimelineConfigSchema = z.object({
-  variant: z.enum(TIMELINE_VARIANT_VALUES as [string, ...string[]]).default(TIMELINE_DEFAULT_VARIANT),
+  variant: z
+    .enum(TIMELINE_VARIANT_VALUES as [string, ...string[]])
+    .default(TIMELINE_DEFAULT_VARIANT),
   ariaLabel: z.string().min(1).default(TIMELINE_DEFAULT_ARIA_LABEL),
   items: z.array(TimelineItemSchema).min(1),
 });

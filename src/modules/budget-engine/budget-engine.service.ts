@@ -47,17 +47,32 @@ export const BudgetEngineService = {
 
   async getImpact(
     userId: string,
-    input: { categoryId: string; amount: number; budgetPeriodYear: number; budgetPeriodMonth: number },
+    input: {
+      categoryId: string;
+      amount: number;
+      budgetPeriodYear: number;
+      budgetPeriodMonth: number;
+    },
   ) {
     validatePeriod(input.budgetPeriodYear, input.budgetPeriodMonth);
 
     const cat = await BudgetEngineRepository.findCategoryById(input.categoryId, userId);
     if (!cat) throw new CategoryNotFoundError();
 
-    const overrides = await BudgetEngineRepository.findOverrides(userId, input.budgetPeriodYear, input.budgetPeriodMonth);
-    const plannedAmount = overrides.find((o) => o.categoryId === input.categoryId)?.planned ?? cat.plannedAmount ?? 0;
+    const overrides = await BudgetEngineRepository.findOverrides(
+      userId,
+      input.budgetPeriodYear,
+      input.budgetPeriodMonth,
+    );
+    const plannedAmount =
+      overrides.find((o) => o.categoryId === input.categoryId)?.planned ?? cat.plannedAmount ?? 0;
 
-    const agg = await TransactionRepository.sumByPeriod(userId, input.budgetPeriodYear, input.budgetPeriodMonth, input.categoryId);
+    const agg = await TransactionRepository.sumByPeriod(
+      userId,
+      input.budgetPeriodYear,
+      input.budgetPeriodMonth,
+      input.categoryId,
+    );
     const currentSpend = agg._sum.amount ?? 0;
     const projectedSpend = currentSpend + input.amount;
     const remainingAfter = plannedAmount - projectedSpend;
@@ -88,7 +103,13 @@ export const BudgetEngineService = {
     }));
   },
 
-  async updateCategoryPlanned(userId: string, year: number, month: number, categoryId: string, planned: number) {
+  async updateCategoryPlanned(
+    userId: string,
+    year: number,
+    month: number,
+    categoryId: string,
+    planned: number,
+  ) {
     validatePeriod(year, month);
     const cat = await BudgetEngineRepository.findCategoryById(categoryId, userId);
     if (!cat) throw new CategoryNotFoundError();

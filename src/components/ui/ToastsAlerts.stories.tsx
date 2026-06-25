@@ -1,4 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { Toast } from '@/components/ui/Toast';
 import {
   chromaticBaseline,
@@ -6,6 +5,7 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta = {
   title: 'UI/Toasts & Alerts',

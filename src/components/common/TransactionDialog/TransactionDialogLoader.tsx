@@ -1,8 +1,8 @@
 import 'server-only';
 // Import directly — NOT via the barrel index (which is client-safe and excludes this file)
 import {
-  getPaymentSourceOptions,
   getCategoryOptions,
+  getPaymentSourceOptions,
   getSinkingFundOptions,
 } from '@/lib/data/transaction-options';
 import { TransactionDialog } from './TransactionDialog';
@@ -19,10 +19,5 @@ export async function TransactionDialogLoader({ userId, ...props }: TransactionD
     getSinkingFundOptions(userId),
   ]);
 
-  return (
-    <TransactionDialog
-      {...props}
-      initialOptions={{ sources, categories, sinkingFunds }}
-    />
-  );
+  return <TransactionDialog {...props} initialOptions={{ sources, categories, sinkingFunds }} />;
 }

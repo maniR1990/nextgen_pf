@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import type { MobileConfig } from '@/lib/schemas/appHeader';
+import { BarChart2, Home, Plus, Target, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, BarChart2, Target, User, Plus } from 'lucide-react';
+import { useState } from 'react';
 import { FabRadial } from './FabRadial';
-import type { MobileConfig } from '@/lib/schemas/appHeader';
 
 interface BottomTabBarProps {
   config: MobileConfig;
@@ -13,11 +13,11 @@ interface BottomTabBarProps {
 }
 
 const ICON_MAP: Record<string, React.ReactNode> = {
-  home:      <Home      size={20} aria-hidden />,
+  home: <Home size={20} aria-hidden />,
   'bar-chart': <BarChart2 size={20} aria-hidden />,
-  target:    <Target    size={20} aria-hidden />,
-  user:      <User      size={20} aria-hidden />,
-  plus:      <Plus      size={24} aria-hidden />,
+  target: <Target size={20} aria-hidden />,
+  user: <User size={20} aria-hidden />,
+  plus: <Plus size={24} aria-hidden />,
 };
 
 export function BottomTabBar({ config, onFabAction }: BottomTabBarProps) {
@@ -51,7 +51,9 @@ export function BottomTabBar({ config, onFabAction }: BottomTabBarProps) {
               <li key={item.id} className="bottom-tab-bar__tab bottom-tab-bar__tab--fab">
                 <button
                   type="button"
-                  className={['bottom-tab-bar__fab', radialOpen && 'bottom-tab-bar__fab--open'].filter(Boolean).join(' ')}
+                  className={['bottom-tab-bar__fab', radialOpen && 'bottom-tab-bar__fab--open']
+                    .filter(Boolean)
+                    .join(' ')}
                   onClick={() => setRadialOpen((v) => !v)}
                   aria-expanded={radialOpen}
                   aria-label="Log transaction"
@@ -67,7 +69,9 @@ export function BottomTabBar({ config, onFabAction }: BottomTabBarProps) {
             <li key={item.id} className="bottom-tab-bar__tab">
               <Link
                 href={item.href!}
-                className={['bottom-tab-bar__link', active && 'bottom-tab-bar__link--active'].filter(Boolean).join(' ')}
+                className={['bottom-tab-bar__link', active && 'bottom-tab-bar__link--active']
+                  .filter(Boolean)
+                  .join(' ')}
                 aria-current={active ? 'page' : undefined}
               >
                 <span className="bottom-tab-bar__icon">{ICON_MAP[item.icon]}</span>

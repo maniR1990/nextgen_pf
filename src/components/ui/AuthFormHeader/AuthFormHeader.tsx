@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
 import { Icon, type IconTone } from '@/components/ui/Icon';
 import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 export interface AuthFormHeaderProps {
   title: string;
@@ -10,7 +10,13 @@ export interface AuthFormHeaderProps {
   trailing?: ReactNode;
 }
 
-export function AuthFormHeader({ title, subtitle, icon, iconTone = 'brand', trailing }: AuthFormHeaderProps) {
+export function AuthFormHeader({
+  title,
+  subtitle,
+  icon,
+  iconTone = 'brand',
+  trailing,
+}: AuthFormHeaderProps) {
   return (
     <header className="auth-form-header">
       {icon ? (

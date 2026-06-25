@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
-import { formatINR } from '@/lib/utils/format';
 import type { ContextSubBarItem } from '@/lib/schemas/appHeader';
 import type { AppHeaderData } from '@/lib/schemas/appHeader';
+import { formatINR } from '@/lib/utils/format';
+import Link from 'next/link';
 
 interface ContextSubBarProps {
   items: ContextSubBarItem[];
@@ -35,9 +35,7 @@ export function ContextSubBar({ items, data }: ContextSubBarProps) {
               <span className="context-sub-bar__label">{item.label}</span>
               <span className="context-sub-bar__value">
                 {value}
-                {item.badge && (
-                  <span className="context-sub-bar__badge">{item.badge}</span>
-                )}
+                {item.badge && <span className="context-sub-bar__badge">{item.badge}</span>}
                 {change !== undefined && (
                   <span
                     className={[
@@ -45,7 +43,8 @@ export function ContextSubBar({ items, data }: ContextSubBarProps) {
                       change >= 0 ? 'context-sub-bar__change--up' : 'context-sub-bar__change--down',
                     ].join(' ')}
                   >
-                    {change >= 0 ? '+' : '−'}{Math.abs(change).toFixed(0)}%
+                    {change >= 0 ? '+' : '−'}
+                    {Math.abs(change).toFixed(0)}%
                   </span>
                 )}
               </span>

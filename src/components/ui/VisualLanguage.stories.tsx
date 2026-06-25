@@ -1,6 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { IMAGE_ASPECTS } from '@/constants/media';
-import { Icon, AppIcons } from '@/components/ui/Icon';
+import { AppIcons, Icon } from '@/components/ui/Icon';
 import { ImagePlaceholder } from '@/components/ui/MediaImage';
 import {
   chromaticBaseline,
@@ -9,6 +7,8 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
+import { IMAGE_ASPECTS } from '@/constants/media';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta = {
   title: 'Design System/Images, Icons & Illustration',
@@ -54,7 +54,9 @@ function GuidelineCard({
       <h3 className="type-h5" style={{ margin: '0 0 var(--space-3)', color: border }}>
         {title}
       </h3>
-      <ul style={{ margin: 0, paddingLeft: 'var(--space-5)', display: 'grid', gap: 'var(--space-2)' }}>
+      <ul
+        style={{ margin: 0, paddingLeft: 'var(--space-5)', display: 'grid', gap: 'var(--space-2)' }}
+      >
         {items.map((item) => (
           <li key={item} className="type-body" style={{ margin: 0 }}>
             {item}
@@ -83,7 +85,12 @@ function OverviewPanel() {
           ].map(({ label, icon }) => (
             <div
               key={label}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)' }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+              }}
             >
               <Icon icon={icon} size="md" tone="brand" />
               <span className="type-caption">{label}</span>

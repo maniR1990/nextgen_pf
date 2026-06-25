@@ -1,22 +1,22 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { apiGetV1 } from '@/lib/query/fetcher';
-import { queryKeys } from '@/lib/query/queryKeys';
-import type { CategoryTreeNode } from '@/modules/categories/categories.types';
-import {
-  mapCategoryTreeToPickerOptions,
-  buildPickerGroups,
-} from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import type {
-  FormSourceOption,
   FormCategoryOption,
   FormSinkingFundOption,
+  FormSourceOption,
 } from '@/lib/data/transaction-options';
+import { apiGetV1 } from '@/lib/query/fetcher';
+import { queryKeys } from '@/lib/query/queryKeys';
 import type { AccountGroupWithAccounts } from '@/modules/accounts/accounts.types';
 import { flattenAccountsForPicker } from '@/modules/accounts/lib/flatten-accounts-for-picker';
+import type { CategoryTreeNode } from '@/modules/categories/categories.types';
+import {
+  buildPickerGroups,
+  mapCategoryTreeToPickerOptions,
+} from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
+import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 export type { FormSourceOption, FormCategoryOption, FormSinkingFundOption };
 export type { PickerGroup };
@@ -86,9 +86,7 @@ export function useFormOptions(initialData?: FormOptions) {
 
   const categoryGroups = useMemo(
     () =>
-      treeQuery.data
-        ? buildPickerGroups(treeQuery.data)
-        : (initialData?.categoryGroups ?? []),
+      treeQuery.data ? buildPickerGroups(treeQuery.data) : (initialData?.categoryGroups ?? []),
     [treeQuery.data, initialData?.categoryGroups],
   );
 

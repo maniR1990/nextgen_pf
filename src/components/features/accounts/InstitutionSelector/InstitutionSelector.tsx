@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Search } from 'lucide-react';
 import { FormField } from '@/components/common/FormField';
+import { Search } from 'lucide-react';
+import { useState } from 'react';
 
 const COMMON_INSTITUTIONS = [
   'HDFC Bank',
@@ -69,7 +69,11 @@ export function InstitutionSelector({ value, onChange, error }: InstitutionSelec
           />
         </div>
         {showSuggestions && filtered.length > 0 && (
-          <ul className="institution-selector__suggestions" role="listbox" aria-label="Institution suggestions">
+          <ul
+            className="institution-selector__suggestions"
+            role="listbox"
+            aria-label="Institution suggestions"
+          >
             {filtered.slice(0, 8).map((name) => (
               <li
                 key={name}

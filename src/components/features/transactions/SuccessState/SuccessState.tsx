@@ -1,8 +1,8 @@
 'use client';
 
-import { CheckCircle } from 'lucide-react';
-import type { SuccessData } from '@/store/transactionFormStore';
 import { TX_TYPE_META } from '@/constants/finance';
+import type { SuccessData } from '@/store/transactionFormStore';
+import { CheckCircle } from 'lucide-react';
 
 interface SuccessStateProps {
   data: SuccessData;
@@ -62,11 +62,7 @@ export function SuccessState({ data, onLogAnother, onClose }: SuccessStateProps)
         <button type="button" className="btn btn--primary" onClick={onLogAnother}>
           Log Another
         </button>
-        <a
-          href="/dashboard/transactions"
-          className="btn btn--ghost"
-          onClick={onClose}
-        >
+        <a href="/dashboard/transactions" className="btn btn--ghost" onClick={onClose}>
           View Transactions
         </a>
         <button type="button" className="btn btn--ghost" onClick={onClose}>

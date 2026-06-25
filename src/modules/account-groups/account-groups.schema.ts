@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { ACCOUNT_GROUP_SORT_OPTIONS } from '@/constants/account-groups';
+import { z } from 'zod';
 
 export const CreateAccountGroupSchema = z.object({
   name: z.string().min(1).max(80),

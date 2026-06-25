@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronRight, MoreHorizontal, Plus } from 'lucide-react';
 import type { AccountGroupWithAccounts, AccountSummary } from '@/modules/accounts/accounts.types';
-import { BalancePill } from '../BalancePill';
+import { ChevronDown, ChevronRight, MoreHorizontal, Plus } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { AccountListRow } from '../AccountListRow';
+import { BalancePill } from '../BalancePill';
 
 export interface AccountGroupSectionProps {
   group: AccountGroupWithAccounts;
@@ -72,7 +72,10 @@ export function AccountGroupSection({
             <ChevronDown size={16} aria-hidden />
           )}
           <span className="account-group-section__name">{group.name}</span>
-          <span className="account-group-section__count" aria-label={`${visibleAccounts.length} accounts`}>
+          <span
+            className="account-group-section__count"
+            aria-label={`${visibleAccounts.length} accounts`}
+          >
             {visibleAccounts.length}
           </span>
         </button>
@@ -102,7 +105,10 @@ export function AccountGroupSection({
                   e.stopPropagation();
                   if (!groupMenuOpen && groupMenuTriggerRef.current) {
                     const rect = groupMenuTriggerRef.current.getBoundingClientRect();
-                    setGroupMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                    setGroupMenuPos({
+                      top: rect.bottom + 4,
+                      right: window.innerWidth - rect.right,
+                    });
                   }
                   setGroupMenuOpen((v) => !v);
                 }}
@@ -125,7 +131,10 @@ export function AccountGroupSection({
                       type="button"
                       role="menuitem"
                       className="account-group-section__menu-item"
-                      onClick={() => { setGroupMenuOpen(false); onEditGroup(group); }}
+                      onClick={() => {
+                        setGroupMenuOpen(false);
+                        onEditGroup(group);
+                      }}
                     >
                       Edit Group
                     </button>
@@ -135,7 +144,10 @@ export function AccountGroupSection({
                       type="button"
                       role="menuitem"
                       className="account-group-section__menu-item account-group-section__menu-item--danger"
-                      onClick={() => { setGroupMenuOpen(false); onDeleteGroup(group); }}
+                      onClick={() => {
+                        setGroupMenuOpen(false);
+                        onDeleteGroup(group);
+                      }}
                     >
                       Delete Group
                     </button>

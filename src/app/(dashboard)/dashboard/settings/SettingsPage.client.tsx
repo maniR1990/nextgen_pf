@@ -1,28 +1,32 @@
 'use client';
 
-import { Suspense, useCallback, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { SettingsWorkspace, SettingsPageConfigSchema } from '@/components/common/SettingsWorkspace';
-import { useSettingsCategoriesCrud } from '@/hooks/useSettingsCategoriesCrud';
-import { useAccountDetail } from '@/hooks/useAccountDetail';
-import { useFundsSettings } from '@/hooks/useFundsSettings';
-import { useFundGroups } from '@/hooks/useFundGroups';
+import { SettingsPageConfigSchema, SettingsWorkspace } from '@/components/common/SettingsWorkspace';
+import { useToast } from '@/components/common/ToastProvider/useToast';
+import type { AccountGroupFormPayload } from '@/components/features/accounts/AccountGroupFormModal';
 import { AccountsShell } from '@/components/features/accounts/AccountsShell';
+import type { TransferPayload } from '@/components/features/accounts/TransferModal';
+import rawConfig from '@/config/settingsPage.json';
+import { useAccountDetail } from '@/hooks/useAccountDetail';
+import { useFundGroups } from '@/hooks/useFundGroups';
+import { useFundsSettings } from '@/hooks/useFundsSettings';
+import { useSettingsCategoriesCrud } from '@/hooks/useSettingsCategoriesCrud';
 import {
+  apiDeleteV1,
   apiGetV1,
+  apiPatchV1,
   apiPostV1,
   apiPutV1,
-  apiDeleteV1,
-  apiPatchV1,
   getFetchErrorMessage,
 } from '@/lib/query/fetcher';
-import { useToast } from '@/components/common/ToastProvider/useToast';
 import { queryKeys } from '@/lib/query/queryKeys';
-import type { AccountGroupWithAccounts, AccountDetail, CreateAccountDto } from '@/modules/accounts/accounts.types';
-import type { TransferPayload } from '@/components/features/accounts/TransferModal';
-import type { AccountGroupFormPayload } from '@/components/features/accounts/AccountGroupFormModal';
+import type {
+  AccountDetail,
+  AccountGroupWithAccounts,
+  CreateAccountDto,
+} from '@/modules/accounts/accounts.types';
 import type { FundAllocationInput } from '@/modules/funds/funds.types';
-import rawConfig from '@/config/settingsPage.json';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Suspense, useCallback, useMemo, useState } from 'react';
 
 const categoriesTabOnly = SettingsPageConfigSchema.parse({
   ariaLabel: 'Category settings',
@@ -205,7 +209,13 @@ export function SettingsPageClient() {
   }
 
   return (
-    <Suspense fallback={<div className="accounts-shell" aria-busy="true" aria-live="polite"><div className="accounts-shell__loading" /></div>}>
+    <Suspense
+      fallback={
+        <div className="accounts-shell" aria-busy="true" aria-live="polite">
+          <div className="accounts-shell__loading" />
+        </div>
+      }
+    >
       <AccountsShell
         accountGroups={accountsError ? [] : accountGroups}
         onCreateGroup={handleCreateGroup}

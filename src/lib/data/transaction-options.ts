@@ -1,12 +1,12 @@
 import 'server-only';
 import { prisma } from '@/lib/db/prisma';
 import { AccountsRepository } from '@/modules/accounts/accounts.repository';
+import type { AccountGroupWithAccounts } from '@/modules/accounts/accounts.types';
+import { flattenAccountsForPicker } from '@/modules/accounts/lib/flatten-accounts-for-picker';
 import { CategoriesRepository } from '@/modules/categories/categories.repository';
 import type { CategoryTreeNode } from '@/modules/categories/categories.types';
 import { buildCategoryTree } from '@/modules/categories/lib/category-tree';
 import { mapCategoryTreeToPickerOptions } from '@/modules/categories/lib/map-category-tree-to-picker-options';
-import { flattenAccountsForPicker } from '@/modules/accounts/lib/flatten-accounts-for-picker';
-import type { AccountGroupWithAccounts } from '@/modules/accounts/accounts.types';
 
 export interface FormSourceOption {
   id: string;

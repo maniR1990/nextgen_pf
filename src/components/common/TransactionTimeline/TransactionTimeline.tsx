@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { Pencil, Trash2 } from 'lucide-react';
+import { useMemo } from 'react';
 
 export interface TimelineTransaction {
   id: string;
@@ -74,8 +74,11 @@ export function TransactionTimeline({
 
   if (loading) {
     return (
-      <div className="tx-timeline tx-timeline--loading max-w-4xl mx-auto p-8" aria-label="Loading transactions">
-        {[1, 2, 3].map(i => (
+      <div
+        className="tx-timeline tx-timeline--loading max-w-4xl mx-auto p-8"
+        aria-label="Loading transactions"
+      >
+        {[1, 2, 3].map((i) => (
           <div key={i} className="tx-timeline__skeleton" aria-hidden>
             <div className="tx-timeline__skeleton-header" />
             <div className="tx-timeline__skeleton-card" />
@@ -107,7 +110,9 @@ export function TransactionTimeline({
           <div className="tx-timeline__summary-divider" />
           <div className="tx-timeline__summary-item">
             <span className="tx-timeline__summary-label">Net</span>
-            <span className={`tx-timeline__summary-value tx-timeline__summary-value--${summary.net >= 0 ? 'credit' : 'debit'}`}>
+            <span
+              className={`tx-timeline__summary-value tx-timeline__summary-value--${summary.net >= 0 ? 'credit' : 'debit'}`}
+            >
               {summary.net >= 0
                 ? `+₹${summary.net.toLocaleString('en-IN')}`
                 : `−₹${Math.abs(summary.net).toLocaleString('en-IN')}`}
@@ -116,16 +121,17 @@ export function TransactionTimeline({
         </div>
       )}
 
-      {groups.length === 0 && (
-        <div className="tx-timeline__empty">No transactions to display</div>
-      )}
+      {groups.length === 0 && <div className="tx-timeline__empty">No transactions to display</div>}
 
       {/* Timeline groups */}
       <div className="tx-timeline__list">
-        {groups.map(group => {
+        {groups.map((group) => {
           const dateLabel = (() => {
-            try { return format(parseISO(group.date), 'MMM d'); }
-            catch { return group.date; }
+            try {
+              return format(parseISO(group.date), 'MMM d');
+            } catch {
+              return group.date;
+            }
           })();
           const total = groupNetTotal(group);
 
@@ -133,7 +139,9 @@ export function TransactionTimeline({
             <div key={group.date} className="tx-timeline__group">
               {/* Desktop left-axis date */}
               <div className="tx-timeline__date-col">
-                <time className="tx-timeline__date" dateTime={group.date}>{dateLabel}</time>
+                <time className="tx-timeline__date" dateTime={group.date}>
+                  {dateLabel}
+                </time>
                 <div className="tx-timeline__date-track" aria-hidden />
               </div>
 
@@ -141,72 +149,88 @@ export function TransactionTimeline({
               <div className="tx-timeline__cards-col">
                 {/* Mobile: sticky date + net total row */}
                 <div className="tx-timeline__mobile-header">
-                  <time className="tx-timeline__mobile-date" dateTime={group.date}>{dateLabel}</time>
-                  <span className={`tx-timeline__mobile-total tx-timeline__mobile-total--${total.positive ? 'credit' : 'debit'}`}>
+                  <time className="tx-timeline__mobile-date" dateTime={group.date}>
+                    {dateLabel}
+                  </time>
+                  <span
+                    className={`tx-timeline__mobile-total tx-timeline__mobile-total--${total.positive ? 'credit' : 'debit'}`}
+                  >
                     {total.label}
                   </span>
                 </div>
 
                 <div className="tx-timeline__cards-list">
-                  {group.transactions.map(tx => {
+                  {group.transactions.map((tx) => {
                     const isCurrentPeriod =
                       tx.budgetPeriodYear === currentYear && tx.budgetPeriodMonth === currentMonth;
                     const showActions = isCurrentPeriod && (onEditClick || onDeleteClick);
 
                     return (
-                    <div
-                      key={tx.id}
-                      className={[
-                        'tx-timeline__card',
-                        onTransactionClick ? 'tx-timeline__card--clickable' : '',
-                        showActions ? 'tx-timeline__card--has-actions' : '',
-                      ].filter(Boolean).join(' ')}
-                      role={onTransactionClick ? 'button' : undefined}
-                      tabIndex={onTransactionClick ? 0 : undefined}
-                      onClick={() => onTransactionClick?.(tx.id)}
-                      onKeyDown={(e) => {
-                        if (onTransactionClick && (e.key === 'Enter' || e.key === ' ')) {
-                          e.preventDefault();
-                          onTransactionClick(tx.id);
+                      <div
+                        key={tx.id}
+                        className={[
+                          'tx-timeline__card',
+                          onTransactionClick ? 'tx-timeline__card--clickable' : '',
+                          showActions ? 'tx-timeline__card--has-actions' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        role={onTransactionClick ? 'button' : undefined}
+                        tabIndex={onTransactionClick ? 0 : undefined}
+                        onClick={() => onTransactionClick?.(tx.id)}
+                        onKeyDown={(e) => {
+                          if (onTransactionClick && (e.key === 'Enter' || e.key === ' ')) {
+                            e.preventDefault();
+                            onTransactionClick(tx.id);
+                          }
+                        }}
+                        aria-label={
+                          onTransactionClick ? `${tx.merchant} ${formatAmount(tx)}` : undefined
                         }
-                      }}
-                      aria-label={onTransactionClick ? `${tx.merchant} ${formatAmount(tx)}` : undefined}
-                    >
-                      <span className={`tx-timeline__dot tx-timeline__dot--${tx.type}`} aria-hidden />
-                      <div className="tx-timeline__card-body">
-                        <span className="tx-timeline__card-merchant">{tx.merchant}</span>
-                        <span className="tx-timeline__card-subtitle">
-                          {[tx.category, tx.method].filter(Boolean).join(' · ')}
-                        </span>
-                      </div>
-                      <span className={`tx-timeline__card-amount tx-timeline__card-amount--${tx.type}`}>
-                        {formatAmount(tx)}
-                      </span>
-                      {showActions && (
-                        <div className="tx-timeline__card-actions" onClick={(e) => e.stopPropagation()}>
-                          {onEditClick && (
-                            <button
-                              type="button"
-                              className="tx-timeline__card-action"
-                              aria-label={`Edit ${tx.merchant}`}
-                              onClick={() => onEditClick(tx.id)}
-                            >
-                              <Pencil size={14} />
-                            </button>
-                          )}
-                          {onDeleteClick && (
-                            <button
-                              type="button"
-                              className="tx-timeline__card-action tx-timeline__card-action--delete"
-                              aria-label={`Delete ${tx.merchant}`}
-                              onClick={() => onDeleteClick(tx.id)}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
+                      >
+                        <span
+                          className={`tx-timeline__dot tx-timeline__dot--${tx.type}`}
+                          aria-hidden
+                        />
+                        <div className="tx-timeline__card-body">
+                          <span className="tx-timeline__card-merchant">{tx.merchant}</span>
+                          <span className="tx-timeline__card-subtitle">
+                            {[tx.category, tx.method].filter(Boolean).join(' · ')}
+                          </span>
                         </div>
-                      )}
-                    </div>
+                        <span
+                          className={`tx-timeline__card-amount tx-timeline__card-amount--${tx.type}`}
+                        >
+                          {formatAmount(tx)}
+                        </span>
+                        {showActions && (
+                          <div
+                            className="tx-timeline__card-actions"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {onEditClick && (
+                              <button
+                                type="button"
+                                className="tx-timeline__card-action"
+                                aria-label={`Edit ${tx.merchant}`}
+                                onClick={() => onEditClick(tx.id)}
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            )}
+                            {onDeleteClick && (
+                              <button
+                                type="button"
+                                className="tx-timeline__card-action tx-timeline__card-action--delete"
+                                aria-label={`Delete ${tx.merchant}`}
+                                onClick={() => onDeleteClick(tx.id)}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>

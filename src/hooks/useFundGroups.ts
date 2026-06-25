@@ -1,7 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/common/ToastProvider/useToast';
 import {
   apiDeleteV1,
@@ -11,13 +9,23 @@ import {
   getFetchErrorMessage,
 } from '@/lib/query/fetcher';
 import { queryKeys } from '@/lib/query/queryKeys';
-import type { CreateFundGroupDto, FundGroupSummary, UpdateFundGroupDto } from '@/modules/fund-groups/fund-groups.types';
+import type {
+  CreateFundGroupDto,
+  FundGroupSummary,
+  UpdateFundGroupDto,
+} from '@/modules/fund-groups/fund-groups.types';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 export function useFundGroups() {
   const toast = useToast();
   const queryClient = useQueryClient();
 
-  const { data: groups = [], isLoading, isError } = useQuery({
+  const {
+    data: groups = [],
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: queryKeys.fundGroups.list(),
     queryFn: () => apiGetV1<FundGroupSummary[]>('/api/v1/fund-groups?includeArchived=true'),
     staleTime: 60_000,

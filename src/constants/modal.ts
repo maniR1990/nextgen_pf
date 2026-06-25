@@ -14,10 +14,8 @@ export const MODAL_FOCUSABLE_SELECTOR =
 /** Storybook / demo copy */
 export const MODAL_DEMO_TITLE = 'Confirm action';
 
-export const MODAL_DEMO_BODY =
-  'Are you sure you want to continue? This action cannot be undone.';
+export const MODAL_DEMO_BODY = 'Are you sure you want to continue? This action cannot be undone.';
 
 export const MODAL_DEMO_DELETE_TITLE = 'Delete transaction';
 
-export const MODAL_DEMO_DELETE_BODY =
-  'This will permanently remove the selected transaction.';
+export const MODAL_DEMO_DELETE_BODY = 'This will permanently remove the selected transaction.';

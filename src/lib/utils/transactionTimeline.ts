@@ -1,7 +1,7 @@
-import { format } from 'date-fns';
 import type { TimelineGroup } from '@/components/common/TransactionTimeline';
 import { TX_TYPE_META } from '@/constants/finance';
 import type { FinanceTransactionRow } from '@/types/finance';
+import { format } from 'date-fns';
 
 function toDateKey(dateStr: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;

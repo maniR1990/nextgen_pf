@@ -1,7 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/common/ToastProvider/useToast';
 import {
   apiDeleteV1,
@@ -11,15 +9,27 @@ import {
   apiPutV1,
   getFetchErrorMessage,
 } from '@/lib/query/fetcher';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 import { queryKeys } from '@/lib/query/queryKeys';
-import type { CreateFundDto, FundSummary, FundsAggregateSummary, UpdateFundDto, FundAllocationInput } from '@/modules/funds/funds.types';
+import type {
+  CreateFundDto,
+  FundAllocationInput,
+  FundSummary,
+  FundsAggregateSummary,
+  UpdateFundDto,
+} from '@/modules/funds/funds.types';
 
 export function useFundsSettings() {
   const toast = useToast();
   const queryClient = useQueryClient();
 
-  const { data: funds = [], isLoading: fundsLoading, isError: fundsError } = useQuery({
+  const {
+    data: funds = [],
+    isLoading: fundsLoading,
+    isError: fundsError,
+  } = useQuery({
     queryKey: queryKeys.funds.list(),
     queryFn: () => apiGetV1<FundSummary[]>('/api/v1/funds?limit=100&sort=order_asc'),
     staleTime: 60_000,

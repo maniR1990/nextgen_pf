@@ -4,9 +4,7 @@ import type { StorybookConfig } from '@storybook/nextjs-vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 const storybookDir =
-  typeof __dirname !== 'undefined'
-    ? __dirname
-    : path.dirname(fileURLToPath(import.meta.url));
+  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(storybookDir, '..');
 const srcPath = path.resolve(projectRoot, 'src');
 
@@ -16,10 +14,7 @@ const config: StorybookConfig = {
   framework: '@storybook/nextjs-vite',
   staticDirs: ['../public'],
   viteFinal: async (viteConfig) => {
-    viteConfig.plugins = [
-      ...(viteConfig.plugins ?? []),
-      tsconfigPaths({ root: projectRoot }),
-    ];
+    viteConfig.plugins = [...(viteConfig.plugins ?? []), tsconfigPaths({ root: projectRoot })];
 
     const aliasEntry = { find: /^@\//, replacement: `${srcPath}/` };
     const existing = viteConfig.resolve?.alias;

@@ -1,5 +1,11 @@
-import { LOG_LEVELS, type ILogger, type ILoggerProvider, type LogContext, type LogLevel } from '../types';
 import { sanitizeContext } from '../sanitize';
+import {
+  type ILogger,
+  type ILoggerProvider,
+  LOG_LEVELS,
+  type LogContext,
+  type LogLevel,
+} from '../types';
 
 function shouldLog(level: LogLevel, minLevel: LogLevel) {
   return LOG_LEVELS[level] >= LOG_LEVELS[minLevel];

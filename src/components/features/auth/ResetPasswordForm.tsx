@@ -1,9 +1,5 @@
 'use client';
 
-import { Lock } from 'lucide-react';
-import type { Route } from 'next';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { AuthFormHeader } from '@/components/ui/AuthFormHeader';
 import { Button } from '@/components/ui/Button';
@@ -13,6 +9,10 @@ import { AUTH_MESSAGES, AUTH_UI } from '@/constants/auth';
 import { ROUTES } from '@/constants/routes';
 import { parseClientError } from '@/lib/api/parseClientError';
 import { ResetPasswordSchema } from '@/modules/auth/auth.schema';
+import { Lock } from 'lucide-react';
+import type { Route } from 'next';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export interface ResetPasswordFormProps {
   token: string;
@@ -88,10 +88,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       <div className="auth-form">
         <AuthFormHeader title="Link expired" icon={Lock} iconTone="error" />
         <Alert variant="error">{AUTH_MESSAGES.resetTokenExpired}</Alert>
-        <Button
-          type="button"
-          onClick={() => router.push(ROUTES.FORGOT_PASSWORD as Route)}
-        >
+        <Button type="button" onClick={() => router.push(ROUTES.FORGOT_PASSWORD as Route)}>
           Request new link
         </Button>
       </div>

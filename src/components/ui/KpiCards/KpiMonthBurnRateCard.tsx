@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/Badge';
-import { formatKpiMoney } from './formatKpiMoney';
 import { KpiCardShell } from './KpiCardShell';
 import { KpiProgressBar } from './KpiProgressBar';
+import { formatKpiMoney } from './formatKpiMoney';
 import type { KpiMonthBurnRateData } from './schemas';
 import type { KpiCardComponentProps } from './types';
 

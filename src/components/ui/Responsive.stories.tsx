@@ -1,5 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { BREAKPOINT_ORDER, BREAKPOINTS, MOBILE_DESIGN_WIDTH } from '@/constants/breakpoints';
 import {
   chromaticBaseline,
   storySectionStyle,
@@ -9,6 +7,8 @@ import {
   viewportTablet,
   viewportXl,
 } from '@/components/ui/storyLayout';
+import { BREAKPOINTS, BREAKPOINT_ORDER, MOBILE_DESIGN_WIDTH } from '@/constants/breakpoints';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta = {
   title: 'Design System/Responsive',

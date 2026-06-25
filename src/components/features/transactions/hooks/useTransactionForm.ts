@@ -1,21 +1,18 @@
 'use client';
 
-import { useCallback } from 'react';
-import { useTransactionFormStore } from '@/store/transactionFormStore';
-import { CreateTransactionSchema } from '@/modules/transactions/transactions.schema';
-import type { TxType } from '@/constants/finance';
-import type { FormErrors, SuccessData } from '@/store/transactionFormStore';
 import { useToast } from '@/components/common/ToastProvider/useToast';
+import type { TxType } from '@/constants/finance';
 import { TX_TYPE_META } from '@/constants/finance';
+import { CreateTransactionSchema } from '@/modules/transactions/transactions.schema';
+import { useTransactionFormStore } from '@/store/transactionFormStore';
+import type { FormErrors, SuccessData } from '@/store/transactionFormStore';
+import { useCallback } from 'react';
 
 export function useTransactionForm() {
   const store = useTransactionFormStore();
   const toast = useToast();
 
-  const handleTypeChange = useCallback(
-    (type: TxType) => store.setType(type),
-    [store],
-  );
+  const handleTypeChange = useCallback((type: TxType) => store.setType(type), [store]);
 
   const handleFieldChange = useCallback(
     <K extends keyof typeof store.values>(key: K, value: (typeof store.values)[K]) => {
@@ -36,8 +33,8 @@ export function useTransactionForm() {
 
       // Auto-calc amount from units × nav for investments
       if (key === 'units' || key === 'nav') {
-        const units = parseFloat(key === 'units' ? (value as string) : store.values.units);
-        const nav = parseFloat(key === 'nav' ? (value as string) : store.values.nav);
+        const units = Number.parseFloat(key === 'units' ? (value as string) : store.values.units);
+        const nav = Number.parseFloat(key === 'nav' ? (value as string) : store.values.nav);
         if (!isNaN(units) && !isNaN(nav) && units > 0 && nav > 0) {
           store.setField('amount', String((units * nav).toFixed(2)));
         }
@@ -45,8 +42,12 @@ export function useTransactionForm() {
 
       // Auto-calc amount from pts × rate for points redemption
       if (key === 'ptsSpent' || key === 'ptsRate') {
-        const pts = parseFloat(key === 'ptsSpent' ? (value as string) : store.values.ptsSpent);
-        const rate = parseFloat(key === 'ptsRate' ? (value as string) : store.values.ptsRate);
+        const pts = Number.parseFloat(
+          key === 'ptsSpent' ? (value as string) : store.values.ptsSpent,
+        );
+        const rate = Number.parseFloat(
+          key === 'ptsRate' ? (value as string) : store.values.ptsRate,
+        );
         if (!isNaN(pts) && !isNaN(rate) && pts > 0 && rate > 0) {
           store.setField('amount', String((pts * rate).toFixed(2)));
         }
@@ -57,7 +58,7 @@ export function useTransactionForm() {
 
   const validate = useCallback((): FormErrors => {
     const { values } = store;
-    const amountNum = parseFloat(values.amount);
+    const amountNum = Number.parseFloat(values.amount);
     const errors: FormErrors = {};
 
     const result = CreateTransactionSchema.safeParse({
@@ -80,9 +81,9 @@ export function useTransactionForm() {
       recSchedule: values.isRecurring
         ? {
             frequency: values.recFrequency,
-            every: parseInt(values.recEvery) || 1,
+            every: Number.parseInt(values.recEvery) || 1,
             endCondition: values.recEndCondition,
-            count: values.recCount ? parseInt(values.recCount) : undefined,
+            count: values.recCount ? Number.parseInt(values.recCount) : undefined,
             endDate: values.recEndDate || undefined,
           }
         : undefined,
@@ -117,7 +118,7 @@ export function useTransactionForm() {
 
     try {
       const { values } = store;
-      const amountNum = parseFloat(values.amount);
+      const amountNum = Number.parseFloat(values.amount);
 
       const body = {
         type: values.type,
@@ -133,17 +134,22 @@ export function useTransactionForm() {
         isPlanned: values.isPlanned,
         isRecurring: values.isRecurring,
         notes: values.notes || undefined,
-        tags: values.tags ? values.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+        tags: values.tags
+          ? values.tags
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
         // Investment
         assetClass: values.assetClass || undefined,
         fundName: values.fundName || undefined,
-        units: values.units ? parseFloat(values.units) : undefined,
-        nav: values.nav ? parseFloat(values.nav) : undefined,
+        units: values.units ? Number.parseFloat(values.units) : undefined,
+        nav: values.nav ? Number.parseFloat(values.nav) : undefined,
         mfPlan: values.mfPlan || undefined,
         taxSection: values.taxSection || undefined,
         // Income
         incomeType: values.incomeType || undefined,
-        tds: values.tds ? parseFloat(values.tds) : undefined,
+        tds: values.tds ? Number.parseFloat(values.tds) : undefined,
         // Gift
         giftFrom: values.giftFrom || undefined,
         occasion: values.occasion || undefined,
@@ -158,26 +164,26 @@ export function useTransactionForm() {
         origTxRef: values.origTxRef || undefined,
         // Transfer
         txPurpose: values.txPurpose || undefined,
-        txFee: values.txFee ? parseFloat(values.txFee) : undefined,
+        txFee: values.txFee ? Number.parseFloat(values.txFee) : undefined,
         // ATM
         atmLocation: values.atmLocation || undefined,
         atmPurpose: values.atmPurpose || undefined,
         // Refund
         refundReason: values.refundReason || undefined,
         // Coupon
-        origPrice: values.origPrice ? parseFloat(values.origPrice) : undefined,
+        origPrice: values.origPrice ? Number.parseFloat(values.origPrice) : undefined,
         couponCode: values.couponCode || undefined,
         platform: values.platform || undefined,
         // Points
-        ptsSpent: values.ptsSpent ? parseFloat(values.ptsSpent) : undefined,
-        ptsRate: values.ptsRate ? parseFloat(values.ptsRate) : undefined,
+        ptsSpent: values.ptsSpent ? Number.parseFloat(values.ptsSpent) : undefined,
+        ptsRate: values.ptsRate ? Number.parseFloat(values.ptsRate) : undefined,
         // Recurring
         recSchedule: values.isRecurring
           ? {
               frequency: values.recFrequency,
-              every: parseInt(values.recEvery) || 1,
+              every: Number.parseInt(values.recEvery) || 1,
               endCondition: values.recEndCondition,
-              count: values.recCount ? parseInt(values.recCount) : undefined,
+              count: values.recCount ? Number.parseInt(values.recCount) : undefined,
               endDate: values.recEndDate || undefined,
             }
           : undefined,
@@ -223,93 +229,101 @@ export function useTransactionForm() {
     }
   }, [store, validate, toast]);
 
-  const handleUpdate = useCallback(async (editId: string): Promise<boolean> => {
-    const errors = validate();
-    if (Object.keys(errors).length > 0) {
-      store.setErrors(errors);
-      return false;
-    }
-
-    store.setSubmitState('loading');
-
-    try {
-      const { values } = store;
-      const amountNum = parseFloat(values.amount);
-
-      const body = {
-        type: values.type,
-        date: values.date,
-        budgetPeriodYear: values.budgetPeriodYear,
-        budgetPeriodMonth: values.budgetPeriodMonth,
-        amount: amountNum,
-        merchant: values.merchant || undefined,
-        categoryId: values.categoryId || undefined,
-        paymentSourceId: values.sourceId,
-        toAccountId: values.toAccountId || undefined,
-        paymentMethod: values.method,
-        isPlanned: values.isPlanned,
-        isRecurring: values.isRecurring,
-        notes: values.notes || undefined,
-        tags: values.tags ? values.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
-        assetClass: values.assetClass || undefined,
-        fundName: values.fundName || undefined,
-        units: values.units ? parseFloat(values.units) : undefined,
-        nav: values.nav ? parseFloat(values.nav) : undefined,
-        mfPlan: values.mfPlan || undefined,
-        taxSection: values.taxSection || undefined,
-        incomeType: values.incomeType || undefined,
-        tds: values.tds ? parseFloat(values.tds) : undefined,
-        giftFrom: values.giftFrom || undefined,
-        occasion: values.occasion || undefined,
-        sfId: values.sfId || undefined,
-        isTaxDed: values.isTaxDed || undefined,
-        isReimbursable: values.isReimbursable || undefined,
-        reimbDate: values.reimbDate || undefined,
-        reimbFrom: values.reimbFrom || undefined,
-        origTxRef: values.origTxRef || undefined,
-        txPurpose: values.txPurpose || undefined,
-        txFee: values.txFee ? parseFloat(values.txFee) : undefined,
-        atmLocation: values.atmLocation || undefined,
-        atmPurpose: values.atmPurpose || undefined,
-        refundReason: values.refundReason || undefined,
-        origPrice: values.origPrice ? parseFloat(values.origPrice) : undefined,
-        couponCode: values.couponCode || undefined,
-        platform: values.platform || undefined,
-        ptsSpent: values.ptsSpent ? parseFloat(values.ptsSpent) : undefined,
-        ptsRate: values.ptsRate ? parseFloat(values.ptsRate) : undefined,
-        recSchedule: values.isRecurring
-          ? {
-              frequency: values.recFrequency,
-              every: parseInt(values.recEvery) || 1,
-              endCondition: values.recEndCondition,
-              count: values.recCount ? parseInt(values.recCount) : undefined,
-              endDate: values.recEndDate || undefined,
-            }
-          : undefined,
-      };
-
-      const res = await fetch(`/api/v1/transactions/${editId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.error?.message ?? json.error ?? 'Failed to update transaction');
+  const handleUpdate = useCallback(
+    async (editId: string): Promise<boolean> => {
+      const errors = validate();
+      if (Object.keys(errors).length > 0) {
+        store.setErrors(errors);
+        return false;
       }
 
-      store.setSubmitState('success');
-      toast.success('Transaction updated');
-      return true;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Something went wrong';
-      store.setErrors({ _form: message });
-      store.setSubmitState('error');
-      toast.error(message);
-      return false;
-    }
-  }, [store, validate, toast]);
+      store.setSubmitState('loading');
+
+      try {
+        const { values } = store;
+        const amountNum = Number.parseFloat(values.amount);
+
+        const body = {
+          type: values.type,
+          date: values.date,
+          budgetPeriodYear: values.budgetPeriodYear,
+          budgetPeriodMonth: values.budgetPeriodMonth,
+          amount: amountNum,
+          merchant: values.merchant || undefined,
+          categoryId: values.categoryId || undefined,
+          paymentSourceId: values.sourceId,
+          toAccountId: values.toAccountId || undefined,
+          paymentMethod: values.method,
+          isPlanned: values.isPlanned,
+          isRecurring: values.isRecurring,
+          notes: values.notes || undefined,
+          tags: values.tags
+            ? values.tags
+                .split(',')
+                .map((t) => t.trim())
+                .filter(Boolean)
+            : [],
+          assetClass: values.assetClass || undefined,
+          fundName: values.fundName || undefined,
+          units: values.units ? Number.parseFloat(values.units) : undefined,
+          nav: values.nav ? Number.parseFloat(values.nav) : undefined,
+          mfPlan: values.mfPlan || undefined,
+          taxSection: values.taxSection || undefined,
+          incomeType: values.incomeType || undefined,
+          tds: values.tds ? Number.parseFloat(values.tds) : undefined,
+          giftFrom: values.giftFrom || undefined,
+          occasion: values.occasion || undefined,
+          sfId: values.sfId || undefined,
+          isTaxDed: values.isTaxDed || undefined,
+          isReimbursable: values.isReimbursable || undefined,
+          reimbDate: values.reimbDate || undefined,
+          reimbFrom: values.reimbFrom || undefined,
+          origTxRef: values.origTxRef || undefined,
+          txPurpose: values.txPurpose || undefined,
+          txFee: values.txFee ? Number.parseFloat(values.txFee) : undefined,
+          atmLocation: values.atmLocation || undefined,
+          atmPurpose: values.atmPurpose || undefined,
+          refundReason: values.refundReason || undefined,
+          origPrice: values.origPrice ? Number.parseFloat(values.origPrice) : undefined,
+          couponCode: values.couponCode || undefined,
+          platform: values.platform || undefined,
+          ptsSpent: values.ptsSpent ? Number.parseFloat(values.ptsSpent) : undefined,
+          ptsRate: values.ptsRate ? Number.parseFloat(values.ptsRate) : undefined,
+          recSchedule: values.isRecurring
+            ? {
+                frequency: values.recFrequency,
+                every: Number.parseInt(values.recEvery) || 1,
+                endCondition: values.recEndCondition,
+                count: values.recCount ? Number.parseInt(values.recCount) : undefined,
+                endDate: values.recEndDate || undefined,
+              }
+            : undefined,
+        };
+
+        const res = await fetch(`/api/v1/transactions/${editId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          const json = await res.json();
+          throw new Error(json.error?.message ?? json.error ?? 'Failed to update transaction');
+        }
+
+        store.setSubmitState('success');
+        toast.success('Transaction updated');
+        return true;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Something went wrong';
+        store.setErrors({ _form: message });
+        store.setSubmitState('error');
+        toast.error(message);
+        return false;
+      }
+    },
+    [store, validate, toast],
+  );
 
   const handleLogAnother = useCallback(() => {
     const { values } = store;

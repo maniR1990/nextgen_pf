@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, within } from 'storybook/test';
 import { useState } from 'react';
+import { expect, fn, userEvent, within } from 'storybook/test';
 import { CategoryPicker } from './CategoryPicker';
 import type { CategoryPickerOption } from './CategoryPicker';
 

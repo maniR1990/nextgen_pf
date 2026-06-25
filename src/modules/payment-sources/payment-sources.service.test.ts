@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PaymentSourcesService } from './payment-sources.service';
-import { PaymentSourcesRepository } from './payment-sources.repository';
 import { NotFoundError } from '@/lib/api/errors';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PaymentSourcesRepository } from './payment-sources.repository';
+import { PaymentSourcesService } from './payment-sources.service';
 
 vi.mock('./payment-sources.repository');
 
@@ -53,19 +53,23 @@ describe('PaymentSourcesService.updateBalance', () => {
   });
 
   it('throws NotFoundError when source belongs to another user', async () => {
-    vi.mocked(PaymentSourcesRepository.findById).mockResolvedValue(
-      { ...mockSource, userId: 'other' } as never,
+    vi.mocked(PaymentSourcesRepository.findById).mockResolvedValue({
+      ...mockSource,
+      userId: 'other',
+    } as never);
+    await expect(PaymentSourcesService.updateBalance('ps1', 'u1', 60000)).rejects.toThrow(
+      NotFoundError,
     );
-    await expect(PaymentSourcesService.updateBalance('ps1', 'u1', 60000)).rejects.toThrow(NotFoundError);
   });
 });
 
 describe('PaymentSourcesService.getStatement', () => {
   it('returns paginated transactions with hasMore when extra row present', async () => {
     vi.mocked(PaymentSourcesRepository.findById).mockResolvedValue(mockSource as never);
-    vi.mocked(PaymentSourcesRepository.findTransactions).mockResolvedValue(
-      [mockTx, mockTx] as never,
-    );
+    vi.mocked(PaymentSourcesRepository.findTransactions).mockResolvedValue([
+      mockTx,
+      mockTx,
+    ] as never);
     const result = await PaymentSourcesService.getStatement('ps1', 'u1', { limit: 1 });
     expect(result.rows).toHaveLength(1);
     expect(result.hasMore).toBe(true);
@@ -74,9 +78,7 @@ describe('PaymentSourcesService.getStatement', () => {
 
   it('returns all rows without hasMore when at end', async () => {
     vi.mocked(PaymentSourcesRepository.findById).mockResolvedValue(mockSource as never);
-    vi.mocked(PaymentSourcesRepository.findTransactions).mockResolvedValue(
-      [mockTx] as never,
-    );
+    vi.mocked(PaymentSourcesRepository.findTransactions).mockResolvedValue([mockTx] as never);
     const result = await PaymentSourcesService.getStatement('ps1', 'u1', { limit: 20 });
     expect(result.rows).toHaveLength(1);
     expect(result.hasMore).toBe(false);
@@ -84,11 +86,12 @@ describe('PaymentSourcesService.getStatement', () => {
   });
 
   it('throws NotFoundError when source belongs to another user', async () => {
-    vi.mocked(PaymentSourcesRepository.findById).mockResolvedValue(
-      { ...mockSource, userId: 'other' } as never,
+    vi.mocked(PaymentSourcesRepository.findById).mockResolvedValue({
+      ...mockSource,
+      userId: 'other',
+    } as never);
+    await expect(PaymentSourcesService.getStatement('ps1', 'u1', { limit: 20 })).rejects.toThrow(
+      NotFoundError,
     );
-    await expect(
-      PaymentSourcesService.getStatement('ps1', 'u1', { limit: 20 }),
-    ).rejects.toThrow(NotFoundError);
   });
 });

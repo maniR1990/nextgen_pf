@@ -17,7 +17,8 @@ function getLastWorkingDayOfMonth(year: number, month: number): Date {
   // new Date(year, month, 0) = last calendar day of 1-indexed month
   const d = new Date(year, month, 0);
   const dow = d.getDay();
-  if (dow === 0) d.setDate(d.getDate() - 2); // Sun → Fri
+  if (dow === 0)
+    d.setDate(d.getDate() - 2); // Sun → Fri
   else if (dow === 6) d.setDate(d.getDate() - 1); // Sat → Fri
   return d;
 }
@@ -40,7 +41,9 @@ export function getIncomePeriodData(dateStr: string): IncomePeriodData {
   const nextYear = m === 12 ? y + 1 : y;
 
   const monthName = date.toLocaleString('en-IN', { month: 'long' });
-  const nextMonthName = new Date(nextYear, nextMonth - 1, 1).toLocaleString('en-IN', { month: 'long' });
+  const nextMonthName = new Date(nextYear, nextMonth - 1, 1).toLocaleString('en-IN', {
+    month: 'long',
+  });
 
   const recommendNext = isNearEnd;
 
@@ -74,7 +77,7 @@ export function getIncomePeriodData(dateStr: string): IncomePeriodData {
 }
 
 export function formatAmountShort(amountStr: string): string {
-  const n = parseFloat(amountStr);
+  const n = Number.parseFloat(amountStr);
   if (!n || isNaN(n) || n <= 0) return '';
   if (n >= 100000) return `+₹${(n / 100000).toFixed(1).replace(/\.0$/, '')}L`;
   if (n >= 1000) return `+₹${Math.round(n / 1000)}K`;

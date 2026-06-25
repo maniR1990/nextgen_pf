@@ -1,5 +1,5 @@
-import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import type { Prisma } from '@prisma/client';
 
 const SELECT = {
   id: true,
@@ -26,6 +26,5 @@ export const SinkingFundsRepository = {
     return rows.filter((r) => r.archivedAt == null);
   },
 
-  findById: (id: string) =>
-    prisma.fund.findUniqueOrThrow({ where: { id }, select: SELECT }),
+  findById: (id: string) => prisma.fund.findUniqueOrThrow({ where: { id }, select: SELECT }),
 };

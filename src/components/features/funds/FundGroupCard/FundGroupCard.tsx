@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { MoreHorizontal, Plus } from 'lucide-react';
 import type { FundGroupSummary } from '@/modules/fund-groups/fund-groups.types';
+import { MoreHorizontal, Plus } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface FundGroupCardProps {
   group: FundGroupSummary;
@@ -13,7 +13,14 @@ export interface FundGroupCardProps {
   onRestore?: (group: FundGroupSummary) => void;
 }
 
-export function FundGroupCard({ group, fundCount, onAddFund, onEdit, onDelete, onRestore }: FundGroupCardProps) {
+export function FundGroupCard({
+  group,
+  fundCount,
+  onAddFund,
+  onEdit,
+  onDelete,
+  onRestore,
+}: FundGroupCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const canDelete = !group.isSystem && fundCount === 0;
@@ -31,11 +38,16 @@ export function FundGroupCard({ group, fundCount, onAddFund, onEdit, onDelete, o
 
   return (
     <div
-      className={['fund-group-card', isArchived && 'fund-group-card--archived'].filter(Boolean).join(' ')}
+      className={['fund-group-card', isArchived && 'fund-group-card--archived']
+        .filter(Boolean)
+        .join(' ')}
       style={group.color ? ({ '--group-color': group.color } as React.CSSProperties) : undefined}
     >
       <div className="fund-group-card__header">
-        <span className="fund-group-card__dot" style={{ backgroundColor: group.color ?? '#94a3b8' }} />
+        <span
+          className="fund-group-card__dot"
+          style={{ backgroundColor: group.color ?? '#94a3b8' }}
+        />
         <span className="fund-group-card__name">{group.name}</span>
         {isArchived && <span className="fund-group-card__archived-badge">Archived</span>}
 
@@ -58,7 +70,10 @@ export function FundGroupCard({ group, fundCount, onAddFund, onEdit, onDelete, o
                     type="button"
                     role="menuitem"
                     className="fund-group-card__menu-item"
-                    onClick={() => { setMenuOpen(false); onEdit(group); }}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onEdit(group);
+                    }}
                   >
                     Rename
                   </button>
@@ -71,16 +86,23 @@ export function FundGroupCard({ group, fundCount, onAddFund, onEdit, onDelete, o
                       'fund-group-card__menu-item',
                       'fund-group-card__menu-item--danger',
                       !canDelete && 'fund-group-card__menu-item--disabled',
-                    ].filter(Boolean).join(' ')}
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
                     disabled={!canDelete}
                     title={
                       group.isSystem
                         ? 'System groups cannot be deleted'
                         : fundCount > 0
-                        ? `Move or archive all ${fundCount} fund(s) first`
-                        : undefined
+                          ? `Move or archive all ${fundCount} fund(s) first`
+                          : undefined
                     }
-                    onClick={() => { if (canDelete) { setMenuOpen(false); onDelete(group); } }}
+                    onClick={() => {
+                      if (canDelete) {
+                        setMenuOpen(false);
+                        onDelete(group);
+                      }
+                    }}
                   >
                     Delete
                   </button>
@@ -91,9 +113,7 @@ export function FundGroupCard({ group, fundCount, onAddFund, onEdit, onDelete, o
         )}
       </div>
 
-      {group.description && (
-        <p className="fund-group-card__desc">{group.description}</p>
-      )}
+      {group.description && <p className="fund-group-card__desc">{group.description}</p>}
 
       <div className="fund-group-card__footer">
         {!isArchived && (

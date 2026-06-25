@@ -5,10 +5,10 @@ import { seedSystemCategories } from './seeds/system-categories';
 const prisma = new PrismaClient();
 
 const DEFAULT_ACCOUNT_GROUPS = [
-  { name: 'Cash & Bank',   slug: 'cash-bank',    type: 'ASSET'     as const, order: 1 },
-  { name: 'Investments',   slug: 'investments',   type: 'ASSET'     as const, order: 2 },
-  { name: 'Credit Cards',  slug: 'credit-cards',  type: 'LIABILITY' as const, order: 3 },
-  { name: 'Loans',         slug: 'loans',         type: 'LIABILITY' as const, order: 4 },
+  { name: 'Cash & Bank', slug: 'cash-bank', type: 'ASSET' as const, order: 1 },
+  { name: 'Investments', slug: 'investments', type: 'ASSET' as const, order: 2 },
+  { name: 'Credit Cards', slug: 'credit-cards', type: 'LIABILITY' as const, order: 3 },
+  { name: 'Loans', slug: 'loans', type: 'LIABILITY' as const, order: 4 },
 ];
 
 async function seedDefaultAccountGroups(userId: string) {

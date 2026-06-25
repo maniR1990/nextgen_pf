@@ -1,15 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   ACCOUNT_ASSET_TYPES,
   ACCOUNT_LIABILITY_TYPES,
   ACCOUNT_TAX_BENEFIT_TYPES,
-  ACCOUNT_TYPE_META,
   ACCOUNT_TYPES,
+  ACCOUNT_TYPE_META,
   DEFAULT_ACCOUNT_GROUP_TEMPLATES,
+  LEGACY_ACCOUNT_TYPE_MAP,
   getAccountTypeBySlug,
   isAssetAccountType,
   isLiabilityAccountType,
-  LEGACY_ACCOUNT_TYPE_MAP,
 } from './accounts';
 
 describe('Account type taxonomy', () => {

@@ -1,6 +1,6 @@
-import { AccountType } from '@prisma/client';
-import { z } from 'zod';
 import { ACCOUNT_SORT_OPTIONS, ACCOUNT_STATUSES, ACCOUNT_TYPES } from '@/constants/accounts';
+import type { AccountType } from '@prisma/client';
+import { z } from 'zod';
 
 const accountTypeSchema = z.enum(ACCOUNT_TYPES as [AccountType, ...AccountType[]]);
 
@@ -47,7 +47,9 @@ const accountFieldsSchema = z.object({
   interestPaidTotal: z.number().finite().min(0).optional(),
   fundAllocations: z.array(fundAllocationSchema).optional(),
   linkedAccountIds: z.array(z.string().min(1)).optional(),
-  status: z.enum(ACCOUNT_STATUSES as unknown as ['ACTIVE', 'INACTIVE', 'CLOSED', 'FROZEN']).optional(),
+  status: z
+    .enum(ACCOUNT_STATUSES as unknown as ['ACTIVE', 'INACTIVE', 'CLOSED', 'FROZEN'])
+    .optional(),
   isPrimary: z.boolean().optional(),
   isExcludeNetWorth: z.boolean().optional(),
   isHidden: z.boolean().optional(),

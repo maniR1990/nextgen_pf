@@ -1,10 +1,10 @@
-import type { Role } from '@prisma/client';
 import { AUTH } from '@/constants/auth';
-import { UnauthorizedError } from '../errors';
 import { v1FromApiError } from '@/lib/api/v1/envelope';
 import { getCookie } from '@/lib/auth/cookies';
 import { verifyAccessToken } from '@/lib/auth/jwt';
 import { isAccessTokenBlacklisted } from '@/lib/auth/sessionStore';
+import type { Role } from '@prisma/client';
+import { UnauthorizedError } from '../errors';
 import type { Middleware } from './types';
 
 export function withAuth(): Middleware {

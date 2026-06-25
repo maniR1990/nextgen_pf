@@ -23,7 +23,11 @@ export function skeletonClassName({
   className?: string;
 }) {
   const variantClass =
-    variant === 'circle' ? 'skeleton--circle' : variant === 'rect' ? 'skeleton--rect' : 'skeleton--text';
+    variant === 'circle'
+      ? 'skeleton--circle'
+      : variant === 'rect'
+        ? 'skeleton--rect'
+        : 'skeleton--text';
   return ['skeleton', variantClass, className].filter(Boolean).join(' ');
 }
 
@@ -53,7 +57,11 @@ export function Skeleton({
 
 export function SkeletonCard({ className = '' }: { className?: string }) {
   return (
-    <div className={['skeleton-card', className].filter(Boolean).join(' ')} aria-busy aria-label="Loading">
+    <div
+      className={['skeleton-card', className].filter(Boolean).join(' ')}
+      aria-busy
+      aria-label="Loading"
+    >
       <div className="skeleton-card__top">
         <Skeleton variant="circle" />
         <div className="skeleton-card__body">

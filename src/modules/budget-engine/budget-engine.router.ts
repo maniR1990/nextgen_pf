@@ -1,6 +1,6 @@
-import { compose, withAuth, withValidation } from '@/lib/api/middleware';
 import { isApiError } from '@/lib/api/errors';
-import { v1Ok, v1FromApiError } from '@/lib/api/v1/envelope';
+import { compose, withAuth, withValidation } from '@/lib/api/middleware';
+import { v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { getLogger } from '@/lib/logger';
 import { BudgetImpactSchema, UpdateCategoryPlannedSchema } from './budget-engine.schema';
 import { BudgetEngineService } from './budget-engine.service';
@@ -55,10 +55,17 @@ export const v1UpdateCategoryPlanned = compose(
     const year = Number(ctx.params?.year);
     const month = Number(ctx.params?.month);
     const catId = ctx.params?.catId;
-    if (!catId) return v1FromApiError({ message: 'Missing catId', status: 400, code: 'VALIDATION_ERROR' });
+    if (!catId)
+      return v1FromApiError({ message: 'Missing catId', status: 400, code: 'VALIDATION_ERROR' });
 
     const { planned } = await req.json();
-    const result = await BudgetEngineService.updateCategoryPlanned(ctx.session!.id, year, month, catId, planned);
+    const result = await BudgetEngineService.updateCategoryPlanned(
+      ctx.session!.id,
+      year,
+      month,
+      catId,
+      planned,
+    );
     return v1Ok(result);
   } catch (err) {
     if (isApiError(err)) return v1FromApiError(err);

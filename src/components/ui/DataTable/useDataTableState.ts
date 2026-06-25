@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   DATA_TABLE_DEFAULT_PAGE_SIZE,
   DATA_TABLE_DENSITIES,
-  dataTableStorageKey,
   type DataTableDensity,
+  dataTableStorageKey,
 } from '@/constants/dataTable';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   filterRows,
   paginateRows,
@@ -58,7 +58,9 @@ export function useDataTableState<T extends Record<string, unknown>>({
     saved?.columnOrder ?? columns.map((col) => col.key),
   );
   const [hiddenColumns, setHiddenColumns] = useState<string[]>(saved?.hiddenColumns ?? []);
-  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(saved?.columnWidths ?? {});
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
+    saved?.columnWidths ?? {},
+  );
   const [density, setDensity] = useState<DataTableDensity>(
     saved?.density && DATA_TABLE_DENSITIES.includes(saved.density) ? saved.density : 'standard',
   );
@@ -83,12 +85,12 @@ export function useDataTableState<T extends Record<string, unknown>>({
     [data, orderedColumns, globalSearch, columnFilters],
   );
 
-  const sorted = useMemo(() => sortRows(filtered, orderedColumns, sort), [filtered, orderedColumns, sort]);
-
-  const pagination = useMemo(
-    () => paginateRows(sorted, page, pageSize),
-    [sorted, page, pageSize],
+  const sorted = useMemo(
+    () => sortRows(filtered, orderedColumns, sort),
+    [filtered, orderedColumns, sort],
   );
+
+  const pagination = useMemo(() => paginateRows(sorted, page, pageSize), [sorted, page, pageSize]);
 
   useEffect(() => {
     setPage(1);
@@ -111,19 +113,16 @@ export function useDataTableState<T extends Record<string, unknown>>({
     });
   }, []);
 
-  const toggleAllPageRows = useCallback(
-    (ids: string[], checked: boolean) => {
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        ids.forEach((id) => {
-          if (checked) next.add(id);
-          else next.delete(id);
-        });
-        return next;
+  const toggleAllPageRows = useCallback((ids: string[], checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => {
+        if (checked) next.add(id);
+        else next.delete(id);
       });
-    },
-    [],
-  );
+      return next;
+    });
+  }, []);
 
   const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 

@@ -1,6 +1,5 @@
 'use client';
 
-import { Calendar, Building2, ArrowDownUp } from 'lucide-react';
 import {
   TRANSACTION_FILTER_ALL,
   TRANSACTION_FILTER_CHIPS,
@@ -12,6 +11,7 @@ import { apiGetV1 } from '@/lib/query/fetcher';
 import { queryKeys } from '@/lib/query/queryKeys';
 import type { PaymentSourceOption } from '@/types/finance';
 import { useQuery } from '@tanstack/react-query';
+import { ArrowDownUp, Building2, Calendar } from 'lucide-react';
 
 export function TransactionFilterBar() {
   const { filters, setFilters, monthLabel } = useTransactionFilters();

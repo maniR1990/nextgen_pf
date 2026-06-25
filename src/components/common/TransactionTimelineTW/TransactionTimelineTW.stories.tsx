@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { TransactionTimelineTW, DEMO_GROUPS } from './TransactionTimelineTW';
+import { DEMO_GROUPS, TransactionTimelineTW } from './TransactionTimelineTW';
 import type { TimelineTxGroup } from './TransactionTimelineTW';
 
 const meta: Meta<typeof TransactionTimelineTW> = {
@@ -35,14 +35,14 @@ const CUSTOM_JSON: TimelineTxGroup[] = [
   {
     date: '2024-07-01',
     transactions: [
-      { id: 'a', merchant: 'Zepto',       subtitle: 'Groceries · UPI',  amount: -540,   type: 'debit'  },
-      { id: 'b', merchant: 'Freelance',   subtitle: 'Income · IMPS',    amount: 15000,  type: 'credit' },
+      { id: 'a', merchant: 'Zepto', subtitle: 'Groceries · UPI', amount: -540, type: 'debit' },
+      { id: 'b', merchant: 'Freelance', subtitle: 'Income · IMPS', amount: 15000, type: 'credit' },
     ],
   },
   {
     date: '2024-06-30',
     transactions: [
-      { id: 'c', merchant: 'Netflix',     subtitle: 'OTT · Card',       amount: -649,   type: 'debit'  },
+      { id: 'c', merchant: 'Netflix', subtitle: 'OTT · Card', amount: -649, type: 'debit' },
     ],
   },
 ];

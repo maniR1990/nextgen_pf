@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FundsService } from './funds.service';
-import { FundsRepository } from './funds.repository';
-import { FundGroupsRepository } from '@/modules/fund-groups/fund-groups.repository';
 import { FundAllocationNotFoundError, FundNotFoundError } from '@/lib/api/errors';
+import { FundGroupsRepository } from '@/modules/fund-groups/fund-groups.repository';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FundsRepository } from './funds.repository';
+import { FundsService } from './funds.service';
 
 vi.mock('./funds.repository');
 vi.mock('@/modules/fund-groups/fund-groups.repository');
@@ -81,7 +81,11 @@ describe('FundsService.create', () => {
   it('creates a fund without requiring categoryId', async () => {
     vi.mocked(FundsRepository.findAccountsByIds).mockResolvedValue([]);
     vi.mocked(FundsRepository.maxOrder).mockResolvedValue({ _max: { order: 0 } });
-    vi.mocked(FundsRepository.create).mockResolvedValue({ ...mockFund, name: 'Tax Fund', purpose: 'TAX' });
+    vi.mocked(FundsRepository.create).mockResolvedValue({
+      ...mockFund,
+      name: 'Tax Fund',
+      purpose: 'TAX',
+    });
 
     const result = await FundsService.create(userId, {
       name: 'Tax Fund',
@@ -162,10 +166,19 @@ describe('FundsService.setupDefaults', () => {
 
     await FundsService.setupDefaults(userId);
 
-    const createdPurposes = vi.mocked(FundsRepository.create).mock.calls.map(
-      ([data]) => (data as { purpose: string }).purpose,
-    );
-    const expected = ['EMERGENCY', 'OPS', 'GOAL', 'TAX', 'INSURANCE', 'SINKING', 'INVESTMENT', 'WEALTH'];
+    const createdPurposes = vi
+      .mocked(FundsRepository.create)
+      .mock.calls.map(([data]) => (data as { purpose: string }).purpose);
+    const expected = [
+      'EMERGENCY',
+      'OPS',
+      'GOAL',
+      'TAX',
+      'INSURANCE',
+      'SINKING',
+      'INVESTMENT',
+      'WEALTH',
+    ];
     expect(createdPurposes).toEqual(expect.arrayContaining(expected));
     expect(new Set(createdPurposes).size).toBe(8);
   });
@@ -220,6 +233,8 @@ describe('FundsService.getSummary', () => {
 describe('FundsService.update', () => {
   it('throws for wrong owner', async () => {
     vi.mocked(FundsRepository.findById).mockResolvedValue({ ...mockFund, userId: 'other' });
-    await expect(FundsService.update('f1', userId, { name: 'X' })).rejects.toThrow(FundNotFoundError);
+    await expect(FundsService.update('f1', userId, { name: 'X' })).rejects.toThrow(
+      FundNotFoundError,
+    );
   });
 });

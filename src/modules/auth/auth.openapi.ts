@@ -1,7 +1,7 @@
+import { MessageSchema, SessionUserSchema, errorResponse } from '@/lib/openapi/common.schemas';
+import { registry } from '@/lib/openapi/registry';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
-import { errorResponse, MessageSchema, SessionUserSchema } from '@/lib/openapi/common.schemas';
-import { registry } from '@/lib/openapi/registry';
 
 extendZodWithOpenApi(z);
 

@@ -1,6 +1,14 @@
 import { z } from 'zod';
 
-export const INSTITUTION_TYPES = ['BANK', 'NBFC', 'AMC', 'BROKER', 'INSURER', 'WALLET', 'POST_OFFICE'] as const;
+export const INSTITUTION_TYPES = [
+  'BANK',
+  'NBFC',
+  'AMC',
+  'BROKER',
+  'INSURER',
+  'WALLET',
+  'POST_OFFICE',
+] as const;
 
 export const ListInstitutionsQuerySchema = z.object({
   type: z.enum(INSTITUTION_TYPES).optional(),
@@ -13,6 +21,9 @@ export const CreateInstitutionSchema = z.object({
   shortName: z.string().min(1).max(20),
   type: z.enum(INSTITUTION_TYPES),
   logoUrl: z.string().url().optional(),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
   ifscPattern: z.string().max(50).optional(),
 });

@@ -1,10 +1,10 @@
-import { type ReactElement, useRef } from 'react';
-import { cleanup, fireEvent, render, renderHook, screen, act } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'jest-axe';
+import { type ReactElement, useRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_TOAST_DURATION, MAX_TOASTS } from './toast.types';
 import { ToastProvider } from './ToastProvider';
+import { DEFAULT_TOAST_DURATION, MAX_TOASTS } from './toast.types';
 import { useToast } from './useToast';
 
 // --- Test helpers ---
@@ -104,7 +104,12 @@ describe('ToastProvider + useToast', () => {
       function Capture() {
         const toast = useToast();
         return (
-          <button type="button" onClick={() => { capturedId = toast.success('Hi'); }}>
+          <button
+            type="button"
+            onClick={() => {
+              capturedId = toast.success('Hi');
+            }}
+          >
             Show toast
           </button>
         );
@@ -136,14 +141,13 @@ describe('ToastProvider + useToast', () => {
           <>
             <button
               type="button"
-              onClick={() => { capturedId = toast.success('Programmatic', { duration: 0 }); }}
+              onClick={() => {
+                capturedId = toast.success('Programmatic', { duration: 0 });
+              }}
             >
               Show toast
             </button>
-            <button
-              type="button"
-              onClick={() => toast.dismiss(capturedId)}
-            >
+            <button type="button" onClick={() => toast.dismiss(capturedId)}>
               Dismiss by id
             </button>
           </>
@@ -166,12 +170,24 @@ describe('ToastProvider + useToast', () => {
       vi.useFakeTimers();
       function TestComp() {
         const toast = useToast();
-        return <button type="button" onClick={() => toast.success('Auto-dismiss')}>Show toast</button>;
+        return (
+          <button type="button" onClick={() => toast.success('Auto-dismiss')}>
+            Show toast
+          </button>
+        );
       }
-      render(<ToastProvider><TestComp /></ToastProvider>);
-      act(() => { fireEvent.click(screen.getByRole('button', { name: 'Show toast' })); });
+      render(
+        <ToastProvider>
+          <TestComp />
+        </ToastProvider>,
+      );
+      act(() => {
+        fireEvent.click(screen.getByRole('button', { name: 'Show toast' }));
+      });
       expect(screen.getByText('Auto-dismiss')).toBeInTheDocument();
-      act(() => { vi.advanceTimersByTime(DEFAULT_TOAST_DURATION); });
+      act(() => {
+        vi.advanceTimersByTime(DEFAULT_TOAST_DURATION);
+      });
       expect(screen.queryByText('Auto-dismiss')).not.toBeInTheDocument();
     });
 
@@ -179,13 +195,27 @@ describe('ToastProvider + useToast', () => {
       vi.useFakeTimers();
       function TestComp() {
         const toast = useToast();
-        return <button type="button" onClick={() => toast.success('Custom', { duration: 1_000 })}>Show toast</button>;
+        return (
+          <button type="button" onClick={() => toast.success('Custom', { duration: 1_000 })}>
+            Show toast
+          </button>
+        );
       }
-      render(<ToastProvider><TestComp /></ToastProvider>);
-      act(() => { fireEvent.click(screen.getByRole('button', { name: 'Show toast' })); });
-      act(() => { vi.advanceTimersByTime(999); });
+      render(
+        <ToastProvider>
+          <TestComp />
+        </ToastProvider>,
+      );
+      act(() => {
+        fireEvent.click(screen.getByRole('button', { name: 'Show toast' }));
+      });
+      act(() => {
+        vi.advanceTimersByTime(999);
+      });
       expect(screen.getByText('Custom')).toBeInTheDocument();
-      act(() => { vi.advanceTimersByTime(1); });
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
       expect(screen.queryByText('Custom')).not.toBeInTheDocument();
     });
 
@@ -193,11 +223,23 @@ describe('ToastProvider + useToast', () => {
       vi.useFakeTimers();
       function TestComp() {
         const toast = useToast();
-        return <button type="button" onClick={() => toast.success('Persistent', { duration: 0 })}>Show toast</button>;
+        return (
+          <button type="button" onClick={() => toast.success('Persistent', { duration: 0 })}>
+            Show toast
+          </button>
+        );
       }
-      render(<ToastProvider><TestComp /></ToastProvider>);
-      act(() => { fireEvent.click(screen.getByRole('button', { name: 'Show toast' })); });
-      act(() => { vi.advanceTimersByTime(60_000); });
+      render(
+        <ToastProvider>
+          <TestComp />
+        </ToastProvider>,
+      );
+      act(() => {
+        fireEvent.click(screen.getByRole('button', { name: 'Show toast' }));
+      });
+      act(() => {
+        vi.advanceTimersByTime(60_000);
+      });
       expect(screen.getByText('Persistent')).toBeInTheDocument();
     });
   });
@@ -242,7 +284,11 @@ describe('ToastProvider + useToast', () => {
   // accessibility
   describe('accessibility', () => {
     it('renders a landmarks region labelled "Notifications"', () => {
-      render(<ToastProvider><div /></ToastProvider>);
+      render(
+        <ToastProvider>
+          <div />
+        </ToastProvider>,
+      );
       expect(screen.getByRole('region', { name: /notifications/i })).toBeInTheDocument();
     });
 

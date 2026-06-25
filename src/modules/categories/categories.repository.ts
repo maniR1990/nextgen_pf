@@ -1,5 +1,5 @@
-import type { CategoryFlowType, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import type { CategoryFlowType, Prisma } from '@prisma/client';
 
 const CATEGORY_SELECT = {
   id: true,
@@ -55,8 +55,14 @@ export const CategoriesRepository = {
   ) => {
     const typeWhere = options.type ? { type: options.type } : {};
     const [userRows, systemRows] = await Promise.all([
-      prisma.category.findMany({ where: { userId, ...typeWhere }, select: { id: true, archivedAt: true } }),
-      prisma.category.findMany({ where: { userId: null, isSystem: true, ...typeWhere }, select: { id: true, archivedAt: true } }),
+      prisma.category.findMany({
+        where: { userId, ...typeWhere },
+        select: { id: true, archivedAt: true },
+      }),
+      prisma.category.findMany({
+        where: { userId: null, isSystem: true, ...typeWhere },
+        select: { id: true, archivedAt: true },
+      }),
     ]);
     const notArchived = (rows: { archivedAt: Date | null }[]) =>
       options.includeArchived ? rows.length : rows.filter((r) => r.archivedAt == null).length;
@@ -77,12 +83,7 @@ export const CategoriesRepository = {
       where: { categoryId, voidedAt: null },
     }),
 
-  spendByCategoryIds: (
-    userId: string,
-    categoryIds: string[],
-    year: number,
-    month: number,
-  ) => {
+  spendByCategoryIds: (userId: string, categoryIds: string[], year: number, month: number) => {
     if (categoryIds.length === 0) return Promise.resolve([]);
     return prisma.financeTransaction.groupBy({
       by: ['categoryId'],
@@ -115,7 +116,13 @@ export const CategoriesRepository = {
     });
   },
 
-  topTransactions: (userId: string, categoryId: string, year: number, month: number, take: number) =>
+  topTransactions: (
+    userId: string,
+    categoryId: string,
+    year: number,
+    month: number,
+    take: number,
+  ) =>
     prisma.financeTransaction.findMany({
       where: {
         userId,

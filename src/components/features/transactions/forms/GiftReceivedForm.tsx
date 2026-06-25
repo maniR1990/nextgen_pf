@@ -1,23 +1,35 @@
 'use client';
 
 import { FormField } from '@/components/common/FormField';
-import { CommonFormFields } from './CommonFormFields';
-import type { TransactionFormValues, FormErrors } from '@/store/transactionFormStore';
+import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption } from '@/types/finance';
+import { CommonFormFields } from './CommonFormFields';
 
 interface GiftReceivedFormProps {
   values: TransactionFormValues;
   errors: FormErrors;
-  onChange: <K extends keyof TransactionFormValues>(key: K, value: TransactionFormValues[K]) => void;
+  onChange: <K extends keyof TransactionFormValues>(
+    key: K,
+    value: TransactionFormValues[K],
+  ) => void;
   paymentSources: PaymentSourceOption[];
 }
 
-export function GiftReceivedForm({ values, errors, onChange, paymentSources }: GiftReceivedFormProps) {
+export function GiftReceivedForm({
+  values,
+  errors,
+  onChange,
+  paymentSources,
+}: GiftReceivedFormProps) {
   return (
     <div className="tx-form tx-form--gift">
       {/* From | Occasion | Merchant */}
       <div className="tx-form__row">
-        <FormField label="From (Person / Organisation)" htmlFor="tx-gift-from" error={errors.giftFrom}>
+        <FormField
+          label="From (Person / Organisation)"
+          htmlFor="tx-gift-from"
+          error={errors.giftFrom}
+        >
           <input
             id="tx-gift-from"
             type="text"

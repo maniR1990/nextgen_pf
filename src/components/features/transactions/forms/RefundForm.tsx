@@ -3,15 +3,18 @@
 import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
 import { DuplicateDetect } from '@/components/features/transactions/DuplicateDetect';
-import { CommonFormFields } from './CommonFormFields';
 import { REFUND_REASONS } from '@/constants/finance';
-import type { TransactionFormValues, FormErrors } from '@/store/transactionFormStore';
-import type { PaymentSourceOption, DuplicateMatch } from '@/types/finance';
+import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
+import type { DuplicateMatch, PaymentSourceOption } from '@/types/finance';
+import { CommonFormFields } from './CommonFormFields';
 
 interface RefundFormProps {
   values: TransactionFormValues;
   errors: FormErrors;
-  onChange: <K extends keyof TransactionFormValues>(key: K, value: TransactionFormValues[K]) => void;
+  onChange: <K extends keyof TransactionFormValues>(
+    key: K,
+    value: TransactionFormValues[K],
+  ) => void;
   paymentSources: PaymentSourceOption[];
   duplicate: DuplicateMatch | null;
   onDismissDuplicate: () => void;
@@ -35,7 +38,9 @@ export function RefundForm({
           <input
             id="tx-merchant"
             type="text"
-            className={['form-input', errors.merchant && 'form-input--error'].filter(Boolean).join(' ')}
+            className={['form-input', errors.merchant && 'form-input--error']
+              .filter(Boolean)
+              .join(' ')}
             value={values.merchant}
             placeholder="e.g. Flipkart, Swiggy"
             onChange={(e) => onChange('merchant', e.target.value)}

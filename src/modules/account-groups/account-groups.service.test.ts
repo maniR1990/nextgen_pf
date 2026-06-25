@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AccountGroupsService } from './account-groups.service';
-import { AccountGroupsRepository } from './account-groups.repository';
 import {
   AccountGroupHasAccountsError,
   AccountGroupNotFoundError,
   ConflictError,
 } from '@/lib/api/errors';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AccountGroupsRepository } from './account-groups.repository';
+import { AccountGroupsService } from './account-groups.service';
 
 vi.mock('./account-groups.repository');
 
@@ -88,8 +88,8 @@ describe('AccountGroupsService.reorder', () => {
       ...mockGroup,
       userId: 'other',
     });
-    await expect(
-      AccountGroupsService.reorder(userId, [{ id: 'g1', order: 1 }]),
-    ).rejects.toThrow(AccountGroupNotFoundError);
+    await expect(AccountGroupsService.reorder(userId, [{ id: 'g1', order: 1 }])).rejects.toThrow(
+      AccountGroupNotFoundError,
+    );
   });
 });

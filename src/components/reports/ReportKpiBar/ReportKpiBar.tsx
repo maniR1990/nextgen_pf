@@ -1,11 +1,11 @@
 'use client';
 
-import { TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Chip } from '@/components/ui/Chip';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { formatKpiMoney } from '@/components/ui/KpiCards';
-import { useReportKpiData, type ReportKpiData } from '@/hooks/useReportKpiData';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { type ReportKpiData, useReportKpiData } from '@/hooks/useReportKpiData';
+import { TrendingUp } from 'lucide-react';
 
 // ─── Inner (pure presentational) ─────────────────────────────────────────────
 
@@ -14,19 +14,18 @@ export interface ReportKpiBarInnerProps {
 }
 
 export function ReportKpiBarInner({ data }: ReportKpiBarInnerProps) {
-  const fmt = (minor: number) =>
-    formatKpiMoney({ amountMinor: minor, currency: 'INR' });
+  const fmt = (minor: number) => formatKpiMoney({ amountMinor: minor, currency: 'INR' });
 
   const EXPENSE_VARIANT_MAP = {
     success: 'success',
     warning: 'warning',
-    error:   'error',
+    error: 'error',
   } as const;
 
   const BALANCE_CHIP_VARIANT = {
     success: 'success',
     warning: 'neutral',
-    error:   'neutral',
+    error: 'neutral',
   } as const;
 
   return (
@@ -39,7 +38,9 @@ export function ReportKpiBarInner({ data }: ReportKpiBarInnerProps) {
         </span>
         <div className="report-kpi-strip__sub">
           <TrendingUp size={12} aria-hidden className="report-kpi-strip__trend-icon" />
-          <Chip variant="success" action="none">{data.incomeSourceLabel}</Chip>
+          <Chip variant="success" action="none">
+            {data.incomeSourceLabel}
+          </Chip>
         </div>
       </div>
 
@@ -50,12 +51,8 @@ export function ReportKpiBarInner({ data }: ReportKpiBarInnerProps) {
           {fmt(data.expensesSpentMinor)}
         </span>
         <div className="report-kpi-strip__sub">
-          <span className="report-kpi-strip__sub-text">
-            of {fmt(data.expensesBudgetMinor)} ·
-          </span>
-          <Badge variant={EXPENSE_VARIANT_MAP[data.expensesVariant]}>
-            {data.expensesPct}%
-          </Badge>
+          <span className="report-kpi-strip__sub-text">of {fmt(data.expensesBudgetMinor)} ·</span>
+          <Badge variant={EXPENSE_VARIANT_MAP[data.expensesVariant]}>{data.expensesPct}%</Badge>
         </div>
       </div>
 
@@ -66,7 +63,9 @@ export function ReportKpiBarInner({ data }: ReportKpiBarInnerProps) {
           {fmt(data.investedMinor)}
         </span>
         <div className="report-kpi-strip__sub">
-          <Chip variant="brand" action="none">{data.investedLabel}</Chip>
+          <Chip variant="brand" action="none">
+            {data.investedLabel}
+          </Chip>
         </div>
       </div>
 

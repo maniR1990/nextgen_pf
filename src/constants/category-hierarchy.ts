@@ -41,10 +41,7 @@ export const CATEGORY_HIERARCHY_TYPE_TONES: Record<
   transfer: 'neutral',
 };
 
-export const ACCOUNT_HIERARCHY_TYPE_TONES: Record<
-  AccountSideSlug,
-  'success' | 'error'
-> = {
+export const ACCOUNT_HIERARCHY_TYPE_TONES: Record<AccountSideSlug, 'success' | 'error'> = {
   asset: 'success',
   liability: 'error',
 };
@@ -104,4 +101,3 @@ export function getHierarchyTypeTone(
   if (level === 2) return 'neutral';
   return CATEGORY_HIERARCHY_TYPE_TONES[rootType as CategoryFlowTypeSlug] ?? 'neutral';
 }
-

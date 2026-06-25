@@ -1,8 +1,5 @@
 import { EmptyState } from '@/components/ui/EmptyState';
-import {
-  DATA_TABLE_EMPTY_DESCRIPTION,
-  DATA_TABLE_EMPTY_TITLE,
-} from '@/constants/emptyState';
+import { DATA_TABLE_EMPTY_DESCRIPTION, DATA_TABLE_EMPTY_TITLE } from '@/constants/emptyState';
 import type { DataTableEmptyState } from './types';
 
 export function DataTableEmpty({

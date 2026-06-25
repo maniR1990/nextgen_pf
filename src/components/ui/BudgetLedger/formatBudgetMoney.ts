@@ -1,5 +1,5 @@
-import { KPI_DEFAULT_CURRENCY, KPI_DEFAULT_LOCALE } from '@/constants/kpiCards';
 import { formatKpiMoney } from '@/components/ui/KpiCards/formatKpiMoney';
+import { KPI_DEFAULT_CURRENCY, KPI_DEFAULT_LOCALE } from '@/constants/kpiCards';
 
 export function formatBudgetMoney(
   amountMinor: number,

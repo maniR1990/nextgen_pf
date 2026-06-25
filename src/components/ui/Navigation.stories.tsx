@@ -1,5 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { AppIcons, Icon } from '@/components/ui/Icon';
 import { Nav } from '@/components/ui/Nav';
@@ -11,6 +9,8 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
+import { useState } from 'react';
 
 const meta: Meta = {
   title: 'UI/Navigation',
@@ -77,7 +77,11 @@ function NavigationBoard() {
         <Nav
           items={[
             { id: 'dashboard', label: 'Dashboard', icon: <Icon icon={AppIcons.home} size="md" /> },
-            { id: 'transactions', label: 'Transactions', icon: <Icon icon={AppIcons.card} size="md" /> },
+            {
+              id: 'transactions',
+              label: 'Transactions',
+              icon: <Icon icon={AppIcons.card} size="md" />,
+            },
             { id: 'reports', label: 'Reports', icon: <Icon icon={AppIcons.chart} size="md" /> },
           ]}
           activeId={nav}

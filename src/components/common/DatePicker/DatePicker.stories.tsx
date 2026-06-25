@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, within } from 'storybook/test';
 import { useState } from 'react';
+import { expect, fn, userEvent, within } from 'storybook/test';
 import { DatePicker } from './DatePicker';
 
 const chromatic = { chromatic: { disableSnapshot: false } };
@@ -48,7 +48,10 @@ export const RangeMode: Story = {
         label="Date range"
         rangeStart={start}
         rangeEnd={end}
-        onRangeChange={(s, e) => { setStart(s); setEnd(e); }}
+        onRangeChange={(s, e) => {
+          setStart(s);
+          setEnd(e);
+        }}
       />
     );
   },

@@ -1,7 +1,5 @@
 'use client';
 
-import { KeyRound } from 'lucide-react';
-import { useState } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { AuthFormFooter } from '@/components/ui/AuthFormFooter';
 import { AuthFormHeader } from '@/components/ui/AuthFormHeader';
@@ -12,6 +10,8 @@ import { AUTH_MESSAGES } from '@/constants/auth';
 import { ROUTES } from '@/constants/routes';
 import { parseClientError } from '@/lib/api/parseClientError';
 import { ForgotPasswordSchema } from '@/modules/auth/auth.schema';
+import { KeyRound } from 'lucide-react';
+import { useState } from 'react';
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState('');

@@ -1,9 +1,9 @@
-import type { Metadata } from 'next';
-import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
+import { ToastProvider } from '@/components/common/ToastProvider';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
-import { ToastProvider } from '@/components/common/ToastProvider';
+import { GeistMono } from 'geist/font/mono';
+import { GeistSans } from 'geist/font/sans';
+import type { Metadata } from 'next';
 import '@/styles/globals.scss';
 import '@/styles/tailwind.css';
 

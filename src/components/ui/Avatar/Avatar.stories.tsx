@@ -1,4 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import {
   chromaticBaseline,
   storyRowStyle,
@@ -7,12 +6,12 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
-import { Avatar, AvatarGroup, type AvatarColor, type AvatarSize } from './Avatar';
+import type { Meta, StoryObj } from '@storybook/react';
+import { Avatar, type AvatarColor, AvatarGroup, type AvatarSize } from './Avatar';
 
 const SIZES: AvatarSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
 const SIZE_COLORS: AvatarColor[] = ['blue', 'purple', 'green', 'orange', 'red'];
 const ALL_COLORS: AvatarColor[] = ['blue', 'purple', 'green', 'orange', 'red', 'gray'];
-
 
 function SizesRow() {
   return (

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useState } from 'react';
 
 export interface MonthPickerProps {
   value?: { month: number; year: number } | null;
@@ -66,7 +66,7 @@ export function MonthPicker({
         <button
           type="button"
           className="month-picker__nav-btn"
-          onClick={() => canGoBack() && setYear(y => y - 1)}
+          onClick={() => canGoBack() && setYear((y) => y - 1)}
           disabled={!canGoBack() || disabled}
           aria-label="Previous year"
         >
@@ -76,7 +76,7 @@ export function MonthPicker({
         <button
           type="button"
           className="month-picker__nav-btn"
-          onClick={() => canGoForward() && setYear(y => y + 1)}
+          onClick={() => canGoForward() && setYear((y) => y + 1)}
           disabled={!canGoForward() || disabled}
           aria-label="Next year"
         >
@@ -94,7 +94,9 @@ export function MonthPicker({
             isSelected ? 'month-picker__month--selected' : '',
             isCurrent ? 'month-picker__month--current' : '',
             isDisabled ? 'month-picker__month--disabled' : '',
-          ].filter(Boolean).join(' ');
+          ]
+            .filter(Boolean)
+            .join(' ');
           return (
             <button
               key={m}

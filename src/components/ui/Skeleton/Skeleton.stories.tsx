@@ -1,4 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import {
   chromaticBaseline,
   storyRowStyle,
@@ -7,6 +6,7 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
 import { Skeleton, SkeletonCard } from './Skeleton';
 
 const meta: Meta<typeof Skeleton> = {
@@ -24,7 +24,15 @@ export const Primitives: Story = {
   render: () => (
     <div style={storyRowStyle}>
       <Skeleton variant="circle" />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', flex: 1, minWidth: 200 }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--space-2)',
+          flex: 1,
+          minWidth: 200,
+        }}
+      >
         <Skeleton variant="text" />
         <Skeleton variant="text" width="70%" />
         <Skeleton variant="rect" height={32} />

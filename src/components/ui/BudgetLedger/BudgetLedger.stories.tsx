@@ -1,4 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import {
   chromaticBaseline,
   storySectionStyle,
@@ -6,6 +5,7 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
 import { BudgetLedger } from './BudgetLedger';
 import samplePayload from './sampleBudgetLedger.json';
 import { BudgetLedgerPayloadSchema } from './schemas';

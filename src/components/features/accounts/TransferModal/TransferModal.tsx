@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
-import { FormField } from '@/components/common/FormField';
 import { AmountInput } from '@/components/common/AmountInput';
+import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import type { AccountSummary } from '@/modules/accounts/accounts.types';
+import { useState } from 'react';
 
 export interface TransferPayload {
   fromAccountId: string;
@@ -48,9 +48,15 @@ export function TransferModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const parsedAmount = parseFloat(amount);
-    if (!toAccountId) { setError('Select a destination account'); return; }
-    if (!parsedAmount || parsedAmount <= 0) { setError('Enter a valid amount'); return; }
+    const parsedAmount = Number.parseFloat(amount);
+    if (!toAccountId) {
+      setError('Select a destination account');
+      return;
+    }
+    if (!parsedAmount || parsedAmount <= 0) {
+      setError('Enter a valid amount');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
@@ -72,7 +78,9 @@ export function TransferModal({
   return (
     <Modal open={open} onClose={onClose} titleId={TITLE_ID}>
       <Modal.Header>
-        <h2 id={TITLE_ID} className="modal__title">Transfer</h2>
+        <h2 id={TITLE_ID} className="modal__title">
+          Transfer
+        </h2>
         <p className="modal__subtitle">From: {fromAccount?.name}</p>
         <Modal.CloseButton />
       </Modal.Header>
@@ -86,12 +94,7 @@ export function TransferModal({
             onChange={(e) => setToAccountId(e.target.value)}
             required
           />
-          <AmountInput
-            value={amount}
-            onChange={setAmount}
-            label="Amount (₹)"
-            showChips={false}
-          />
+          <AmountInput value={amount} onChange={setAmount} label="Amount (₹)" showChips={false} />
           <FormField label="Date" htmlFor="transfer-date">
             <input
               id="transfer-date"
@@ -112,12 +115,20 @@ export function TransferModal({
               placeholder="e.g. Monthly savings transfer"
             />
           </FormField>
-          {error && <p className="form-field__error" role="alert">{error}</p>}
+          {error && (
+            <p className="form-field__error" role="alert">
+              {error}
+            </p>
+          )}
         </form>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
-        <Button type="submit" form="transfer-form" loading={loading}>Transfer</Button>
+        <Button variant="secondary" onClick={onClose} disabled={loading}>
+          Cancel
+        </Button>
+        <Button type="submit" form="transfer-form" loading={loading}>
+          Transfer
+        </Button>
       </Modal.Footer>
     </Modal>
   );

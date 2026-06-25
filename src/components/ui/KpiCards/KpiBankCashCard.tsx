@@ -1,8 +1,8 @@
 import { Icon } from '@/components/ui/Icon';
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
-import { formatKpiMoney, formatKpiTrendAmount } from './formatKpiMoney';
 import { KpiCardShell } from './KpiCardShell';
 import { KpiSparkline } from './KpiSparkline';
+import { formatKpiMoney, formatKpiTrendAmount } from './formatKpiMoney';
 import type { KpiBankCashData } from './schemas';
 import type { KpiCardComponentProps } from './types';
 
@@ -22,10 +22,7 @@ const TREND_CLASS = {
 
 export function KpiBankCashCard({ data, density }: KpiBankCashCardProps) {
   const TrendIcon = TREND_ICON[data.trend.direction];
-  const trendAmount = formatKpiTrendAmount(
-    Math.abs(data.trend.amountMinor),
-    data.amount.currency,
-  );
+  const trendAmount = formatKpiTrendAmount(Math.abs(data.trend.amountMinor), data.amount.currency);
 
   return (
     <KpiCardShell

@@ -1,7 +1,7 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { Toast } from '@/components/ui/Toast';
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { DEFAULT_TOAST_DURATION, MAX_TOASTS, type ToastItem } from './toast.types';
 
 // --- Internal context ---

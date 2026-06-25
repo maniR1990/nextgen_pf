@@ -17,16 +17,39 @@ export const CreateTransactionSchema = z
   .object({
     userId: z.string().min(1).optional(),
     type: z.enum([
-      'EXPENSE', 'INVESTMENT', 'SINKING_DEPOSIT', 'INCOME', 'GIFT_RECEIVED',
-      'REIMBURSEMENT', 'TRANSFER', 'ATM_WITHDRAWAL', 'REFUND',
-      'COUPON_REDEMPTION', 'POINTS_REDEMPTION',
+      'EXPENSE',
+      'INVESTMENT',
+      'SINKING_DEPOSIT',
+      'INCOME',
+      'GIFT_RECEIVED',
+      'REIMBURSEMENT',
+      'TRANSFER',
+      'ATM_WITHDRAWAL',
+      'REFUND',
+      'COUPON_REDEMPTION',
+      'POINTS_REDEMPTION',
     ]),
     date: z.string().min(1, 'Date is required'),
     budgetPeriodYear: z.number().int().min(2020),
     budgetPeriodMonth: z.number().int().min(1).max(12),
     amount: z.number().positive('Amount must be greater than ₹0'),
     paymentSourceId: z.string().min(1, 'Payment source required'),
-    paymentMethod: z.enum(['UPI', 'NEFT', 'IMPS', 'RTGS', 'CARD_SWIPE', 'CARD_ONLINE', 'CASH', 'CHEQUE', 'AUTO_DEBIT', 'ATM', 'GIFT_CARD', 'POINTS', 'COUPON', 'STORE_CREDIT']),
+    paymentMethod: z.enum([
+      'UPI',
+      'NEFT',
+      'IMPS',
+      'RTGS',
+      'CARD_SWIPE',
+      'CARD_ONLINE',
+      'CASH',
+      'CHEQUE',
+      'AUTO_DEBIT',
+      'ATM',
+      'GIFT_CARD',
+      'POINTS',
+      'COUPON',
+      'STORE_CREDIT',
+    ]),
     isPlanned: z.boolean(),
     isRecurring: z.boolean(),
     status: z.enum(['PENDING', 'CLEARED', 'VOID', 'RECONCILED']).default('PENDING'),
@@ -90,33 +113,69 @@ export const CreateTransactionSchema = z
     recSchedule: recScheduleSchema.optional(),
   })
   .superRefine((data, ctx) => {
-    const requiredMerchant = ['EXPENSE', 'INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND', 'COUPON_REDEMPTION', 'POINTS_REDEMPTION'];
+    const requiredMerchant = [
+      'EXPENSE',
+      'INCOME',
+      'GIFT_RECEIVED',
+      'REIMBURSEMENT',
+      'REFUND',
+      'COUPON_REDEMPTION',
+      'POINTS_REDEMPTION',
+    ];
     if (requiredMerchant.includes(data.type) && !data.merchant?.trim()) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Merchant or description is required', path: ['merchant'] });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Merchant or description is required',
+        path: ['merchant'],
+      });
     }
 
     if (data.type === 'EXPENSE' && !data.categoryId) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Please select a category', path: ['categoryId'] });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Please select a category',
+        path: ['categoryId'],
+      });
     }
 
     if (data.type === 'INVESTMENT' && !data.assetClass) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Asset class is required', path: ['assetClass'] });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Asset class is required',
+        path: ['assetClass'],
+      });
     }
 
     if (data.type === 'SINKING_DEPOSIT' && !data.sfId) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Please select a sinking fund', path: ['sfId'] });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Please select a sinking fund',
+        path: ['sfId'],
+      });
     }
 
     if (data.type === 'INCOME' && !data.categoryId) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Please select a category', path: ['categoryId'] });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Please select a category',
+        path: ['categoryId'],
+      });
     }
 
     if (data.type === 'TRANSFER' && !data.toAccountId) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Destination account is required', path: ['toAccountId'] });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Destination account is required',
+        path: ['toAccountId'],
+      });
     }
 
     if (data.isRecurring && !data.recSchedule) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Recurring schedule is required', path: ['recSchedule'] });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Recurring schedule is required',
+        path: ['recSchedule'],
+      });
     }
   });
 
@@ -143,17 +202,44 @@ export const ListTransactionsQuerySchema = z.object({
 // ── PATCH (full update — all fields optional) ─────────────────────────────────
 
 export const PatchTransactionSchema = z.object({
-  type: z.enum([
-    'EXPENSE', 'INVESTMENT', 'SINKING_DEPOSIT', 'INCOME', 'GIFT_RECEIVED',
-    'REIMBURSEMENT', 'TRANSFER', 'ATM_WITHDRAWAL', 'REFUND',
-    'COUPON_REDEMPTION', 'POINTS_REDEMPTION',
-  ]).optional(),
+  type: z
+    .enum([
+      'EXPENSE',
+      'INVESTMENT',
+      'SINKING_DEPOSIT',
+      'INCOME',
+      'GIFT_RECEIVED',
+      'REIMBURSEMENT',
+      'TRANSFER',
+      'ATM_WITHDRAWAL',
+      'REFUND',
+      'COUPON_REDEMPTION',
+      'POINTS_REDEMPTION',
+    ])
+    .optional(),
   date: z.string().min(1).optional(),
   budgetPeriodYear: z.number().int().min(2020).max(2100).optional(),
   budgetPeriodMonth: z.number().int().min(1).max(12).optional(),
   amount: z.number().positive().optional(),
   paymentSourceId: z.string().min(1).optional(),
-  paymentMethod: z.enum(['UPI', 'NEFT', 'IMPS', 'RTGS', 'CARD_SWIPE', 'CARD_ONLINE', 'CASH', 'CHEQUE', 'AUTO_DEBIT', 'ATM', 'GIFT_CARD', 'POINTS', 'COUPON', 'STORE_CREDIT']).optional(),
+  paymentMethod: z
+    .enum([
+      'UPI',
+      'NEFT',
+      'IMPS',
+      'RTGS',
+      'CARD_SWIPE',
+      'CARD_ONLINE',
+      'CASH',
+      'CHEQUE',
+      'AUTO_DEBIT',
+      'ATM',
+      'GIFT_CARD',
+      'POINTS',
+      'COUPON',
+      'STORE_CREDIT',
+    ])
+    .optional(),
   isPlanned: z.boolean().optional(),
   isRecurring: z.boolean().optional(),
   merchant: z.string().max(120).optional(),

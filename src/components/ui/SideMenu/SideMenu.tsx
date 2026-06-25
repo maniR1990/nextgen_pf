@@ -2,12 +2,12 @@
 
 import { Icon } from '@/components/ui/Icon';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import Link from 'next/link';
 import type { Route } from 'next';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useId, useState } from 'react';
-import { resolveSideMenuIcon } from './resolveSideMenuIcon';
 import { SideMenuFooter } from './SideMenuFooter';
+import { resolveSideMenuIcon } from './resolveSideMenuIcon';
 import type { SideMenuConfigJson, SideMenuItemJson } from './schemas';
 
 export type SideMenuVariant = 'shell' | 'standalone';
@@ -33,12 +33,7 @@ export function sideMenuClassName({
   variant?: SideMenuVariant;
   className?: string;
 }) {
-  return [
-    'side-menu',
-    `side-menu--${variant}`,
-    collapsed && 'side-menu--collapsed',
-    className,
-  ]
+  return ['side-menu', `side-menu--${variant}`, collapsed && 'side-menu--collapsed', className]
     .filter(Boolean)
     .join(' ');
 }

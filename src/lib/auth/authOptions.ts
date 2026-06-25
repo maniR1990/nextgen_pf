@@ -1,11 +1,11 @@
+import { prisma } from '@/lib/db/prisma';
+import { AuthService } from '@/modules/auth';
+import { AuthRepository } from '@/modules/auth/auth.repository';
 import type { NextAuthOptions } from 'next-auth';
-import type { Provider } from 'next-auth/providers/index';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GitHubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
-import { prisma } from '@/lib/db/prisma';
-import { AuthRepository } from '@/modules/auth/auth.repository';
-import { AuthService } from '@/modules/auth';
+import type { Provider } from 'next-auth/providers/index';
 
 const providers: Provider[] = [
   CredentialsProvider({

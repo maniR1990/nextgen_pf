@@ -1,12 +1,22 @@
-import type { Prisma, FinanceTransactionStatus } from '@prisma/client';
-import { prisma } from '@/lib/db/prisma';
 import type { TxType } from '@/constants/finance';
+import { prisma } from '@/lib/db/prisma';
+import type { FinanceTransactionStatus, Prisma } from '@prisma/client';
 
 const TX_INCLUDE = {
   category: { select: { id: true, name: true, path: true } },
   account: { select: { id: true, name: true, type: true } },
   toAccount: { select: { id: true, name: true } },
-  attachmentFiles: { where: { deletedAt: null }, select: { id: true, filename: true, url: true, mimeType: true, sizeBytes: true, uploadedAt: true } },
+  attachmentFiles: {
+    where: { deletedAt: null },
+    select: {
+      id: true,
+      filename: true,
+      url: true,
+      mimeType: true,
+      sizeBytes: true,
+      uploadedAt: true,
+    },
+  },
 } satisfies Prisma.FinanceTransactionInclude;
 
 export const TransactionRepository = {
@@ -50,12 +60,7 @@ export const TransactionRepository = {
       sort = 'date_desc',
     } = options;
 
-    const typeFilter =
-      types && types.length > 0
-        ? { type: { in: types } }
-        : type
-          ? { type }
-          : {};
+    const typeFilter = types && types.length > 0 ? { type: { in: types } } : type ? { type } : {};
 
     const where: Prisma.FinanceTransactionWhereInput = {
       userId,
@@ -98,7 +103,9 @@ export const TransactionRepository = {
       userId,
       ...(type && { type }),
       ...(categoryId && { categoryId }),
-      ...(fromDate || toDate ? { date: { ...(fromDate && { gte: fromDate }), ...(toDate && { lte: toDate }) } } : {}),
+      ...(fromDate || toDate
+        ? { date: { ...(fromDate && { gte: fromDate }), ...(toDate && { lte: toDate }) } }
+        : {}),
       ...(search && { merchant: { contains: search, mode: 'insensitive' as const } }),
     };
     return prisma.financeTransaction.findMany({
@@ -106,12 +113,14 @@ export const TransactionRepository = {
       skip,
       take,
       orderBy: { date: 'desc' },
-      include: { category: { select: { id: true, name: true } }, account: { select: { id: true, name: true, type: true } } },
+      include: {
+        category: { select: { id: true, name: true } },
+        account: { select: { id: true, name: true, type: true } },
+      },
     });
   },
 
-  countByUserId: (userId: string) =>
-    prisma.financeTransaction.count({ where: { userId } }),
+  countByUserId: (userId: string) => prisma.financeTransaction.count({ where: { userId } }),
 
   create: (data: Prisma.FinanceTransactionCreateInput) =>
     prisma.financeTransaction.create({ data, include: TX_INCLUDE }),
@@ -119,8 +128,7 @@ export const TransactionRepository = {
   update: (id: string, data: Prisma.FinanceTransactionUpdateInput) =>
     prisma.financeTransaction.update({ where: { id }, data, include: TX_INCLUDE }),
 
-  hardDelete: (id: string) =>
-    prisma.financeTransaction.delete({ where: { id } }),
+  hardDelete: (id: string) => prisma.financeTransaction.delete({ where: { id } }),
 
   findDuplicates: (userId: string, merchant: string, amount: number, date: Date) => {
     const threeDaysAgo = new Date(date);

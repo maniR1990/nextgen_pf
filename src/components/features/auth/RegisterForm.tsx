@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { AuthDivider } from '@/components/ui/AuthDivider';
 import { AuthFormFooter } from '@/components/ui/AuthFormFooter';
@@ -15,6 +14,7 @@ import { getEnabledOAuthProviders } from '@/constants/oauth';
 import { ROUTES } from '@/constants/routes';
 import { parseClientError } from '@/lib/api/parseClientError';
 import { RegisterSchema } from '@/modules/auth/auth.schema';
+import { useState } from 'react';
 import { VerifyEmailPending } from './VerifyEmailPending';
 
 export function RegisterForm() {

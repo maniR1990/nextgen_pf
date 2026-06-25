@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { UserService } from './users.service';
 import { UserRepository } from './users.repository';
+import { UserService } from './users.service';
 
 vi.mock('./users.repository');
 
@@ -35,7 +35,11 @@ describe('UserService', () => {
       updatedAt: mockUser.updatedAt,
     });
 
-    const result = await UserService.createUser({ email: 'a@b.com', name: 'Alice', password: 'plain' });
+    const result = await UserService.createUser({
+      email: 'a@b.com',
+      name: 'Alice',
+      password: 'plain',
+    });
     const saved = vi.mocked(UserRepository.create).mock.calls[0][0];
     expect(saved.passwordHash).not.toBe('plain');
     expect(result.id).toBeDefined();

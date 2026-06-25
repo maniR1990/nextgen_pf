@@ -1,6 +1,6 @@
-import type { DataTableColumnDef } from './types';
 import { parseDataTableColumns } from './columnSchema';
 import columnJson from './sampleColumns.json';
+import type { DataTableColumnDef } from './types';
 
 export type TransactionRow = {
   id: string;

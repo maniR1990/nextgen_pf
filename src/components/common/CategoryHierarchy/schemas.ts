@@ -1,12 +1,10 @@
 import { CATEGORY_FLOW_TYPE_SLUGS } from '@/constants/categories';
-import {
-  getHierarchyMeta,
-} from '@/constants/category-hierarchy';
+import { getHierarchyMeta } from '@/constants/category-hierarchy';
 import {
   ACCOUNT_SIDE_TYPES,
   HIERARCHY_CRUD_MODES,
-  HIERARCHY_DENSITIES,
   HIERARCHY_DEFAULT_VARIANT,
+  HIERARCHY_DENSITIES,
   HIERARCHY_VARIANTS,
 } from '@/constants/settings';
 import { z } from 'zod';
@@ -15,15 +13,9 @@ const categoryFlowTypeSlugSchema = z.enum(
   CATEGORY_FLOW_TYPE_SLUGS as unknown as [string, ...string[]],
 );
 
-const accountSideTypeSchema = z.enum(
-  ACCOUNT_SIDE_TYPES as unknown as [string, ...string[]],
-);
+const accountSideTypeSchema = z.enum(ACCOUNT_SIDE_TYPES as unknown as [string, ...string[]]);
 
-const categoryHierarchyLevelSchema = z.union([
-  z.literal(0),
-  z.literal(1),
-  z.literal(2),
-]);
+const categoryHierarchyLevelSchema = z.union([z.literal(0), z.literal(1), z.literal(2)]);
 
 export type CategoryHierarchyNodeJson = {
   id: string;
@@ -62,8 +54,7 @@ function validateHierarchyNodes(
   pathPrefix: (string | number)[] = ['nodes'],
 ) {
   const meta = getHierarchyMeta(variant);
-  const rootTypeSchema =
-    variant === 'account' ? accountSideTypeSchema : categoryFlowTypeSlugSchema;
+  const rootTypeSchema = variant === 'account' ? accountSideTypeSchema : categoryFlowTypeSlugSchema;
 
   for (const [index, node] of nodes.entries()) {
     const nodePath = [...pathPrefix, index];

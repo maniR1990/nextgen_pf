@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { FraudDetectedError } from '@/lib/api/errors';
+import { describe, expect, it } from 'vitest';
 import { evaluateFraud } from './evaluator';
 
 describe('evaluateFraud', () => {

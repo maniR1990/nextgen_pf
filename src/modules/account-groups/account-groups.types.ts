@@ -1,5 +1,5 @@
-import type { AccountGroupType } from '@prisma/client';
 import type { AccountGroupSort } from '@/constants/account-groups';
+import type { AccountGroupType } from '@prisma/client';
 
 export interface ListAccountGroupsQuery {
   page?: number;

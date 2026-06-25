@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
 import { Icon } from '@/components/ui/Icon';
+import { MoreHorizontal } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import type { DataTableRowAction } from './types';
 
 interface DataTableRowMenuProps<T> {

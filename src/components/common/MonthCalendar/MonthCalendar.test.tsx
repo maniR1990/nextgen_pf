@@ -28,9 +28,7 @@ describe('MonthCalendar', () => {
 
     it('renders day buttons for June 2026 (30 days)', () => {
       render(<MonthCalendar month={6} year={2026} />);
-      const dayBtns = screen.getAllByRole('gridcell').filter(
-        el => el.tagName === 'BUTTON'
-      );
+      const dayBtns = screen.getAllByRole('gridcell').filter((el) => el.tagName === 'BUTTON');
       expect(dayBtns).toHaveLength(30);
     });
 
@@ -48,7 +46,7 @@ describe('MonthCalendar', () => {
           transactions={TRANSACTIONS}
           selectedDate="2026-06-13"
           onDayClick={vi.fn()}
-        />
+        />,
       );
       expect(screen.getByText('Zepto')).toBeInTheDocument();
       expect(screen.getByText('Salary')).toBeInTheDocument();
@@ -56,7 +54,13 @@ describe('MonthCalendar', () => {
 
     it('shows "No transactions" for day with no transactions', () => {
       render(
-        <MonthCalendar month={6} year={2026} transactions={{}} selectedDate="2026-06-13" onDayClick={vi.fn()} />
+        <MonthCalendar
+          month={6}
+          year={2026}
+          transactions={{}}
+          selectedDate="2026-06-13"
+          onDayClick={vi.fn()}
+        />,
       );
       expect(screen.getByText('No transactions')).toBeInTheDocument();
     });

@@ -1,4 +1,10 @@
 import {
+  CATEGORY_MAX_LEVEL,
+  CATEGORY_STATS_TREND_MONTHS,
+  CATEGORY_TOP_TRANSACTIONS_LIMIT,
+  toCategoryFlowType,
+} from '@/constants/categories';
+import {
   CategoryDepthExceededError,
   CategoryHasTransactionsError,
   CategoryNotFoundError,
@@ -6,12 +12,6 @@ import {
   ForbiddenError,
 } from '@/lib/api/errors';
 import { buildMeta } from '@/lib/api/pagination';
-import {
-  CATEGORY_MAX_LEVEL,
-  CATEGORY_STATS_TREND_MONTHS,
-  CATEGORY_TOP_TRANSACTIONS_LIMIT,
-  toCategoryFlowType,
-} from '@/constants/categories';
 import { CategoriesRepository } from './categories.repository';
 import type {
   CategoryStats,
@@ -65,10 +65,7 @@ function currentBudgetPeriod() {
   return { year: now.getFullYear(), month: now.getMonth() + 1 };
 }
 
-function toTreeNode(
-  row: CategoryRow,
-  monthlySpend: number,
-): Omit<CategoryTreeNode, 'children'> {
+function toTreeNode(row: CategoryRow, monthlySpend: number): Omit<CategoryTreeNode, 'children'> {
   return {
     id: row.id,
     name: row.name,
@@ -79,12 +76,13 @@ function toTreeNode(
     type: row.type,
     monthlyBudget: row.monthlyBudget,
     budgetRollover: row.budgetRollover,
-    matchRules: row.matchRules?.map((r) => ({
-      field: r.field,
-      operator: r.operator,
-      value: r.value as string | number | [number, number],
-      priority: r.priority,
-    })) ?? [],
+    matchRules:
+      row.matchRules?.map((r) => ({
+        field: r.field,
+        operator: r.operator,
+        value: r.value as string | number | [number, number],
+        priority: r.priority,
+      })) ?? [],
     color: row.color,
     icon: row.icon,
     order: row.order,
@@ -158,9 +156,7 @@ export const CategoriesService = {
       rows.filter((r) => r.userId === userId || !r.isSystem).map((r) => r.id),
     );
 
-    const flatNodes = rows.map((row) =>
-      toTreeNode(row, spendMap.get(row.id) ?? 0),
-    );
+    const flatNodes = rows.map((row) => toTreeNode(row, spendMap.get(row.id) ?? 0));
     const tree = buildCategoryTree(flatNodes);
     rollupMonthlySpend(tree);
 
@@ -243,10 +239,12 @@ export const CategoriesService = {
       await CategoriesRepository.update(id, data);
       if (pathUpdates.length > 1) {
         await CategoriesRepository.reorder(
-          pathUpdates.filter((u) => u.id !== id).map(({ id: cid, data: pathData }) => ({
-            id: cid,
-            data: pathData,
-          })),
+          pathUpdates
+            .filter((u) => u.id !== id)
+            .map(({ id: cid, data: pathData }) => ({
+              id: cid,
+              data: pathData,
+            })),
         );
       }
     } else if (Object.keys(data).length > 0) {
@@ -262,7 +260,8 @@ export const CategoriesService = {
     const flat = await CategoriesRepository.findAccessible(userId, { includeArchived: true });
     const userOwned = flat.filter((r) => r.userId === userId);
 
-    const updates: Array<{ id: string; data: Parameters<typeof CategoriesRepository.update>[1] }> = [];
+    const updates: Array<{ id: string; data: Parameters<typeof CategoriesRepository.update>[1] }> =
+      [];
 
     for (const item of items) {
       const node = userOwned.find((r) => r.id === item.id);
@@ -307,7 +306,9 @@ export const CategoriesService = {
     const refreshed = await CategoriesRepository.findAccessible(userId, { includeArchived: true });
     const pathFixes: Array<{ id: string; data: { path: string } }> = [];
     for (const item of items) {
-      const descendants = [...collectDescendantIds(refreshed, item.id)].filter((id) => id !== item.id);
+      const descendants = [...collectDescendantIds(refreshed, item.id)].filter(
+        (id) => id !== item.id,
+      );
       for (const descId of descendants) {
         const desc = refreshed.find((r) => r.id === descId);
         const parent = refreshed.find((r) => r.id === desc?.parentId);

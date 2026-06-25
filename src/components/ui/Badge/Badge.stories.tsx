@@ -1,4 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import {
   chromaticBaseline,
   storyRowStyle,
@@ -7,6 +6,7 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
 import { Badge, type BadgeVariant } from './Badge';
 
 const STATUS: { variant: BadgeVariant; label: string }[] = [

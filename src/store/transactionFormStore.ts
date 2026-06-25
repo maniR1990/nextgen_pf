@@ -1,7 +1,7 @@
 'use client';
 
-import { createAppStore } from '@/lib/stores/createStore';
 import type { TxType } from '@/constants/finance';
+import { createAppStore } from '@/lib/stores/createStore';
 
 export interface TransactionFormValues {
   // Core
@@ -155,7 +155,10 @@ interface TransactionFormState {
   successData: SuccessData | null;
   isDuplicateDismissed: boolean;
 
-  setField: <K extends keyof TransactionFormValues>(key: K, value: TransactionFormValues[K]) => void;
+  setField: <K extends keyof TransactionFormValues>(
+    key: K,
+    value: TransactionFormValues[K],
+  ) => void;
   setType: (type: TxType) => void;
   prefill: (vals: Partial<TransactionFormValues>) => void;
   setErrors: (errors: FormErrors) => void;
@@ -176,22 +179,36 @@ export const useTransactionFormStore = createAppStore<TransactionFormState>(
     isDuplicateDismissed: false,
 
     setField: (key, value) =>
-      set((s) => ({ values: { ...s.values, [key]: value }, errors: { ...s.errors, [key]: undefined } })),
+      set((s) => ({
+        values: { ...s.values, [key]: value },
+        errors: { ...s.errors, [key]: undefined },
+      })),
 
     setType: (type) =>
       set((s) => ({
-        values: { ...buildDefaultValues(), type, date: s.values.date, sourceId: s.values.sourceId, method: s.values.method },
+        values: {
+          ...buildDefaultValues(),
+          type,
+          date: s.values.date,
+          sourceId: s.values.sourceId,
+          method: s.values.method,
+        },
         errors: {},
         isDuplicateDismissed: false,
       })),
 
     prefill: (vals) =>
-      set({ values: { ...buildDefaultValues(), ...vals }, errors: {}, submitState: 'idle', successData: null, isDuplicateDismissed: false }),
+      set({
+        values: { ...buildDefaultValues(), ...vals },
+        errors: {},
+        submitState: 'idle',
+        successData: null,
+        isDuplicateDismissed: false,
+      }),
 
     setErrors: (errors) => set({ errors }),
 
-    clearError: (key) =>
-      set((s) => ({ errors: { ...s.errors, [key]: undefined } })),
+    clearError: (key) => set((s) => ({ errors: { ...s.errors, [key]: undefined } })),
 
     setSubmitState: (state) => set({ submitState: state }),
 

@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
 import type { BadgeVariant } from '@/components/ui/Badge';
 import type { DataTableDensity } from '@/constants/dataTable';
+import type { ReactNode } from 'react';
 
 export type DataTableColumnType = 'text' | 'date' | 'amount' | 'badge' | 'transaction';
 

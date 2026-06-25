@@ -1,19 +1,22 @@
 'use client';
 
+import { CascadingCategoryPicker } from '@/components/common/CascadingCategoryPicker';
 import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
-import { CascadingCategoryPicker } from '@/components/common/CascadingCategoryPicker';
 import { BudgetImpactStrip } from '@/components/features/transactions/BudgetImpactStrip';
 import { DuplicateDetect } from '@/components/features/transactions/DuplicateDetect';
 import { TAX_SECTIONS } from '@/constants/finance';
-import type { TransactionFormValues, FormErrors } from '@/store/transactionFormStore';
-import type { PaymentSourceOption, BudgetImpact, DuplicateMatch } from '@/types/finance';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
+import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
+import type { BudgetImpact, DuplicateMatch, PaymentSourceOption } from '@/types/finance';
 
 interface ExpenseFormProps {
   values: TransactionFormValues;
   errors: FormErrors;
-  onChange: <K extends keyof TransactionFormValues>(key: K, value: TransactionFormValues[K]) => void;
+  onChange: <K extends keyof TransactionFormValues>(
+    key: K,
+    value: TransactionFormValues[K],
+  ) => void;
   paymentSources: PaymentSourceOption[];
   categoryGroups: PickerGroup[];
   budgetImpact: BudgetImpact | null;
@@ -37,13 +40,19 @@ export function ExpenseForm({
 
   return (
     <div className="tx-form tx-form--expense">
-
       {/* Merchant */}
-      <FormField label="Merchant / Description" htmlFor="tx-merchant" error={errors.merchant} required>
+      <FormField
+        label="Merchant / Description"
+        htmlFor="tx-merchant"
+        error={errors.merchant}
+        required
+      >
         <input
           id="tx-merchant"
           type="text"
-          className={['form-input', errors.merchant && 'form-input--error'].filter(Boolean).join(' ')}
+          className={['form-input', errors.merchant && 'form-input--error']
+            .filter(Boolean)
+            .join(' ')}
           value={values.merchant}
           placeholder="e.g. BigBasket, Swiggy..."
           onChange={(e) => onChange('merchant', e.target.value)}
@@ -57,7 +66,9 @@ export function ExpenseForm({
         value={values.categoryId || null}
         onChange={(id) => onChange('categoryId', id ?? '')}
         error={errors.categoryId}
-        onCreateL2={onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined}
+        onCreateL2={
+          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+        }
       />
 
       {duplicate && <DuplicateDetect duplicate={duplicate} onDismiss={onDismissDuplicate} />}
@@ -72,14 +83,24 @@ export function ExpenseForm({
         <div className="tx-form__toggle-chips">
           <button
             type="button"
-            className={['tx-form__toggle-chip', !values.isTaxDed ? 'tx-form__toggle-chip--active' : ''].filter(Boolean).join(' ')}
+            className={[
+              'tx-form__toggle-chip',
+              !values.isTaxDed ? 'tx-form__toggle-chip--active' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             onClick={() => onChange('isTaxDed', false)}
           >
             No
           </button>
           <button
             type="button"
-            className={['tx-form__toggle-chip', values.isTaxDed ? 'tx-form__toggle-chip--active' : ''].filter(Boolean).join(' ')}
+            className={[
+              'tx-form__toggle-chip',
+              values.isTaxDed ? 'tx-form__toggle-chip--active' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             onClick={() => onChange('isTaxDed', true)}
           >
             Yes
@@ -97,14 +118,24 @@ export function ExpenseForm({
           <div className="tx-form__toggle-chips">
             <button
               type="button"
-              className={['tx-form__toggle-chip', !values.isReimbursable ? 'tx-form__toggle-chip--active' : ''].filter(Boolean).join(' ')}
+              className={[
+                'tx-form__toggle-chip',
+                !values.isReimbursable ? 'tx-form__toggle-chip--active' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               onClick={() => onChange('isReimbursable', false)}
             >
               No
             </button>
             <button
               type="button"
-              className={['tx-form__toggle-chip', values.isReimbursable ? 'tx-form__toggle-chip--active' : ''].filter(Boolean).join(' ')}
+              className={[
+                'tx-form__toggle-chip',
+                values.isReimbursable ? 'tx-form__toggle-chip--active' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               onClick={() => onChange('isReimbursable', true)}
             >
               Yes
@@ -162,7 +193,6 @@ export function ExpenseForm({
           )}
         </div>
       )}
-
     </div>
   );
 }

@@ -11,14 +11,14 @@
  *   return <TransactionDialog open={...} onClose={...} />;
  */
 
-import { useQueryClient } from '@tanstack/react-query';
 import { AddTransactionModal } from '@/components/features/transactions/AddTransactionModal';
-import { useFormOptions } from './hooks/useFormOptions';
 import { queryKeys } from '@/lib/query/queryKeys';
-import type { FormOptions } from './hooks/useFormOptions';
-import type { PaymentSourceOption, CategoryOption, SinkingFundOption } from '@/types/finance';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import type { TransactionFormValues } from '@/store/transactionFormStore';
+import type { CategoryOption, PaymentSourceOption, SinkingFundOption } from '@/types/finance';
+import { useQueryClient } from '@tanstack/react-query';
+import { useFormOptions } from './hooks/useFormOptions';
+import type { FormOptions } from './hooks/useFormOptions';
 
 export interface TransactionDialogProps {
   open: boolean;
@@ -65,9 +65,17 @@ function toSinkingFundOption(f: FormOptions['sinkingFunds'][number]): SinkingFun
   };
 }
 
-export function TransactionDialog({ open, onClose, initialOptions, onSuccess, editId, prefillValues }: TransactionDialogProps) {
+export function TransactionDialog({
+  open,
+  onClose,
+  initialOptions,
+  onSuccess,
+  editId,
+  prefillValues,
+}: TransactionDialogProps) {
   const queryClient = useQueryClient();
-  const { sources, categories, categoryGroups, sinkingFunds, isLoading } = useFormOptions(initialOptions);
+  const { sources, categories, categoryGroups, sinkingFunds, isLoading } =
+    useFormOptions(initialOptions);
 
   const handleClose = () => {
     onClose();

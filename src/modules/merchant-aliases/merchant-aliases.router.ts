@@ -1,6 +1,6 @@
-import { compose, withAuth, withValidation } from '@/lib/api/middleware';
 import { isApiError } from '@/lib/api/errors';
-import { v1Ok, v1Created, v1FromApiError } from '@/lib/api/v1/envelope';
+import { compose, withAuth, withValidation } from '@/lib/api/middleware';
+import { v1Created, v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { getLogger } from '@/lib/logger';
 import { CreateMerchantAliasSchema, MatchMerchantSchema } from './merchant-aliases.schema';
 import { MerchantAliasesService } from './merchant-aliases.service';

@@ -1,4 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { Progress } from '@/components/ui/Progress';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import {
@@ -7,6 +6,7 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta = {
   title: 'UI/Progress & Loading',

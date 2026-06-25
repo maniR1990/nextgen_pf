@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { groupTransactionsByDate } from './transactionTimeline';
 import type { FinanceTransactionRow } from '@/types/finance';
+import { describe, expect, it } from 'vitest';
+import { groupTransactionsByDate } from './transactionTimeline';
 
 const row = (overrides: Partial<FinanceTransactionRow>): FinanceTransactionRow => ({
   id: '1',

@@ -1,11 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AccountsService } from './accounts.service';
+import { AccountArchiveBlockedError, AccountNotFoundError, ConflictError } from '@/lib/api/errors';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccountsRepository } from './accounts.repository';
-import {
-  AccountArchiveBlockedError,
-  AccountNotFoundError,
-  ConflictError,
-} from '@/lib/api/errors';
+import { AccountsService } from './accounts.service';
 
 vi.mock('./accounts.repository');
 
@@ -91,13 +87,21 @@ describe('AccountsService.list', () => {
     const { data, meta } = await AccountsService.list(userId, { page: 1, limit: 20 });
     expect(data).toHaveLength(1);
     expect(data[0].accounts).toHaveLength(1);
-    expect(meta.netWorth).toEqual({ totalAssets: 50000, totalLiabilities: 0, netWorth: 50000, currency: 'INR' });
+    expect(meta.netWorth).toEqual({
+      totalAssets: 50000,
+      totalLiabilities: 0,
+      netWorth: 50000,
+      currency: 'INR',
+    });
   });
 });
 
 describe('AccountsService.getById', () => {
   it('throws AccountNotFoundError for wrong owner', async () => {
-    vi.mocked(AccountsRepository.findById).mockResolvedValue({ ...mockAccount, userId: 'other' } as never);
+    vi.mocked(AccountsRepository.findById).mockResolvedValue({
+      ...mockAccount,
+      userId: 'other',
+    } as never);
     await expect(AccountsService.getById('a1', userId)).rejects.toThrow(AccountNotFoundError);
   });
 });
@@ -114,7 +118,9 @@ describe('AccountsService.archive', () => {
   it('blocks archive when fund allocations are active', async () => {
     vi.mocked(AccountsRepository.findById).mockResolvedValue({
       ...mockAccount,
-      fundAllocations: [{ fundId: 'f1', accountId: 'a1', type: 'PERCENTAGE', value: 0.2, priority: 0 }],
+      fundAllocations: [
+        { fundId: 'f1', accountId: 'a1', type: 'PERCENTAGE', value: 0.2, priority: 0 },
+      ],
     } as never);
     await expect(AccountsService.archive('a1', userId)).rejects.toThrow(AccountArchiveBlockedError);
   });

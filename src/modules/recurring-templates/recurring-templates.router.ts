@@ -1,6 +1,6 @@
-import { compose, withAuth, withValidation } from '@/lib/api/middleware';
 import { isApiError } from '@/lib/api/errors';
-import { v1Ok, v1Created, v1FromApiError } from '@/lib/api/v1/envelope';
+import { compose, withAuth, withValidation } from '@/lib/api/middleware';
+import { v1Created, v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { getLogger } from '@/lib/logger';
 import {
   CreateRecurringTemplateSchema,
@@ -44,7 +44,8 @@ export const v1UpdateTemplate = compose(
 )(async (req, ctx) => {
   try {
     const id = ctx.params?.id;
-    if (!id) return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
+    if (!id)
+      return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
     const body = await req.json();
     const dto = PatchRecurringTemplateSchema.parse(body);
     const template = await RecurringTemplatesService.update(id, ctx.session!.id, dto);
@@ -62,7 +63,8 @@ export const v1PreviewOccurrences = compose(
 )(async (req, ctx) => {
   try {
     const id = ctx.params?.id;
-    if (!id) return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
+    if (!id)
+      return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
     const body = await req.json().catch(() => ({}));
     const { count } = PreviewOccurrencesSchema.parse(body);
     const result = await RecurringTemplatesService.previewOccurrences(id, ctx.session!.id, count);
@@ -77,7 +79,8 @@ export const v1PreviewOccurrences = compose(
 export const v1GenerateOccurrence = compose(withAuth())(async (_req, ctx) => {
   try {
     const id = ctx.params?.id;
-    if (!id) return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
+    if (!id)
+      return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
     const result = await RecurringTemplatesService.generate(id, ctx.session!.id);
     return v1Created(result);
   } catch (err) {

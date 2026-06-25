@@ -1,8 +1,8 @@
 'use client';
 
-import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { type ReactNode, createContext, useContext, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalContextValue {
   onClose: () => void;
@@ -50,7 +50,7 @@ function ModalRoot({ open, onClose, children, size = 'md', 'aria-label': ariaLab
       document.body.style.overflow = '';
       prev?.focus();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   if (!open) return null;
@@ -97,12 +97,7 @@ function ModalHeader({ title, subtitle, children }: ModalHeaderProps) {
         {subtitle && <p className="modal__subtitle">{subtitle}</p>}
       </div>
       {children}
-      <button
-        type="button"
-        className="modal__close"
-        onClick={onClose}
-        aria-label="Close modal"
-      >
+      <button type="button" className="modal__close" onClick={onClose} aria-label="Close modal">
         <X size={20} aria-hidden />
       </button>
     </div>
@@ -117,11 +112,7 @@ interface ModalBodyProps {
 }
 
 function ModalBody({ children, className = '' }: ModalBodyProps) {
-  return (
-    <div className={['modal__body', className].filter(Boolean).join(' ')}>
-      {children}
-    </div>
-  );
+  return <div className={['modal__body', className].filter(Boolean).join(' ')}>{children}</div>;
 }
 
 // Footer

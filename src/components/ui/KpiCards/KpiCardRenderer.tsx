@@ -1,8 +1,4 @@
-import {
-  KPI_CARD_DENSITY,
-  KPI_CARD_TYPE,
-  type KpiCardDensity,
-} from '@/constants/kpiCards';
+import { KPI_CARD_DENSITY, KPI_CARD_TYPE, type KpiCardDensity } from '@/constants/kpiCards';
 import { KpiBankCashCard } from './KpiBankCashCard';
 import { KpiCashRunwayCard } from './KpiCashRunwayCard';
 import { KpiCcDebtCard } from './KpiCcDebtCard';
@@ -61,10 +57,7 @@ export function kpiDashboardGridClassName({
     .join(' ');
 }
 
-export function KpiCardsGrid({
-  cards,
-  density = KPI_CARD_DENSITY.COMFORTABLE,
-}: KpiCardsGridProps) {
+export function KpiCardsGrid({ cards, density = KPI_CARD_DENSITY.COMFORTABLE }: KpiCardsGridProps) {
   return (
     <div className={kpiDashboardGridClassName({ density })}>
       {cards.map((item, index) => (

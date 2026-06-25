@@ -78,8 +78,6 @@ export function useBudgetLedgerApi() {
     updateLine: (id: string, values: BudgetLineFormValues) =>
       updateMutation.mutateAsync({ id, values }),
     deleteLine: deleteMutation.mutateAsync,
-    isMutating:
-      createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+    isMutating: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
   };
 }
-

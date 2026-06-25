@@ -1,16 +1,8 @@
-import {
-  handleDeleteUser,
-  handleGetUser,
-  handleUpdateUser,
-} from '@/modules/users';
+import { handleDeleteUser, handleGetUser, handleUpdateUser } from '@/modules/users';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
-async function withParams(
-  handler: typeof handleGetUser,
-  req: Request,
-  { params }: RouteParams,
-) {
+async function withParams(handler: typeof handleGetUser, req: Request, { params }: RouteParams) {
   const { id } = await params;
   return handler(req, { params: { id } });
 }

@@ -14,8 +14,8 @@ export function formatINRCompact(amount: number): string {
   const abs = Math.abs(amount);
   const sign = amount < 0 ? '−' : '';
   if (abs >= 10_000_000) return `${sign}₹${(abs / 10_000_000).toFixed(1)}Cr`;
-  if (abs >= 100_000)    return `${sign}₹${(abs / 100_000).toFixed(1)}L`;
-  if (abs >= 1_000)      return `${sign}₹${(abs / 1_000).toFixed(1)}K`;
+  if (abs >= 100_000) return `${sign}₹${(abs / 100_000).toFixed(1)}L`;
+  if (abs >= 1_000) return `${sign}₹${(abs / 1_000).toFixed(1)}K`;
   return `${sign}₹${abs}`;
 }
 

@@ -1,7 +1,7 @@
-import { useCallback, useContext, useMemo } from 'react';
 import type { ToastVariant } from '@/components/ui/Toast';
-import { DEFAULT_TOAST_DURATION, type ToastApi, type ToastOptions } from './toast.types';
+import { useCallback, useContext, useMemo } from 'react';
 import { ToastContext } from './ToastProvider';
+import { DEFAULT_TOAST_DURATION, type ToastApi, type ToastOptions } from './toast.types';
 
 function useToastMethod(variant: ToastVariant) {
   const ctx = useContext(ToastContext);

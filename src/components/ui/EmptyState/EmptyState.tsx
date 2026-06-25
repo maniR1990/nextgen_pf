@@ -1,7 +1,5 @@
 'use client';
 
-import { Inbox, type LucideIcon } from 'lucide-react';
-import type { HTMLAttributes } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Icon, type IconTone } from '@/components/ui/Icon';
 import {
@@ -9,6 +7,8 @@ import {
   EMPTY_STATE_DEFAULT_SIZE,
   type EmptyStateSize,
 } from '@/constants/emptyState';
+import { Inbox, type LucideIcon } from 'lucide-react';
+import type { HTMLAttributes } from 'react';
 
 const SIZE_CLASS: Record<EmptyStateSize, string | null> = {
   sm: 'empty-state--sm',

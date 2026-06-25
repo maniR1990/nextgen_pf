@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
 import { CategoryHierarchy } from '@/components/common/CategoryHierarchy';
-import type { CategoryHierarchyNodeJson } from '@/components/common/CategoryHierarchy/schemas';
 import type { CategoryHierarchyCrudHandlers } from '@/components/common/CategoryHierarchy/CategoryHierarchyTreeNode';
+import type { CategoryHierarchyNodeJson } from '@/components/common/CategoryHierarchy/schemas';
 import { useSettingsTab } from '@/hooks/useSettingsTab';
+import { useMemo } from 'react';
 import type { SettingsPageConfigJson } from './schemas';
 
 export interface SettingsWorkspaceProps extends CategoryHierarchyCrudHandlers {

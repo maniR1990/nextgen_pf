@@ -1,16 +1,21 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { formatINR } from '@/lib/utils/format';
 import type { AppFooterConfig, FooterItem } from '@/lib/schemas/appFooter';
 import type { AppHeaderData } from '@/lib/schemas/appHeader';
+import { formatINR } from '@/lib/utils/format';
+import Link from 'next/link';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface AppFooterProps {
   config: AppFooterConfig;
-  data: Pick<AppHeaderData,
-    'pendingCount' | 'spendPaceLabel' | 'spendPaceChangePct' | 'unallocated' |
-    'nextRecurringLabel' | 'monthClosesLabel'
+  data: Pick<
+    AppHeaderData,
+    | 'pendingCount'
+    | 'spendPaceLabel'
+    | 'spendPaceChangePct'
+    | 'unallocated'
+    | 'nextRecurringLabel'
+    | 'monthClosesLabel'
   >;
   onLogTransaction: () => void;
   onCommandPalette: () => void;
@@ -36,7 +41,9 @@ export function AppFooter({ config, data, onLogTransaction, onCommandPalette }: 
 
   useEffect(() => {
     timerRef.current = setTimeout(() => setCollapsed(true), config.collapseAfterMs);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [config.collapseAfterMs]);
 
   function handleShortcut(action: string) {
@@ -56,7 +63,7 @@ export function AppFooter({ config, data, onLogTransaction, onCommandPalette }: 
           {config.items.map((item) => {
             const value = resolveItemValue(item, data);
             const change = item.changeKey
-              ? (data as Record<string, unknown>)[item.changeKey] as number | undefined
+              ? ((data as Record<string, unknown>)[item.changeKey] as number | undefined)
               : undefined;
 
             const content = (
@@ -64,9 +71,7 @@ export function AppFooter({ config, data, onLogTransaction, onCommandPalette }: 
                 <span className="app-footer__item-label">{item.label}</span>
                 <span className="app-footer__item-value">
                   {value}
-                  {item.badge && (
-                    <span className="app-footer__badge">{item.badge}</span>
-                  )}
+                  {item.badge && <span className="app-footer__badge">{item.badge}</span>}
                   {change !== undefined && (
                     <span
                       className={[
@@ -74,7 +79,8 @@ export function AppFooter({ config, data, onLogTransaction, onCommandPalette }: 
                         change >= 0 ? 'app-footer__change--up' : 'app-footer__change--down',
                       ].join(' ')}
                     >
-                      {change >= 0 ? '+' : '−'}{Math.abs(change).toFixed(0)}%
+                      {change >= 0 ? '+' : '−'}
+                      {Math.abs(change).toFixed(0)}%
                     </span>
                   )}
                 </span>

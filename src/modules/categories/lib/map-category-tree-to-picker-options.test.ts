@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { mapCategoryTreeToPickerOptions } from './map-category-tree-to-picker-options';
 import type { CategoryTreeNode } from '../categories.types';
+import { mapCategoryTreeToPickerOptions } from './map-category-tree-to-picker-options';
 
-function baseNode(overrides: Partial<CategoryTreeNode> & Pick<CategoryTreeNode, 'id' | 'name' | 'level'>): CategoryTreeNode {
+function baseNode(
+  overrides: Partial<CategoryTreeNode> & Pick<CategoryTreeNode, 'id' | 'name' | 'level'>,
+): CategoryTreeNode {
   return {
     slug: overrides.id,
     parentId: null,

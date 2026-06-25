@@ -1,8 +1,8 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
-import { getEnabledOAuthProviders, type OAuthProviderId } from '@/constants/oauth';
+import { type OAuthProviderId, getEnabledOAuthProviders } from '@/constants/oauth';
+import { signIn } from 'next-auth/react';
 
 const OAUTH_CALLBACK = '/api/auth/oauth/complete';
 

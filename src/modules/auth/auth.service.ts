@@ -1,5 +1,3 @@
-import bcrypt from 'bcryptjs';
-import { Prisma } from '@prisma/client';
 import { AUTH, AUTH_MESSAGES } from '@/constants/auth';
 import {
   ConflictError,
@@ -8,7 +6,6 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from '@/lib/api/errors';
-import { generateSecureToken } from '@/lib/auth/tokens';
 import { signAccessToken, signRefreshToken } from '@/lib/auth/jwt';
 import {
   blacklistAccessToken,
@@ -16,10 +13,13 @@ import {
   revokeRefreshToken,
   storeRefreshToken,
 } from '@/lib/auth/sessionStore';
+import { generateSecureToken } from '@/lib/auth/tokens';
+import { prisma } from '@/lib/db/prisma';
 import { sendAuthEmail } from '@/lib/email/sendAuthEmail';
 import { getLogger } from '@/lib/logger';
 import { UserRepository } from '@/modules/users/users.repository';
-import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { AuthRepository } from './auth.repository';
 import type {
   AuthTokens,
@@ -80,10 +80,38 @@ export const AuthService = {
 
       await prisma.accountGroup.createMany({
         data: [
-          { name: 'Cash & Bank',  slug: 'cash-bank',   type: 'ASSET',     order: 1, userId: user.id, isDefault: true },
-          { name: 'Investments',  slug: 'investments',  type: 'ASSET',     order: 2, userId: user.id, isDefault: true },
-          { name: 'Credit Cards', slug: 'credit-cards', type: 'LIABILITY', order: 3, userId: user.id, isDefault: true },
-          { name: 'Loans',        slug: 'loans',        type: 'LIABILITY', order: 4, userId: user.id, isDefault: true },
+          {
+            name: 'Cash & Bank',
+            slug: 'cash-bank',
+            type: 'ASSET',
+            order: 1,
+            userId: user.id,
+            isDefault: true,
+          },
+          {
+            name: 'Investments',
+            slug: 'investments',
+            type: 'ASSET',
+            order: 2,
+            userId: user.id,
+            isDefault: true,
+          },
+          {
+            name: 'Credit Cards',
+            slug: 'credit-cards',
+            type: 'LIABILITY',
+            order: 3,
+            userId: user.id,
+            isDefault: true,
+          },
+          {
+            name: 'Loans',
+            slug: 'loans',
+            type: 'LIABILITY',
+            order: 4,
+            userId: user.id,
+            isDefault: true,
+          },
         ],
       });
 
@@ -134,10 +162,7 @@ export const AuthService = {
     if (!valid) {
       const attempts = await AuthRepository.incrementFailedLogin(user.id);
       if (attempts >= AUTH.LOCKOUT_ATTEMPTS) {
-        await AuthRepository.lockUser(
-          user.id,
-          new Date(Date.now() + AUTH.LOCKOUT_DURATION_MS),
-        );
+        await AuthRepository.lockUser(user.id, new Date(Date.now() + AUTH.LOCKOUT_DURATION_MS));
         log.warn('auth.login.locked', { userId: user.id, attempts });
       }
       log.warn('auth.login.failed', { userId: user.id, reason: 'invalid_password', attempts });

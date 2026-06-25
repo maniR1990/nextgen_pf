@@ -1,7 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TransactionService } from './transactions.service';
+import {
+  DuplicateDetectedError,
+  NotFoundError,
+  TxLockedError,
+  ValidationError,
+} from '@/lib/api/errors';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransactionRepository } from './transactions.repository';
-import { DuplicateDetectedError, TxLockedError, NotFoundError, ValidationError } from '@/lib/api/errors';
+import { TransactionService } from './transactions.service';
 
 vi.mock('./transactions.repository');
 vi.mock('@/lib/rules-engine/evaluator', () => ({ evaluateFraud: vi.fn() }));
@@ -32,7 +37,10 @@ describe('TransactionService.getById', () => {
   });
 
   it('throws NotFoundError when tx belongs to another user', async () => {
-    vi.mocked(TransactionRepository.findById).mockResolvedValue({ ...mockTx, userId: 'other' } as never);
+    vi.mocked(TransactionRepository.findById).mockResolvedValue({
+      ...mockTx,
+      userId: 'other',
+    } as never);
     await expect(TransactionService.getById('tx1', 'u1')).rejects.toThrow(NotFoundError);
   });
 });
@@ -42,7 +50,10 @@ describe('TransactionService.getById', () => {
 describe('TransactionService.patch', () => {
   it('updates allowed fields', async () => {
     vi.mocked(TransactionRepository.findById).mockResolvedValue(mockTx as never);
-    vi.mocked(TransactionRepository.update).mockResolvedValue({ ...mockTx, notes: 'edited' } as never);
+    vi.mocked(TransactionRepository.update).mockResolvedValue({
+      ...mockTx,
+      notes: 'edited',
+    } as never);
     const result = await TransactionService.patch('tx1', 'u1', { notes: 'edited' });
     expect(result).toMatchObject({ notes: 'edited' });
   });
@@ -52,7 +63,9 @@ describe('TransactionService.patch', () => {
       ...mockTx,
       reconciledAt: new Date(),
     } as never);
-    await expect(TransactionService.patch('tx1', 'u1', { notes: 'x' })).rejects.toThrow(TxLockedError);
+    await expect(TransactionService.patch('tx1', 'u1', { notes: 'x' })).rejects.toThrow(
+      TxLockedError,
+    );
   });
 
   it('throws NotFoundError for unknown id', async () => {
@@ -66,7 +79,11 @@ describe('TransactionService.patch', () => {
 describe('TransactionService.voidTransaction', () => {
   it('voids a PENDING transaction', async () => {
     vi.mocked(TransactionRepository.findById).mockResolvedValue(mockTx as never);
-    vi.mocked(TransactionRepository.void).mockResolvedValue({ ...mockTx, status: 'VOID', voidedAt: new Date() } as never);
+    vi.mocked(TransactionRepository.void).mockResolvedValue({
+      ...mockTx,
+      status: 'VOID',
+      voidedAt: new Date(),
+    } as never);
     const result = await TransactionService.voidTransaction('tx1', 'u1');
     expect(result.status).toBe('VOID');
   });
@@ -162,9 +179,9 @@ describe('TransactionService.patch — fund group tagging', () => {
       type: 'TRANSFER',
     } as never);
 
-    await expect(
-      TransactionService.patch('tx1', 'u1', { fundGroupId: 'fg1' }),
-    ).rejects.toThrow(ValidationError);
+    await expect(TransactionService.patch('tx1', 'u1', { fundGroupId: 'fg1' })).rejects.toThrow(
+      ValidationError,
+    );
   });
 
   it('allows clearing fundGroupId by passing null for both fields', async () => {
@@ -270,7 +287,10 @@ describe('TransactionService.createTransaction — fund group tagging', () => {
       paymentMethod: 'TRANSFER',
     });
 
-    const call = vi.mocked(TransactionRepository.create).mock.calls[0][0] as Record<string, unknown>;
+    const call = vi.mocked(TransactionRepository.create).mock.calls[0][0] as Record<
+      string,
+      unknown
+    >;
     expect(call).not.toHaveProperty('fundGroupId');
   });
 });

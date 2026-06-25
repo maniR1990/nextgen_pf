@@ -1,13 +1,9 @@
+import { Button } from '@/components/ui/Button';
+import { MODAL_CLOSE_LABEL, MODAL_DEMO_BODY, MODAL_DEMO_TITLE } from '@/constants/modal';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Button } from '@/components/ui/Button';
-import {
-  MODAL_CLOSE_LABEL,
-  MODAL_DEMO_BODY,
-  MODAL_DEMO_TITLE,
-} from '@/constants/modal';
 import { Modal } from './Modal';
 
 expect.extend(toHaveNoViolations);
@@ -147,9 +143,12 @@ describe('Modal', () => {
       </Modal>,
     );
 
-    await waitFor(() => {
-      expect(document.activeElement).toBe(trigger);
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(document.activeElement).toBe(trigger);
+      },
+      { timeout: 3000 },
+    );
 
     trigger.remove();
   });

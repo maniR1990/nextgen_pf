@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/db/prisma';
 
-const INCOME_TYPES  = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND'] as const;
+const INCOME_TYPES = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND'] as const;
 const EXPENSE_TYPES = ['EXPENSE'] as const;
-const ATM_TYPES     = ['ATM_WITHDRAWAL'] as const;
+const ATM_TYPES = ['ATM_WITHDRAWAL'] as const;
 
 export const CashflowReportRepository = {
   async sumByTypes(

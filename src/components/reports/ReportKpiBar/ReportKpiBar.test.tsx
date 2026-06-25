@@ -1,23 +1,23 @@
+import type { ReportKpiData } from '@/hooks/useReportKpiData';
 import { cleanup, render, screen } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ReportKpiData } from '@/hooks/useReportKpiData';
 import { ReportKpiBarInner, ReportKpiBarSkeleton } from './ReportKpiBar';
 
 expect.extend(toHaveNoViolations);
 
 const mockData: ReportKpiData = {
-  totalIncomeMinor: 22300000,      // ₹2,23,000
+  totalIncomeMinor: 22300000, // ₹2,23,000
   incomeSourceLabel: 'Salary + Gift',
-  expensesSpentMinor: 3546200,     // ₹35,462
-  expensesBudgetMinor: 9318300,    // ₹93,183
+  expensesSpentMinor: 3546200, // ₹35,462
+  expensesBudgetMinor: 9318300, // ₹93,183
   expensesPct: 38.1,
   expensesVariant: 'success',
-  investedMinor: 10000000,         // ₹1,00,000
+  investedMinor: 10000000, // ₹1,00,000
   investedLabel: '3 SIPs',
-  budgetRemainingMinor: 5772100,   // ₹57,721
+  budgetRemainingMinor: 5772100, // ₹57,721
   daysLeft: 19,
-  accountBalanceMinor: 12773800,   // ₹1,27,738
+  accountBalanceMinor: 12773800, // ₹1,27,738
   balanceStatus: 'Healthy buffer',
   balanceVariant: 'success',
 };
@@ -33,7 +33,9 @@ describe('ReportKpiBarInner', () => {
   it('shows Total Income label and formatted INR value in green', () => {
     const { container } = render(<ReportKpiBarInner data={mockData} />);
     expect(screen.getByText('Total Income')).toBeInTheDocument();
-    expect(container.querySelector('.report-kpi-strip__value--income')).toHaveTextContent(/₹2,23,000/);
+    expect(container.querySelector('.report-kpi-strip__value--income')).toHaveTextContent(
+      /₹2,23,000/,
+    );
   });
 
   it('shows income source as a success chip', () => {

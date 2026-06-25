@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, within } from 'storybook/test';
 import { useState } from 'react';
+import { expect, fn, userEvent, within } from 'storybook/test';
 import { NestedCategoryPicker } from './NestedCategoryPicker';
 import type { CategoryNode } from './NestedCategoryPicker';
 
@@ -96,7 +96,9 @@ export const Mobile: Story = {
   parameters: { viewport: { defaultViewport: 'mobile375' }, ...chromatic },
   render: () => {
     const [val, setVal] = useState<string | null>(null);
-    return <NestedCategoryPicker categories={CATEGORIES} value={val} onChange={(id) => setVal(id)} />;
+    return (
+      <NestedCategoryPicker categories={CATEGORIES} value={val} onChange={(id) => setVal(id)} />
+    );
   },
 };
 
@@ -111,7 +113,9 @@ export const DarkMode: Story = {
   ],
   render: () => {
     const [val, setVal] = useState<string | null>(null);
-    return <NestedCategoryPicker categories={CATEGORIES} value={val} onChange={(id) => setVal(id)} />;
+    return (
+      <NestedCategoryPicker categories={CATEGORIES} value={val} onChange={(id) => setVal(id)} />
+    );
   },
 };
 

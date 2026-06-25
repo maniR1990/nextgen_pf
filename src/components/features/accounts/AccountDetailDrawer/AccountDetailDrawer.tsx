@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { AccountDetail, AccountGroupWithAccounts, CreateAccountDto, TransactionPage } from '@/modules/accounts/accounts.types';
-import { ACCOUNT_TYPE_META } from '@/constants/accounts';
 import { Button } from '@/components/ui/Button';
 import { Tabs } from '@/components/ui/Tabs';
+import { ACCOUNT_TYPE_META } from '@/constants/accounts';
+import type {
+  AccountDetail,
+  AccountGroupWithAccounts,
+  CreateAccountDto,
+  TransactionPage,
+} from '@/modules/accounts/accounts.types';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { BalancePill } from '../BalancePill';
 
 const DRAWER_TABS = [
@@ -37,7 +42,15 @@ export interface AccountDetailDrawerProps {
 
 const TX_LIMIT = 10;
 
-export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountGroups = [], inline = false, transactionsLoader }: AccountDetailDrawerProps) {
+export function AccountDetailDrawer({
+  open,
+  account,
+  onClose,
+  onUpdate,
+  accountGroups = [],
+  inline = false,
+  transactionsLoader,
+}: AccountDetailDrawerProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [editName, setEditName] = useState('');
   const [editNote, setEditNote] = useState('');
@@ -69,12 +82,18 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
     let cancelled = false;
     setTxLoading(true);
     transactionsLoader(account.id, txPage, TX_LIMIT)
-      .then((result) => { if (!cancelled) setTxData(result); })
+      .then((result) => {
+        if (!cancelled) setTxData(result);
+      })
       .catch(() => {})
-      .finally(() => { if (!cancelled) setTxLoading(false); });
-    return () => { cancelled = true; };
-  // transactionsLoader intentionally omitted — caller must stabilize the reference
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      .finally(() => {
+        if (!cancelled) setTxLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // transactionsLoader intentionally omitted — caller must stabilize the reference
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, txPage, account?.id]);
 
   if (!open || !account) return null;
@@ -90,8 +109,8 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
         name: editName || acc.name,
         note: editNote || acc.note || undefined,
         ...(editGroupId && editGroupId !== acc.groupId && { groupId: editGroupId }),
-        ...(editBalance !== '' && { balance: parseFloat(editBalance) }),
-        ...(editOpeningBalance !== '' && { openingBalance: parseFloat(editOpeningBalance) }),
+        ...(editBalance !== '' && { balance: Number.parseFloat(editBalance) }),
+        ...(editOpeningBalance !== '' && { openingBalance: Number.parseFloat(editOpeningBalance) }),
         ...(editAccountNumber !== '' && { accountNumber: editAccountNumber }),
         ...(editIfscCode !== '' && { ifscCode: editIfscCode }),
       });
@@ -102,15 +121,11 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
 
   return (
     <>
-      {!inline && (
-        <div
-          className="account-detail-drawer__backdrop"
-          aria-hidden
-          onClick={onClose}
-        />
-      )}
+      {!inline && <div className="account-detail-drawer__backdrop" aria-hidden onClick={onClose} />}
       <aside
-        className={['account-detail-drawer', inline ? 'account-detail-drawer--inline' : ''].filter(Boolean).join(' ')}
+        className={['account-detail-drawer', inline ? 'account-detail-drawer--inline' : '']
+          .filter(Boolean)
+          .join(' ')}
         role="complementary"
         aria-label={`${account.name} details`}
       >
@@ -122,7 +137,11 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
           <div className="account-detail-drawer__header-info">
             <h2 className="account-detail-drawer__name">{account.name}</h2>
             <span className="account-detail-drawer__type">{meta.name}</span>
-            <BalancePill amount={account.balance} size="lg" className="account-detail-drawer__balance" />
+            <BalancePill
+              amount={account.balance}
+              size="lg"
+              className="account-detail-drawer__balance"
+            />
           </div>
           <button
             type="button"
@@ -151,7 +170,9 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
               <div className="account-detail-drawer__kpi-stats">
                 <div className="account-detail-drawer__kpi">
                   <span className="account-detail-drawer__kpi-label">Opening Balance</span>
-                  <span className="account-detail-drawer__kpi-value">₹{formatINR(account.openingBalance)}</span>
+                  <span className="account-detail-drawer__kpi-value">
+                    ₹{formatINR(account.openingBalance)}
+                  </span>
                 </div>
                 <div className="account-detail-drawer__kpi">
                   <span className="account-detail-drawer__kpi-label">Status</span>
@@ -160,13 +181,17 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
                 {account.creditLimit && (
                   <div className="account-detail-drawer__kpi">
                     <span className="account-detail-drawer__kpi-label">Credit Limit</span>
-                    <span className="account-detail-drawer__kpi-value">₹{formatINR(account.creditLimit)}</span>
+                    <span className="account-detail-drawer__kpi-value">
+                      ₹{formatINR(account.creditLimit)}
+                    </span>
                   </div>
                 )}
                 {account.interestRate && (
                   <div className="account-detail-drawer__kpi">
                     <span className="account-detail-drawer__kpi-label">Interest Rate</span>
-                    <span className="account-detail-drawer__kpi-value">{account.interestRate}%</span>
+                    <span className="account-detail-drawer__kpi-value">
+                      {account.interestRate}%
+                    </span>
                   </div>
                 )}
               </div>
@@ -176,11 +201,15 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
                   <ul className="account-detail-drawer__activity-list">
                     {account.recentActivity.map((item) => (
                       <li key={item.id} className="account-detail-drawer__activity-item">
-                        <span className="account-detail-drawer__activity-merchant">{item.merchant ?? 'Unknown'}</span>
+                        <span className="account-detail-drawer__activity-merchant">
+                          {item.merchant ?? 'Unknown'}
+                        </span>
                         <span className="account-detail-drawer__activity-amount">
                           ₹{formatINR(Math.abs(item.amount))}
                         </span>
-                        <span className="account-detail-drawer__activity-date">{formatDate(item.date)}</span>
+                        <span className="account-detail-drawer__activity-date">
+                          {formatDate(item.date)}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -217,7 +246,9 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
                       onChange={(e) => setEditGroupId(e.target.value)}
                     >
                       {accountGroups.map((g) => (
-                        <option key={g.id} value={g.id}>{g.name}</option>
+                        <option key={g.id} value={g.id}>
+                          {g.name}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -235,7 +266,10 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
                   />
                 </div>
                 <div className="account-detail-drawer__field">
-                  <label className="account-detail-drawer__field-label" htmlFor="drawer-opening-balance">
+                  <label
+                    className="account-detail-drawer__field-label"
+                    htmlFor="drawer-opening-balance"
+                  >
                     Opening Balance
                   </label>
                   <input
@@ -247,7 +281,10 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
                   />
                 </div>
                 <div className="account-detail-drawer__field">
-                  <label className="account-detail-drawer__field-label" htmlFor="drawer-account-number">
+                  <label
+                    className="account-detail-drawer__field-label"
+                    htmlFor="drawer-account-number"
+                  >
                     Account Number
                   </label>
                   <input
@@ -276,7 +313,9 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
                 </div>
                 <div className="account-detail-drawer__field">
                   <span className="account-detail-drawer__field-label">Opened On</span>
-                  <span className="account-detail-drawer__field-value">{formatDate(account.openedOn)}</span>
+                  <span className="account-detail-drawer__field-value">
+                    {formatDate(account.openedOn)}
+                  </span>
                 </div>
                 <div className="account-detail-drawer__field account-detail-drawer__field--textarea">
                   <label className="account-detail-drawer__field-label" htmlFor="drawer-note">
@@ -293,7 +332,11 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
                 </div>
               </div>
               {onUpdate && (
-                <Button loading={saving} onClick={handleSaveSettings} className="account-detail-drawer__save-btn">
+                <Button
+                  loading={saving}
+                  onClick={handleSaveSettings}
+                  className="account-detail-drawer__save-btn"
+                >
                   Save Changes
                 </Button>
               )}
@@ -306,7 +349,9 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
                 <div className="account-detail-drawer__empty">
                   <p>This account is not linked to any fund yet.</p>
                   <p className="account-detail-drawer__empty-hint">
-                    Go to <strong>Settings → Funds</strong>, open a fund, and click <strong>Allocate</strong> to assign a portion of this account&apos;s balance to that fund.
+                    Go to <strong>Settings → Funds</strong>, open a fund, and click{' '}
+                    <strong>Allocate</strong> to assign a portion of this account&apos;s balance to
+                    that fund.
                   </p>
                 </div>
               ) : (
@@ -315,7 +360,9 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
                     <li key={alloc.fundId} className="account-detail-drawer__fund-item">
                       <span className="account-detail-drawer__fund-id">{alloc.fundId}</span>
                       <span className="account-detail-drawer__fund-value">
-                        {alloc.type === 'PERCENTAGE' ? `${alloc.value}%` : `₹${formatINR(alloc.value)}`}
+                        {alloc.type === 'PERCENTAGE'
+                          ? `${alloc.value}%`
+                          : `₹${formatINR(alloc.value)}`}
                       </span>
                       <span className="account-detail-drawer__fund-amount">
                         ≈ ₹{formatINR(alloc.computedAmount)}
@@ -333,7 +380,11 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
                 <p className="account-detail-drawer__empty">No transaction loader configured.</p>
               )}
               {transactionsLoader && txLoading && !txData && (
-                <div role="status" className="account-detail-drawer__tx-skeleton" aria-label="Loading transactions" />
+                <div
+                  role="status"
+                  className="account-detail-drawer__tx-skeleton"
+                  aria-label="Loading transactions"
+                />
               )}
               {transactionsLoader && txData && txData.items.length === 0 && !txLoading && (
                 <p className="account-detail-drawer__empty">No transactions found.</p>
@@ -344,13 +395,21 @@ export function AccountDetailDrawer({ open, account, onClose, onUpdate, accountG
                     {txData.items.map((tx) => (
                       <li key={tx.id} className="account-detail-drawer__tx-item">
                         <div className="account-detail-drawer__tx-info">
-                          <span className="account-detail-drawer__tx-merchant">{tx.merchant ?? 'Unknown'}</span>
-                          <span className="account-detail-drawer__tx-date">{formatDate(tx.date)}</span>
+                          <span className="account-detail-drawer__tx-merchant">
+                            {tx.merchant ?? 'Unknown'}
+                          </span>
+                          <span className="account-detail-drawer__tx-date">
+                            {formatDate(tx.date)}
+                          </span>
                         </div>
-                        <span className={[
-                          'account-detail-drawer__tx-amount',
-                          tx.amount >= 0 ? 'account-detail-drawer__tx-amount--credit' : 'account-detail-drawer__tx-amount--debit',
-                        ].join(' ')}>
+                        <span
+                          className={[
+                            'account-detail-drawer__tx-amount',
+                            tx.amount >= 0
+                              ? 'account-detail-drawer__tx-amount--credit'
+                              : 'account-detail-drawer__tx-amount--debit',
+                          ].join(' ')}
+                        >
                           {tx.amount >= 0 ? '+' : ''}₹{formatINR(Math.abs(tx.amount))}
                         </span>
                       </li>

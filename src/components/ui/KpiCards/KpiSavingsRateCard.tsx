@@ -25,9 +25,7 @@ export function KpiSavingsRateCard({ data, density }: KpiSavingsRateCardProps) {
           <p className="kpi-card__meta-line">
             Target <span className="kpi-card__meta-strong">{data.targetPercent}%</span>
           </p>
-          <Badge variant={BENCHMARK_VARIANT[data.benchmark.status]}>
-            {data.benchmark.label}
-          </Badge>
+          <Badge variant={BENCHMARK_VARIANT[data.benchmark.status]}>{data.benchmark.label}</Badge>
         </div>
       </div>
     </KpiCardShell>

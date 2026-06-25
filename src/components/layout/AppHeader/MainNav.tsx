@@ -1,10 +1,10 @@
 'use client';
 
+import type { AppHeaderConfig, AppHeaderNavItem } from '@/lib/schemas/appHeader';
+import { Bell, LogOut, Plus, Search, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useRef, useState, useEffect } from 'react';
-import { Bell, Plus, Search, LogOut, User } from 'lucide-react';
-import type { AppHeaderNavItem, AppHeaderConfig } from '@/lib/schemas/appHeader';
+import { useEffect, useRef, useState } from 'react';
 
 interface MainNavProps {
   brand: AppHeaderConfig['brand'];
@@ -53,7 +53,9 @@ export function MainNav({
       <div className="main-nav__inner">
         {/* Brand */}
         <Link href={brand.homeHref} className="main-nav__brand" aria-label={brand.appName}>
-          <span className="main-nav__logo" aria-hidden="true">{brand.logoAbbr}</span>
+          <span className="main-nav__logo" aria-hidden="true">
+            {brand.logoAbbr}
+          </span>
           <span className="main-nav__app-name">{brand.appName}</span>
         </Link>
 
@@ -66,7 +68,9 @@ export function MainNav({
                 <li key={item.id} className="main-nav__tab-item">
                   <Link
                     href={item.href}
-                    className={['main-nav__tab-link', active && 'main-nav__tab-link--active'].filter(Boolean).join(' ')}
+                    className={['main-nav__tab-link', active && 'main-nav__tab-link--active']
+                      .filter(Boolean)
+                      .join(' ')}
                     aria-current={active ? 'page' : undefined}
                   >
                     {item.label}
@@ -135,7 +139,9 @@ export function MainNav({
                   type="button"
                   className="main-nav__user-menu-item"
                   role="menuitem"
-                  onClick={() => { setMenuOpen(false); }}
+                  onClick={() => {
+                    setMenuOpen(false);
+                  }}
                 >
                   <User size={14} aria-hidden />
                   Profile

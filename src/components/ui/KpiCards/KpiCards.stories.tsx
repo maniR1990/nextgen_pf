@@ -1,5 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { KPI_CARD_DENSITY } from '@/constants/kpiCards';
 import {
   chromaticBaseline,
   storySectionStyle,
@@ -7,6 +5,8 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
+import { KPI_CARD_DENSITY } from '@/constants/kpiCards';
+import type { Meta, StoryObj } from '@storybook/react';
 import { KpiBankCashCard } from './KpiBankCashCard';
 import { KpiCardRenderer, KpiCardsGrid } from './KpiCardRenderer';
 import { KpiCashRunwayCard } from './KpiCashRunwayCard';

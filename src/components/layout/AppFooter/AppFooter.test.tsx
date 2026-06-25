@@ -1,27 +1,38 @@
-import { render, screen, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AppFooter } from './AppFooter';
 import type { AppFooterConfig } from '@/lib/schemas/appFooter';
 import type { AppHeaderData } from '@/lib/schemas/appHeader';
+import { act, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppFooter } from './AppFooter';
 
 const mockConfig: AppFooterConfig = {
   collapseAfterMs: 10000,
   items: [
-    { id: 'pending',       label: 'PENDING',        dataKey: 'pendingCount',      unit: 'transactions' },
-    { id: 'spendPace',     label: 'SPEND PACE',     dataKey: 'spendPaceLabel' },
-    { id: 'unallocated',   label: 'UNALLOCATED',    dataKey: 'unallocated',       format: 'currency-inr', badge: 'ready' },
+    { id: 'pending', label: 'PENDING', dataKey: 'pendingCount', unit: 'transactions' },
+    { id: 'spendPace', label: 'SPEND PACE', dataKey: 'spendPaceLabel' },
+    {
+      id: 'unallocated',
+      label: 'UNALLOCATED',
+      dataKey: 'unallocated',
+      format: 'currency-inr',
+      badge: 'ready',
+    },
     { id: 'nextRecurring', label: 'NEXT RECURRING', dataKey: 'nextRecurringLabel' },
-    { id: 'monthCloses',   label: 'MONTH CLOSES',   dataKey: 'monthClosesLabel' },
+    { id: 'monthCloses', label: 'MONTH CLOSES', dataKey: 'monthClosesLabel' },
   ],
   shortcuts: [
     { id: 'commandPalette', label: 'Command palette', key: '⌘K', action: 'commandPalette' },
-    { id: 'logTransaction', label: 'Log transaction', key: 'N',  action: 'logTransaction' },
+    { id: 'logTransaction', label: 'Log transaction', key: 'N', action: 'logTransaction' },
   ],
 };
 
-const mockData: Pick<AppHeaderData,
-  'pendingCount' | 'spendPaceLabel' | 'spendPaceChangePct' | 'unallocated' |
-  'nextRecurringLabel' | 'monthClosesLabel'
+const mockData: Pick<
+  AppHeaderData,
+  | 'pendingCount'
+  | 'spendPaceLabel'
+  | 'spendPaceChangePct'
+  | 'unallocated'
+  | 'nextRecurringLabel'
+  | 'monthClosesLabel'
 > = {
   pendingCount: 3,
   spendPaceLabel: 'Pace: ₹4,210/day',
@@ -38,7 +49,7 @@ function renderFooter(onLogTransaction = vi.fn(), onCommandPalette = vi.fn()) {
       data={mockData}
       onLogTransaction={onLogTransaction}
       onCommandPalette={onCommandPalette}
-    />
+    />,
   );
 }
 
@@ -96,7 +107,9 @@ describe('AppFooter collapse', () => {
 
   it('collapses to accent line after collapseAfterMs', () => {
     renderFooter();
-    act(() => { vi.advanceTimersByTime(10_000); });
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
     const footer = document.querySelector('.app-footer');
     expect(footer?.classList.contains('app-footer--collapsed')).toBe(true);
   });
@@ -104,8 +117,12 @@ describe('AppFooter collapse', () => {
   it('re-expands on mouse enter', () => {
     renderFooter();
     const footer = document.querySelector('.app-footer')!;
-    act(() => { vi.advanceTimersByTime(10_000); });
-    act(() => { footer.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true })); });
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    act(() => {
+      footer.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    });
     expect(footer.classList.contains('app-footer--collapsed')).toBe(false);
   });
 });

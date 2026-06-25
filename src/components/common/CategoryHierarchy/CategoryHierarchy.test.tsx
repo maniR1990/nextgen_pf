@@ -79,11 +79,15 @@ describe('CategoryHierarchy', () => {
     fireEvent.click(menuTrigger);
 
     fireEvent.click(screen.getByRole('menuitem', { name: /Edit/i }));
-    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ id: 'salary', name: 'Salary' }));
+    expect(onUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'salary', name: 'Salary' }),
+    );
 
     fireEvent.click(menuTrigger);
     fireEvent.click(screen.getByRole('menuitem', { name: /Delete/i }));
-    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'salary', name: 'Salary' }));
+    expect(onDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'salary', name: 'Salary' }),
+    );
   });
 
   it('has no axe violations', async () => {

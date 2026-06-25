@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
 import type { DuplicateMatch } from '@/types/finance';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
   merchant: string;
@@ -11,7 +11,13 @@ interface Props {
   enabled: boolean;
 }
 
-export function useDuplicateDetect({ merchant, amount, date, isDismissed, enabled }: Props): DuplicateMatch | null {
+export function useDuplicateDetect({
+  merchant,
+  amount,
+  date,
+  isDismissed,
+  enabled,
+}: Props): DuplicateMatch | null {
   const [duplicate, setDuplicate] = useState<DuplicateMatch | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -21,7 +27,7 @@ export function useDuplicateDetect({ merchant, amount, date, isDismissed, enable
       return;
     }
 
-    const amountNum = parseFloat(amount);
+    const amountNum = Number.parseFloat(amount);
     if (!merchant.trim() || isNaN(amountNum) || amountNum <= 0 || !date) {
       setDuplicate(null);
       return;

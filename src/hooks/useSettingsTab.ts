@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { SETTINGS_TAB_QUERY_KEY } from '@/constants/settings';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useMemo } from 'react';
 
 export function useSettingsTab(defaultTabId: string, validTabIds: readonly string[]) {
   const router = useRouter();

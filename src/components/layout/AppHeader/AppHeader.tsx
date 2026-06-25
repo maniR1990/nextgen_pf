@@ -1,14 +1,14 @@
 'use client';
 
-import { Suspense, useEffect, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { PulseStrip } from './PulseStrip';
-import { MainNav } from './MainNav';
-import { ContextSubBar } from './ContextSubBar';
-import { TransactionFilterBar } from './TransactionFilterBar';
-import { SettingsFilterBar } from './SettingsFilterBar';
-import { ReportFilterBar } from './ReportFilterBar';
 import type { AppHeaderConfig, AppHeaderData, ContextSubBarItem } from '@/lib/schemas/appHeader';
+import { usePathname } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { ContextSubBar } from './ContextSubBar';
+import { MainNav } from './MainNav';
+import { PulseStrip } from './PulseStrip';
+import { ReportFilterBar } from './ReportFilterBar';
+import { SettingsFilterBar } from './SettingsFilterBar';
+import { TransactionFilterBar } from './TransactionFilterBar';
 
 export interface AppHeaderProps {
   config: AppHeaderConfig;

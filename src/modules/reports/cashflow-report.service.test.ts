@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CashflowReportService } from './cashflow-report.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CashflowReportRepository } from './cashflow-report.repository';
+import { CashflowReportService } from './cashflow-report.service';
 
 vi.mock('./cashflow-report.repository');
 
@@ -77,8 +77,10 @@ describe('CashflowReportService.getMonthlyReport', () => {
     );
     vi.mocked(CashflowReportRepository.fundGroupBreakdown).mockImplementation(
       async (_userId, _year, _month, flow) => {
-        if (flow === 'IN') return [{ fundGroupId: 'fg1', fundGroupName: 'Emergency', totalAmount: 25000 }];
-        if (flow === 'OUT') return [{ fundGroupId: 'fg1', fundGroupName: 'Emergency', totalAmount: 20000 }];
+        if (flow === 'IN')
+          return [{ fundGroupId: 'fg1', fundGroupName: 'Emergency', totalAmount: 25000 }];
+        if (flow === 'OUT')
+          return [{ fundGroupId: 'fg1', fundGroupName: 'Emergency', totalAmount: 20000 }];
         return [];
       },
     );
@@ -160,8 +162,10 @@ describe('CashflowReportService.getMonthlyReport', () => {
     );
     vi.mocked(CashflowReportRepository.fundGroupBreakdown).mockImplementation(
       async (_userId, _year, _month, flow) => {
-        if (flow === 'IN') return [{ fundGroupId: 'fg1', fundGroupName: 'Emergency', totalAmount: 16000 }];
-        if (flow === 'OUT') return [{ fundGroupId: 'fg1', fundGroupName: 'Emergency', totalAmount: 5000 }];
+        if (flow === 'IN')
+          return [{ fundGroupId: 'fg1', fundGroupName: 'Emergency', totalAmount: 16000 }];
+        if (flow === 'OUT')
+          return [{ fundGroupId: 'fg1', fundGroupName: 'Emergency', totalAmount: 5000 }];
         return [];
       },
     );
@@ -201,7 +205,11 @@ describe('CashflowReportService.getFundGroupLifetimeContribution', () => {
       totalOut: 5000,
     });
 
-    const result = await CashflowReportService.getFundGroupLifetimeContribution('u1', 'fg1', 120000);
+    const result = await CashflowReportService.getFundGroupLifetimeContribution(
+      'u1',
+      'fg1',
+      120000,
+    );
     // net = 55000, target = 120000, pct = 45.8%
     expect(result.progressPct).toBeCloseTo(45.8, 0);
   });
@@ -212,7 +220,11 @@ describe('CashflowReportService.getFundGroupLifetimeContribution', () => {
       totalOut: 0,
     });
 
-    const result = await CashflowReportService.getFundGroupLifetimeContribution('u1', 'fg1', 120000);
+    const result = await CashflowReportService.getFundGroupLifetimeContribution(
+      'u1',
+      'fg1',
+      120000,
+    );
     expect(result.progressPct).toBe(100);
   });
 

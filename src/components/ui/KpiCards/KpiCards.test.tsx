@@ -1,8 +1,8 @@
+import { KPI_CARD_DENSITY } from '@/constants/kpiCards';
 import { cleanup, render, screen } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { KpiBankCashCard } from './KpiBankCashCard';
-import { KPI_CARD_DENSITY } from '@/constants/kpiCards';
 import { KpiCardRenderer, KpiCardsGrid } from './KpiCardRenderer';
 import { KpiCashRunwayCard } from './KpiCashRunwayCard';
 import { KpiCcDebtCard } from './KpiCcDebtCard';

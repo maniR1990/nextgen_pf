@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BudgetEngineService } from './budget-engine.service';
-import { BudgetEngineRepository } from './budget-engine.repository';
-import { TransactionRepository } from '@/modules/transactions/transactions.repository';
 import { BudgetPeriodInvalidError } from '@/lib/api/errors';
+import { TransactionRepository } from '@/modules/transactions/transactions.repository';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BudgetEngineRepository } from './budget-engine.repository';
+import { BudgetEngineService } from './budget-engine.service';
 
 vi.mock('./budget-engine.repository');
 vi.mock('@/modules/transactions/transactions.repository');
@@ -13,9 +13,13 @@ beforeEach(() => vi.clearAllMocks());
 
 describe('BudgetEngineService.getMonthlySummary', () => {
   it('returns envelope with planned and spent per category', async () => {
-    vi.mocked(BudgetEngineRepository.findCategoriesForUser).mockResolvedValue([MOCK_CATEGORY] as never);
+    vi.mocked(BudgetEngineRepository.findCategoriesForUser).mockResolvedValue([
+      MOCK_CATEGORY,
+    ] as never);
     vi.mocked(BudgetEngineRepository.findOverrides).mockResolvedValue([]);
-    vi.mocked(TransactionRepository.sumByPeriod).mockResolvedValue({ _sum: { amount: 1200 } } as never);
+    vi.mocked(TransactionRepository.sumByPeriod).mockResolvedValue({
+      _sum: { amount: 1200 },
+    } as never);
 
     const result = await BudgetEngineService.getMonthlySummary('u1', 2024, 6);
 
@@ -26,30 +30,43 @@ describe('BudgetEngineService.getMonthlySummary', () => {
   });
 
   it('applies a BudgetOverride over the CategoryNode plannedAmount', async () => {
-    vi.mocked(BudgetEngineRepository.findCategoriesForUser).mockResolvedValue([MOCK_CATEGORY] as never);
+    vi.mocked(BudgetEngineRepository.findCategoriesForUser).mockResolvedValue([
+      MOCK_CATEGORY,
+    ] as never);
     vi.mocked(BudgetEngineRepository.findOverrides).mockResolvedValue([
       { categoryId: 'cat1', planned: 8000 },
     ] as never);
-    vi.mocked(TransactionRepository.sumByPeriod).mockResolvedValue({ _sum: { amount: 0 } } as never);
+    vi.mocked(TransactionRepository.sumByPeriod).mockResolvedValue({
+      _sum: { amount: 0 },
+    } as never);
 
     const result = await BudgetEngineService.getMonthlySummary('u1', 2024, 6);
     expect(result.categories[0].plannedAmount).toBe(8000);
   });
 
   it('throws BudgetPeriodInvalidError for year < 2020', async () => {
-    await expect(BudgetEngineService.getMonthlySummary('u1', 2019, 6)).rejects.toThrow(BudgetPeriodInvalidError);
+    await expect(BudgetEngineService.getMonthlySummary('u1', 2019, 6)).rejects.toThrow(
+      BudgetPeriodInvalidError,
+    );
   });
 
   it('throws BudgetPeriodInvalidError for month out of range', async () => {
-    await expect(BudgetEngineService.getMonthlySummary('u1', 2024, 13)).rejects.toThrow(BudgetPeriodInvalidError);
+    await expect(BudgetEngineService.getMonthlySummary('u1', 2024, 13)).rejects.toThrow(
+      BudgetPeriodInvalidError,
+    );
   });
 });
 
 describe('BudgetEngineService.getImpact', () => {
   it('calculates remaining budget after a hypothetical transaction', async () => {
-    vi.mocked(BudgetEngineRepository.findCategoryById).mockResolvedValue({ ...MOCK_CATEGORY, userId: 'u1' } as never);
+    vi.mocked(BudgetEngineRepository.findCategoryById).mockResolvedValue({
+      ...MOCK_CATEGORY,
+      userId: 'u1',
+    } as never);
     vi.mocked(BudgetEngineRepository.findOverrides).mockResolvedValue([]);
-    vi.mocked(TransactionRepository.sumByPeriod).mockResolvedValue({ _sum: { amount: 2000 } } as never);
+    vi.mocked(TransactionRepository.sumByPeriod).mockResolvedValue({
+      _sum: { amount: 2000 },
+    } as never);
 
     const result = await BudgetEngineService.getImpact('u1', {
       categoryId: 'cat1',

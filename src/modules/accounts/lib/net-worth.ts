@@ -7,10 +7,7 @@ interface NetWorthInput {
   groupType: AccountGroupType;
 }
 
-export function computeNetWorth(
-  accounts: NetWorthInput[],
-  currency = 'INR',
-): NetWorthSummary {
+export function computeNetWorth(accounts: NetWorthInput[], currency = 'INR'): NetWorthSummary {
   let totalAssets = 0;
   let totalLiabilities = 0;
 

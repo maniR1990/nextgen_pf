@@ -1,13 +1,6 @@
 'use client';
 
-const SEGMENT_COLORS = [
-  '#4f9cf9',
-  '#34c98e',
-  '#f9c74f',
-  '#f77f4b',
-  '#a259ff',
-  '#f94144',
-];
+const SEGMENT_COLORS = ['#4f9cf9', '#34c98e', '#f9c74f', '#f77f4b', '#a259ff', '#f94144'];
 
 export interface AllocationBarSource {
   accountName: string;

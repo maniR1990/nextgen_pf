@@ -1,5 +1,5 @@
-import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import type { Prisma } from '@prisma/client';
 
 export const BudgetRepository = {
   findByUserId: (userId: string) =>
@@ -39,6 +39,5 @@ export const BudgetRepository = {
   update: (id: string, data: Prisma.BudgetLineUpdateInput) =>
     prisma.budgetLine.update({ where: { id }, data }),
 
-  deleteMany: (ids: string[]) =>
-    prisma.budgetLine.deleteMany({ where: { id: { in: ids } } }),
+  deleteMany: (ids: string[]) => prisma.budgetLine.deleteMany({ where: { id: { in: ids } } }),
 };

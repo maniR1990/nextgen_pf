@@ -1,6 +1,6 @@
-import { compose, withAuth, withValidation } from '@/lib/api/middleware';
 import { isApiError } from '@/lib/api/errors';
-import { v1Ok, v1Created, v1FromApiError } from '@/lib/api/v1/envelope';
+import { compose, withAuth, withValidation } from '@/lib/api/middleware';
+import { v1Created, v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { getLogger } from '@/lib/logger';
 import { CreateAttachmentSchema } from './attachments.schema';
 import { AttachmentsService } from './attachments.service';
@@ -13,7 +13,12 @@ export const v1CreateAttachment = compose(
 )(async (req, ctx) => {
   try {
     const txId = ctx.params?.id;
-    if (!txId) return v1FromApiError({ message: 'Missing transaction id', status: 400, code: 'VALIDATION_ERROR' });
+    if (!txId)
+      return v1FromApiError({
+        message: 'Missing transaction id',
+        status: 400,
+        code: 'VALIDATION_ERROR',
+      });
     const dto = CreateAttachmentSchema.parse(await req.json());
     const attachment = await AttachmentsService.create(txId, ctx.session!.id, dto);
     return v1Created(attachment);
@@ -27,7 +32,12 @@ export const v1CreateAttachment = compose(
 export const v1ListAttachments = compose(withAuth())(async (_req, ctx) => {
   try {
     const txId = ctx.params?.id;
-    if (!txId) return v1FromApiError({ message: 'Missing transaction id', status: 400, code: 'VALIDATION_ERROR' });
+    if (!txId)
+      return v1FromApiError({
+        message: 'Missing transaction id',
+        status: 400,
+        code: 'VALIDATION_ERROR',
+      });
     const rows = await AttachmentsService.list(txId, ctx.session!.id);
     return v1Ok(rows);
   } catch (err) {

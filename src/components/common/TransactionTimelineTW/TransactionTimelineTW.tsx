@@ -1,7 +1,7 @@
 'use client';
 
-import { Package, Monitor } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { Monitor, Package } from 'lucide-react';
 import { VerticalTimeline, VerticalTimelineElement } from 'react-vertical-timeline-component';
 import 'react-vertical-timeline-component/style.min.css';
 
@@ -36,28 +36,46 @@ export const DEMO_GROUPS: TimelineTxGroup[] = [
   {
     date: '2024-06-12',
     transactions: [
-      { id: '1', merchant: 'BigBasket',          subtitle: 'Groceries · UPI',       amount: -1245,  type: 'debit'  },
-      { id: '2', merchant: 'HDFC SIP',            subtitle: 'SIP / MF · Auto Debit', amount: -60000, type: 'debit'  },
+      { id: '1', merchant: 'BigBasket', subtitle: 'Groceries · UPI', amount: -1245, type: 'debit' },
+      {
+        id: '2',
+        merchant: 'HDFC SIP',
+        subtitle: 'SIP / MF · Auto Debit',
+        amount: -60000,
+        type: 'debit',
+      },
     ],
   },
   {
     date: '2024-06-11',
     transactions: [
-      { id: '3', merchant: 'Swiggy',              subtitle: 'Dining Out · UPI',      amount: -380,   type: 'debit'  },
-      { id: '4', merchant: 'PhonePe',             subtitle: 'Fuel · UPI',            amount: -1000,  type: 'debit'  },
+      { id: '3', merchant: 'Swiggy', subtitle: 'Dining Out · UPI', amount: -380, type: 'debit' },
+      { id: '4', merchant: 'PhonePe', subtitle: 'Fuel · UPI', amount: -1000, type: 'debit' },
     ],
   },
   {
     date: '2024-06-10',
     transactions: [
-      { id: '5', merchant: 'Salary — Acme Corp',  subtitle: 'Income · NEFT',         amount: 220000, type: 'credit' },
+      {
+        id: '5',
+        merchant: 'Salary — Acme Corp',
+        subtitle: 'Income · NEFT',
+        amount: 220000,
+        type: 'credit',
+      },
     ],
   },
   {
     date: '2024-06-09',
     transactions: [
-      { id: '6', merchant: 'Amazon',              subtitle: 'Electronics · Card',    amount: -2499,  type: 'debit'  },
-      { id: '7', merchant: 'Jio Fiber',           subtitle: 'Internet · Auto Debit', amount: -999,   type: 'debit'  },
+      { id: '6', merchant: 'Amazon', subtitle: 'Electronics · Card', amount: -2499, type: 'debit' },
+      {
+        id: '7',
+        merchant: 'Jio Fiber',
+        subtitle: 'Internet · Auto Debit',
+        amount: -999,
+        type: 'debit',
+      },
     ],
   },
 ];
@@ -65,14 +83,18 @@ export const DEMO_GROUPS: TimelineTxGroup[] = [
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 const TAGS = [
-  { label: 'react-chrono',                      variant: 'red'  as const },
+  { label: 'react-chrono', variant: 'red' as const },
   { label: 'react-vertical-timeline-component', variant: 'blue' as const },
-  { label: 'react-virtual',                     variant: 'blue' as const },
-  { label: 'date-fns',                          variant: 'blue' as const },
+  { label: 'react-virtual', variant: 'blue' as const },
+  { label: 'date-fns', variant: 'blue' as const },
 ];
 
 function fmtDate(iso: string) {
-  try { return format(parseISO(iso), 'MMM d'); } catch { return iso; }
+  try {
+    return format(parseISO(iso), 'MMM d');
+  } catch {
+    return iso;
+  }
 }
 
 function fmtAmount(tx: TimelineTx) {
@@ -117,9 +139,7 @@ function TxCard({ tx }: { tx: TimelineTx }) {
           <p className="text-sm font-semibold text-slate-800 leading-tight truncate">
             {tx.merchant}
           </p>
-          <p className="text-xs text-slate-400 leading-tight mt-0.5 truncate">
-            {tx.subtitle}
-          </p>
+          <p className="text-xs text-slate-400 leading-tight mt-0.5 truncate">{tx.subtitle}</p>
         </div>
       </div>
       <span
@@ -143,15 +163,12 @@ export function TransactionTimelineTW({
 }: TransactionTimelineTWProps) {
   return (
     <div className="max-w-2xl mx-auto p-6 bg-slate-50 rounded-2xl font-sans">
-
       {/* Header */}
       <div className="flex items-center gap-2.5 mb-2">
         <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold font-mono bg-blue-50 text-blue-500 border border-blue-200 leading-none">
           05
         </span>
-        <h1 className="text-2xl font-bold text-slate-800 leading-none">
-          Transaction Timeline
-        </h1>
+        <h1 className="text-2xl font-bold text-slate-800 leading-none">Transaction Timeline</h1>
       </div>
 
       <p className="text-sm text-slate-500 leading-relaxed mb-4">
@@ -161,7 +178,7 @@ export function TransactionTimelineTW({
 
       {/* Tech-stack tags */}
       <div className="flex flex-wrap gap-2 mb-4">
-        {TAGS.map(tag => (
+        {TAGS.map((tag) => (
           <span
             key={tag.label}
             className={[
@@ -195,7 +212,7 @@ export function TransactionTimelineTW({
           lineColor="#e2e8f0"
           className="!py-0 !before:left-0"
         >
-          {groups.map(group => (
+          {groups.map((group) => (
             <VerticalTimelineElement
               key={group.date}
               date={fmtDate(group.date)}
@@ -207,7 +224,7 @@ export function TransactionTimelineTW({
               className="!pb-6"
             >
               <div className="flex flex-col gap-2">
-                {group.transactions.map(tx => (
+                {group.transactions.map((tx) => (
                   <TxCard key={tx.id} tx={tx} />
                 ))}
               </div>

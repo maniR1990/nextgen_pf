@@ -1,19 +1,19 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Wallet } from 'lucide-react';
+import { AccountDetailDrawer } from '@/components/features/accounts/AccountDetailDrawer';
 import { Button } from '@/components/ui/Button';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { apiGetV1 } from '@/lib/query/fetcher';
 import { queryKeys } from '@/lib/query/queryKeys';
-import type { FundSummary } from '@/modules/funds/funds.types';
 import type { AccountDetail } from '@/modules/accounts/accounts.types';
-import { AccountDetailDrawer } from '@/components/features/accounts/AccountDetailDrawer';
-import { FundDetailHeader } from './FundDetailHeader';
+import type { FundSummary } from '@/modules/funds/funds.types';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Wallet } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { useCallback, useState } from 'react';
 import { FundAllocationList } from './FundAllocationList';
+import { FundDetailHeader } from './FundDetailHeader';
 
 export function FundDetailClient() {
   const params = useParams();
@@ -24,24 +24,31 @@ export function FundDetailClient() {
   const [accountDetail, setAccountDetail] = useState<AccountDetail | null>(null);
   const [accountLoading, setAccountLoading] = useState(false);
 
-  const { data: fund, isLoading, isError } = useQuery({
+  const {
+    data: fund,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: [...queryKeys.funds.list(), id],
     queryFn: () => apiGetV1<FundSummary>(`/api/v1/funds/${id}`),
     staleTime: 30_000,
   });
 
-  const handleAccountSelect = useCallback(async (accountId: string) => {
-    if (selectedAccountId === accountId) return;
-    setSelectedAccountId(accountId);
-    setAccountDetail(null);
-    setAccountLoading(true);
-    try {
-      const detail = await apiGetV1<AccountDetail>(`/api/v1/accounts/${accountId}`);
-      setAccountDetail(detail);
-    } finally {
-      setAccountLoading(false);
-    }
-  }, [selectedAccountId]);
+  const handleAccountSelect = useCallback(
+    async (accountId: string) => {
+      if (selectedAccountId === accountId) return;
+      setSelectedAccountId(accountId);
+      setAccountDetail(null);
+      setAccountLoading(true);
+      try {
+        const detail = await apiGetV1<AccountDetail>(`/api/v1/accounts/${accountId}`);
+        setAccountDetail(detail);
+      } finally {
+        setAccountLoading(false);
+      }
+    },
+    [selectedAccountId],
+  );
 
   return (
     <div
@@ -70,7 +77,10 @@ export function FundDetailClient() {
 
       {isError && (
         <div className="fund-detail__error" role="alert">
-          <EmptyState title="Could not load fund" description="Something went wrong. Please try again." />
+          <EmptyState
+            title="Could not load fund"
+            description="Something went wrong. Please try again."
+          />
         </div>
       )}
 
@@ -88,7 +98,11 @@ export function FundDetailClient() {
 
             <div className="fund-detail__detail-pane">
               {accountLoading && (
-                <div className="fund-detail__detail-loading" role="status" aria-label="Loading account">
+                <div
+                  className="fund-detail__detail-loading"
+                  role="status"
+                  aria-label="Loading account"
+                >
                   <Skeleton variant="rect" height={100} />
                   <Skeleton variant="rect" height={52} />
                   <Skeleton variant="rect" height={52} />
@@ -101,7 +115,10 @@ export function FundDetailClient() {
                   inline
                   open
                   account={accountDetail}
-                  onClose={() => { setAccountDetail(null); setSelectedAccountId(null); }}
+                  onClose={() => {
+                    setAccountDetail(null);
+                    setSelectedAccountId(null);
+                  }}
                 />
               )}
 

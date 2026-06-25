@@ -1,13 +1,10 @@
 'use client';
 
-import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/ui/Input';
-import {
-  DATA_TABLE_DENSITIES,
-  type DataTableDensity,
-} from '@/constants/dataTable';
+import { DATA_TABLE_DENSITIES, type DataTableDensity } from '@/constants/dataTable';
+import { Search } from 'lucide-react';
 import type { DataTableBulkAction } from './types';
 
 interface DataTableToolbarProps<T> {

@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
 import { fromCategoryFlowType } from '@/constants/categories';
-import { mapCategoryTreeToHierarchy } from './map-category-tree-to-hierarchy';
+import { describe, expect, it } from 'vitest';
 import type { CategoryTreeNode } from '../categories.types';
+import { mapCategoryTreeToHierarchy } from './map-category-tree-to-hierarchy';
 
 const sampleTree: CategoryTreeNode[] = [
   {

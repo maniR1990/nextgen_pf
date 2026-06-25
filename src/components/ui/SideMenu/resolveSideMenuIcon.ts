@@ -6,9 +6,9 @@ import {
   Landmark,
   LayoutGrid,
   List,
+  type LucideIcon,
   PiggyBank,
   RefreshCw,
-  type LucideIcon,
 } from 'lucide-react';
 
 const ICON_MAP: Record<SideMenuIconKey, LucideIcon> = {

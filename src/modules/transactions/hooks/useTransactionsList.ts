@@ -1,10 +1,10 @@
 'use client';
 
-import { useInfiniteQuery } from '@tanstack/react-query';
-import type { FinanceTransactionRow } from '@/types/finance';
 import { filtersToApiParams } from '@/hooks/useTransactionFilters';
 import type { TransactionListFilters } from '@/lib/query/queryKeys';
 import { queryKeys } from '@/lib/query/queryKeys';
+import type { FinanceTransactionRow } from '@/types/finance';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 interface V1ListResponse {
   ok: boolean;
@@ -73,7 +73,7 @@ export function useTransactionsList(filters: TransactionListFilters) {
     queryKey: queryKeys.transactions.list(filters),
     queryFn: ({ pageParam }) => fetchTransactionPage(filters, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => (last.hasMore ? last.nextCursor ?? undefined : undefined),
+    getNextPageParam: (last) => (last.hasMore ? (last.nextCursor ?? undefined) : undefined),
     staleTime: 5 * 60_000,
   });
 }

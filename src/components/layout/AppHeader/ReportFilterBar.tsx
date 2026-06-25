@@ -1,9 +1,9 @@
 'use client';
 
-import { BarChart2, Download, SlidersHorizontal } from 'lucide-react';
-import { Filter } from 'lucide-react';
 import { MonthNavControl } from '@/components/common/MonthNavControl/MonthNavControl';
 import { useReportFilters } from '@/hooks/useReportFilters';
+import { BarChart2, Download, SlidersHorizontal } from 'lucide-react';
+import { Filter } from 'lucide-react';
 
 function ReportFilterBarInner() {
   const { monthLabel, goPrev, goNext } = useReportFilters();
@@ -13,7 +13,9 @@ function ReportFilterBarInner() {
       <div className="report-filter-bar__title">
         <BarChart2 size={15} aria-hidden className="report-filter-bar__title-icon" />
         <span className="report-filter-bar__page-name">Budget Report</span>
-        <span className="report-filter-bar__sep" aria-hidden>·</span>
+        <span className="report-filter-bar__sep" aria-hidden>
+          ·
+        </span>
         <span className="report-filter-bar__view-label">Transaction Timeline</span>
       </div>
 

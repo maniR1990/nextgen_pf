@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
 import { BUDGET_SUMMARY_ID } from '@/constants/budget';
-import { buildBudgetLedgerPayload, computeBudgetMetrics } from './budget.tree';
-import { BudgetService } from './budget.service';
+import { describe, expect, it, vi } from 'vitest';
 import { BudgetRepository } from './budget.repository';
+import { BudgetService } from './budget.service';
+import { buildBudgetLedgerPayload, computeBudgetMetrics } from './budget.tree';
 import type { BudgetLineRecord } from './budget.types';
 
 vi.mock('./budget.repository', () => ({
@@ -18,7 +18,9 @@ vi.mock('./budget.repository', () => ({
 
 const userId = 'user-1';
 
-function line(partial: Partial<BudgetLineRecord> & Pick<BudgetLineRecord, 'id' | 'title' | 'kind'>): BudgetLineRecord {
+function line(
+  partial: Partial<BudgetLineRecord> & Pick<BudgetLineRecord, 'id' | 'title' | 'kind'>,
+): BudgetLineRecord {
   return {
     userId,
     parentId: null,

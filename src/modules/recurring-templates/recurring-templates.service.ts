@@ -1,6 +1,9 @@
 import { ConflictError, NotFoundError } from '@/lib/api/errors';
 import { RecurringTemplatesRepository } from './recurring-templates.repository';
-import type { CreateRecurringTemplateDto, PatchRecurringTemplateDto } from './recurring-templates.types';
+import type {
+  CreateRecurringTemplateDto,
+  PatchRecurringTemplateDto,
+} from './recurring-templates.types';
 
 function assertOwned(template: { userId: string }, userId: string) {
   if (template.userId !== userId) throw new NotFoundError('Recurring template not found');
@@ -12,7 +15,10 @@ function clampDay(day: number, year: number, month: number) {
 
 function addMonths(year: number, month: number, n: number): [number, number] {
   month += n;
-  while (month > 11) { month -= 12; year += 1; }
+  while (month > 11) {
+    month -= 12;
+    year += 1;
+  }
   return [year, month];
 }
 
@@ -52,11 +58,15 @@ function computeOccurrences(
   }
 
   const intervalMonths =
-    template.frequency === 'EVERY_2_MONTHS' ? 2
-    : template.frequency === 'QUARTERLY' ? 3
-    : template.frequency === 'HALF_YEARLY' ? 6
-    : template.frequency === 'ANNUAL' ? 12
-    : 1;
+    template.frequency === 'EVERY_2_MONTHS'
+      ? 2
+      : template.frequency === 'QUARTERLY'
+        ? 3
+        : template.frequency === 'HALF_YEARLY'
+          ? 6
+          : template.frequency === 'ANNUAL'
+            ? 12
+            : 1;
 
   let year = now.getFullYear();
   let month = now.getMonth();
@@ -96,7 +106,10 @@ export const RecurringTemplatesService = {
       ...(dto.categoryId && { category: { connect: { id: dto.categoryId } } }),
       ...(dto.accountId && { account: { connect: { id: dto.accountId } } }),
       ...(dto.toAccountId && { toAccount: { connect: { id: dto.toAccountId } } }),
-      ...(dto.fundGroupId && { fundGroupId: dto.fundGroupId, fundGroupFlow: dto.fundGroupFlow as never }),
+      ...(dto.fundGroupId && {
+        fundGroupId: dto.fundGroupId,
+        fundGroupFlow: dto.fundGroupFlow as never,
+      }),
     });
   },
 
@@ -132,7 +145,10 @@ export const RecurringTemplatesService = {
     }
 
     const today = new Date();
-    const tmpl = template as typeof template & { fundGroupId?: string | null; fundGroupFlow?: string | null };
+    const tmpl = template as typeof template & {
+      fundGroupId?: string | null;
+      fundGroupFlow?: string | null;
+    };
 
     const tx = await RecurringTemplatesRepository.createTransaction({
       user: { connect: { id: userId } },
@@ -152,7 +168,10 @@ export const RecurringTemplatesService = {
       recurringTemplate: { connect: { id } },
       merchant: template.name,
       tags: template.tags,
-      ...(tmpl.fundGroupId && { fundGroupId: tmpl.fundGroupId, fundGroupFlow: tmpl.fundGroupFlow as never }),
+      ...(tmpl.fundGroupId && {
+        fundGroupId: tmpl.fundGroupId,
+        fundGroupFlow: tmpl.fundGroupFlow as never,
+      }),
     });
 
     await RecurringTemplatesRepository.updateLastGenerated(id);

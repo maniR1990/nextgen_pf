@@ -1,7 +1,12 @@
 'use client';
 
+import {
+  ACCOUNT_TAXONOMY_GROUPS,
+  ACCOUNT_TYPES,
+  ACCOUNT_TYPE_META,
+  type AccountTypeMeta,
+} from '@/constants/accounts';
 import type { AccountType } from '@prisma/client';
-import { ACCOUNT_TAXONOMY_GROUPS, ACCOUNT_TYPE_META, ACCOUNT_TYPES, type AccountTypeMeta } from '@/constants/accounts';
 
 const TYPE_ICONS: Partial<Record<string, string>> = {
   banking: '🏦',
@@ -22,9 +27,7 @@ export function AccountTypeGrid({ selected, onSelect }: AccountTypeGridProps) {
   return (
     <div className="account-type-grid">
       {ACCOUNT_TAXONOMY_GROUPS.map((group) => {
-        const typesInGroup = ACCOUNT_TYPES.filter(
-          (t) => ACCOUNT_TYPE_META[t].group === group.slug,
-        );
+        const typesInGroup = ACCOUNT_TYPES.filter((t) => ACCOUNT_TYPE_META[t].group === group.slug);
         if (typesInGroup.length === 0) return null;
 
         return (
@@ -57,7 +60,11 @@ export function AccountTypeGrid({ selected, onSelect }: AccountTypeGridProps) {
                     </span>
                     <span className="account-type-grid__card-name">{meta.name}</span>
                     {meta.taxBenefit && (
-                      <span className="account-type-grid__card-tax" title="80C tax benefit" aria-label="Tax benefit">
+                      <span
+                        className="account-type-grid__card-tax"
+                        title="80C tax benefit"
+                        aria-label="Tax benefit"
+                      >
                         80C
                       </span>
                     )}

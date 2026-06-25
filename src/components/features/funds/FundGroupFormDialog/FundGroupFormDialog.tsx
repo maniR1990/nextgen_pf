@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
 import { FormField } from '@/components/common/FormField';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import type { CreateFundGroupDto, FundGroupSummary } from '@/modules/fund-groups/fund-groups.types';
+import { useState } from 'react';
 
 export interface FundGroupFormDialogProps {
   open: boolean;
@@ -13,7 +13,12 @@ export interface FundGroupFormDialogProps {
   onSubmit: (dto: CreateFundGroupDto) => Promise<void>;
 }
 
-export function FundGroupFormDialog({ open, onClose, initial, onSubmit }: FundGroupFormDialogProps) {
+export function FundGroupFormDialog({
+  open,
+  onClose,
+  initial,
+  onSubmit,
+}: FundGroupFormDialogProps) {
   const [name, setName] = useState(initial?.name ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
   const [color, setColor] = useState(initial?.color ?? '#6366f1');
@@ -22,7 +27,10 @@ export function FundGroupFormDialog({ open, onClose, initial, onSubmit }: FundGr
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setError('Name is required'); return; }
+    if (!name.trim()) {
+      setError('Name is required');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
@@ -76,14 +84,23 @@ export function FundGroupFormDialog({ open, onClose, initial, onSubmit }: FundGr
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
               />
-              <span className="fund-form-drawer__color-preview" style={{ backgroundColor: color }} />
+              <span
+                className="fund-form-drawer__color-preview"
+                style={{ backgroundColor: color }}
+              />
             </div>
           </FormField>
-          {error && <p className="form-field__error" role="alert">{error}</p>}
+          {error && (
+            <p className="form-field__error" role="alert">
+              {error}
+            </p>
+          )}
         </form>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
+        <Button variant="secondary" onClick={onClose} disabled={loading}>
+          Cancel
+        </Button>
         <Button type="submit" form="fund-group-form" loading={loading}>
           {initial ? 'Save Changes' : 'Create Group'}
         </Button>

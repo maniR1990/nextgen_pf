@@ -1,14 +1,14 @@
 'use client';
 
-import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 import {
+  type HierarchyRootType,
   getHierarchyMeta,
   getHierarchyTypeTone,
-  type HierarchyRootType,
 } from '@/constants/category-hierarchy';
 import type { HierarchyCrudMode, HierarchyDensity, HierarchyVariant } from '@/constants/settings';
-import { Icon } from '@/components/ui/Icon';
 import { formatINR } from '@/lib/utils/format';
+import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { CategoryHierarchyCrudActions } from './CategoryHierarchyCrudActions';
 import type { CategoryHierarchyRowAction } from './CategoryHierarchyRowActions';
 import { CategoryHierarchyIcon } from './lib/resolveCategoryIcon';
@@ -116,7 +116,11 @@ export function CategoryHierarchyTreeNode({
   ];
 
   return (
-    <li className="cat-hierarchy__item" role="treeitem" aria-expanded={hasChildren ? isExpanded : undefined}>
+    <li
+      className="cat-hierarchy__item"
+      role="treeitem"
+      aria-expanded={hasChildren ? isExpanded : undefined}
+    >
       <div className={`cat-hierarchy__row cat-hierarchy__row--level-${node.level}`}>
         <div className="cat-hierarchy__row-main">
           {hasChildren ? (
@@ -141,10 +145,7 @@ export function CategoryHierarchyTreeNode({
           </span>
 
           <span
-            className={[
-              'cat-hierarchy__label',
-              node.level === 0 && 'cat-hierarchy__label--group',
-            ]
+            className={['cat-hierarchy__label', node.level === 0 && 'cat-hierarchy__label--group']
               .filter(Boolean)
               .join(' ')}
           >
@@ -153,9 +154,7 @@ export function CategoryHierarchyTreeNode({
         </div>
 
         <div className="cat-hierarchy__row-meta">
-          {budgetLabel ? (
-            <span className="cat-hierarchy__amount">{budgetLabel}</span>
-          ) : null}
+          {budgetLabel ? <span className="cat-hierarchy__amount">{budgetLabel}</span> : null}
 
           {levelLabel ? (
             <span

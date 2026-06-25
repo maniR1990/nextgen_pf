@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { chromaticBaseline, storyRowStyle, storySectionStyle } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
 import { Toggle } from './Toggle';
 
 const meta: Meta<typeof Toggle> = {
@@ -18,16 +18,14 @@ export const Playground: Story = {};
 export const States: Story = {
   parameters: chromaticBaseline,
   render: () => (
-    <div style={{ ...storyRowStyle, flexDirection: 'column', maxWidth: 'calc(24 * var(--space-4))' }}>
+    <div
+      style={{ ...storyRowStyle, flexDirection: 'column', maxWidth: 'calc(24 * var(--space-4))' }}
+    >
       <Toggle label="Off" />
       <Toggle label="On" defaultChecked />
       <Toggle label="Disabled off" disabled />
       <Toggle label="Disabled on" disabled defaultChecked />
-      <Toggle
-        label="Marketing emails"
-        description="Receive product updates"
-        defaultChecked
-      />
+      <Toggle label="Marketing emails" description="Receive product updates" defaultChecked />
     </div>
   ),
 };

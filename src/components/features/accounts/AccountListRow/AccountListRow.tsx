@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
-import type { AccountSummary } from '@/modules/accounts/accounts.types';
-import { ACCOUNT_TYPE_META } from '@/constants/accounts';
 import { Badge } from '@/components/ui/Badge';
+import { ACCOUNT_TYPE_META } from '@/constants/accounts';
+import type { AccountSummary } from '@/modules/accounts/accounts.types';
+import { MoreHorizontal } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { BalancePill } from '../BalancePill';
 
 export interface AccountListRowProps {
@@ -127,7 +127,10 @@ export function AccountListRow({
                   type="button"
                   role="menuitem"
                   className="account-list-row__menu-item"
-                  onClick={() => { setMenuOpen(false); onEdit(account); }}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onEdit(account);
+                  }}
                 >
                   Edit
                 </button>
@@ -137,7 +140,10 @@ export function AccountListRow({
                   type="button"
                   role="menuitem"
                   className="account-list-row__menu-item"
-                  onClick={() => { setMenuOpen(false); onTransfer(account); }}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onTransfer(account);
+                  }}
                 >
                   Transfer
                 </button>
@@ -147,7 +153,10 @@ export function AccountListRow({
                   type="button"
                   role="menuitem"
                   className="account-list-row__menu-item account-list-row__menu-item--danger"
-                  onClick={() => { setMenuOpen(false); onArchive(account); }}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onArchive(account);
+                  }}
                 >
                   Archive
                 </button>
@@ -157,7 +166,10 @@ export function AccountListRow({
                   type="button"
                   role="menuitem"
                   className="account-list-row__menu-item account-list-row__menu-item--danger"
-                  onClick={() => { setMenuOpen(false); onDelete(account); }}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onDelete(account);
+                  }}
                 >
                   Delete
                 </button>

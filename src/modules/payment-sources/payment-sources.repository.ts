@@ -1,5 +1,5 @@
-import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import type { Prisma } from '@prisma/client';
 
 const SELECT = {
   id: true,
@@ -21,8 +21,7 @@ export const PaymentSourcesRepository = {
       orderBy: { name: 'asc' },
     }),
 
-  findById: (id: string) =>
-    prisma.account.findUniqueOrThrow({ where: { id } }),
+  findById: (id: string) => prisma.account.findUniqueOrThrow({ where: { id } }),
 
   updateBalance: (id: string, balance: number) =>
     prisma.account.update({
@@ -31,8 +30,7 @@ export const PaymentSourcesRepository = {
       select: SELECT,
     }),
 
-  create: (data: Prisma.AccountCreateInput) =>
-    prisma.account.create({ data, select: SELECT }),
+  create: (data: Prisma.AccountCreateInput) => prisma.account.create({ data, select: SELECT }),
 
   findTransactions: (accountId: string, options: { take: number; cursor?: string }) =>
     prisma.financeTransaction.findMany({

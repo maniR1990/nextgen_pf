@@ -1,5 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { IMAGE_ASPECTS, IMAGE_RADII, type ImageAspect, type ImageRadius } from '@/constants/media';
 import {
   chromaticBaseline,
   storyRowStyle,
@@ -7,6 +5,8 @@ import {
   viewportDesktop,
   viewportMobile,
 } from '@/components/ui/storyLayout';
+import { IMAGE_ASPECTS, IMAGE_RADII, type ImageAspect, type ImageRadius } from '@/constants/media';
+import type { Meta, StoryObj } from '@storybook/react';
 import { ImagePlaceholder } from './ImagePlaceholder';
 import { MediaImage } from './MediaImage';
 

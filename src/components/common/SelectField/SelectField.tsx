@@ -1,8 +1,8 @@
 'use client';
 
-import type { SelectHTMLAttributes } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { FormField } from '@/components/common/FormField';
+import { ChevronDown } from 'lucide-react';
+import type { SelectHTMLAttributes } from 'react';
 
 export interface SelectOption {
   value: string;
@@ -10,7 +10,8 @@ export interface SelectOption {
   disabled?: boolean;
 }
 
-export interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children'> {
+export interface SelectFieldProps
+  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children'> {
   label: string;
   options: SelectOption[];
   placeholder?: string;
@@ -18,7 +19,16 @@ export interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectEl
   hint?: string;
 }
 
-export function SelectField({ label, options, placeholder, error, hint, id, className = '', ...props }: SelectFieldProps) {
+export function SelectField({
+  label,
+  options,
+  placeholder,
+  error,
+  hint,
+  id,
+  className = '',
+  ...props
+}: SelectFieldProps) {
   const selectId = id ?? label.toLowerCase().replace(/\s+/g, '-');
 
   return (
@@ -26,7 +36,9 @@ export function SelectField({ label, options, placeholder, error, hint, id, clas
       <div className="select-field">
         <select
           id={selectId}
-          className={['select-field__control', error && 'select-field__control--error', className].filter(Boolean).join(' ')}
+          className={['select-field__control', error && 'select-field__control--error', className]
+            .filter(Boolean)
+            .join(' ')}
           aria-invalid={error ? true : undefined}
           {...props}
         >

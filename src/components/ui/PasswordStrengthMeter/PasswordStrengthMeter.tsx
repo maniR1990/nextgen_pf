@@ -1,6 +1,6 @@
 'use client';
 
-import { scorePassword, type PasswordStrengthLevel } from '@/lib/password/strength';
+import { type PasswordStrengthLevel, scorePassword } from '@/lib/password/strength';
 
 export interface PasswordStrengthMeterProps {
   password: string;

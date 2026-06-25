@@ -26,9 +26,7 @@ export function FundGroupContribution({
 
       {targetAmount !== null && displayPct !== null && (
         <>
-          <p className="fund-group-contribution__target">
-            of ₹{formatINR(targetAmount)} target
-          </p>
+          <p className="fund-group-contribution__target">of ₹{formatINR(targetAmount)} target</p>
           <div
             role="progressbar"
             aria-label={`${fundGroupName} contribution progress`}

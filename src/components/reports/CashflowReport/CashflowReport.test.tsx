@@ -1,8 +1,8 @@
+import type { CashflowReportData } from '@/modules/reports/cashflow-report.types';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { CashflowReport } from './CashflowReport';
-import type { CashflowReportData } from '@/modules/reports/cashflow-report.types';
 
 const mockReport: CashflowReportData = {
   year: 2026,
@@ -11,8 +11,20 @@ const mockReport: CashflowReportData = {
   incomeSourceLabel: 'Salary',
   totalSavings: 25000,
   savingsBreakdown: [
-    { fundGroupId: 'fg1', fundGroupName: 'Emergency', fundGroupColor: '#ef4444', totalAmount: 15000, pct: 15 },
-    { fundGroupId: 'fg2', fundGroupName: 'Wealth', fundGroupColor: '#22c55e', totalAmount: 10000, pct: 10 },
+    {
+      fundGroupId: 'fg1',
+      fundGroupName: 'Emergency',
+      fundGroupColor: '#ef4444',
+      totalAmount: 15000,
+      pct: 15,
+    },
+    {
+      fundGroupId: 'fg2',
+      fundGroupName: 'Wealth',
+      fundGroupColor: '#22c55e',
+      totalAmount: 10000,
+      pct: 10,
+    },
   ],
   totalFundUsed: 0,
   fundUsed: [],
@@ -57,7 +69,13 @@ describe('CashflowReport', () => {
       ...mockReport,
       totalFundUsed: 20000,
       fundUsed: [
-        { fundGroupId: 'fg1', fundGroupName: 'Emergency', fundGroupColor: '#ef4444', totalAmount: 20000, pct: null },
+        {
+          fundGroupId: 'fg1',
+          fundGroupName: 'Emergency',
+          fundGroupColor: '#ef4444',
+          totalAmount: 20000,
+          pct: null,
+        },
       ],
     };
     render(<CashflowReport data={withWithdrawal} onMonthChange={vi.fn()} />);
@@ -105,7 +123,10 @@ describe('CashflowReport', () => {
     const user = userEvent.setup();
     const onMonthChange = vi.fn();
     render(
-      <CashflowReport data={{ ...mockReport, year: 2026, month: 1 }} onMonthChange={onMonthChange} />,
+      <CashflowReport
+        data={{ ...mockReport, year: 2026, month: 1 }}
+        onMonthChange={onMonthChange}
+      />,
     );
 
     await user.click(screen.getByRole('button', { name: /previous month/i }));
@@ -117,7 +138,10 @@ describe('CashflowReport', () => {
     const user = userEvent.setup();
     const onMonthChange = vi.fn();
     render(
-      <CashflowReport data={{ ...mockReport, year: 2026, month: 12 }} onMonthChange={onMonthChange} />,
+      <CashflowReport
+        data={{ ...mockReport, year: 2026, month: 12 }}
+        onMonthChange={onMonthChange}
+      />,
     );
 
     await user.click(screen.getByRole('button', { name: /next month/i }));

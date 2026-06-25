@@ -1,7 +1,7 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import { FundBucketBoard } from './FundBucketBoard';
 import type { FundSummary } from '@/modules/funds/funds.types';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { FundBucketBoard } from './FundBucketBoard';
 
 const makeFund = (id: string, name: string, purpose: string): FundSummary => ({
   id,

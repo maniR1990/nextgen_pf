@@ -1,5 +1,5 @@
-import type { InstitutionType, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import type { InstitutionType, Prisma } from '@prisma/client';
 
 const INSTITUTION_SELECT = {
   id: true,

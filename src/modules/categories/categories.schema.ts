@@ -1,19 +1,15 @@
-import { z } from 'zod';
 import {
   CATEGORY_FLOW_TYPES,
   CATEGORY_SORT_OPTIONS,
   MATCH_RULE_FIELDS,
   MATCH_RULE_OPERATORS,
 } from '@/constants/categories';
+import { z } from 'zod';
 
 const matchRuleSchema = z.object({
   field: z.enum(MATCH_RULE_FIELDS),
   operator: z.enum(MATCH_RULE_OPERATORS),
-  value: z.union([
-    z.string(),
-    z.number(),
-    z.tuple([z.number(), z.number()]),
-  ]),
+  value: z.union([z.string(), z.number(), z.tuple([z.number(), z.number()])]),
   priority: z.number().int().min(0).default(0),
 });
 

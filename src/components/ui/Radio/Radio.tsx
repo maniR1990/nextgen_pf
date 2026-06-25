@@ -14,7 +14,9 @@ export function Radio({ label, description, className = '', id, ...props }: Radi
   return (
     <label
       htmlFor={radioId}
-      className={['radio', props.disabled && 'radio--disabled', className].filter(Boolean).join(' ')}
+      className={['radio', props.disabled && 'radio--disabled', className]
+        .filter(Boolean)
+        .join(' ')}
     >
       <input id={radioId} type="radio" className="radio__input" {...props} />
       <span className="radio__dot" aria-hidden />

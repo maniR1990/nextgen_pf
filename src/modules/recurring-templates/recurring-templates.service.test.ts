@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RecurringTemplatesService } from './recurring-templates.service';
-import { RecurringTemplatesRepository } from './recurring-templates.repository';
 import { ConflictError, NotFoundError } from '@/lib/api/errors';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RecurringTemplatesRepository } from './recurring-templates.repository';
+import { RecurringTemplatesService } from './recurring-templates.service';
 
 vi.mock('./recurring-templates.repository');
 
@@ -51,13 +51,19 @@ describe('RecurringTemplatesService.create', () => {
 describe('RecurringTemplatesService.update', () => {
   it('pauses an active template', async () => {
     vi.mocked(RecurringTemplatesRepository.findById).mockResolvedValue(mockTemplate as never);
-    vi.mocked(RecurringTemplatesRepository.update).mockResolvedValue({ ...mockTemplate, isActive: false } as never);
+    vi.mocked(RecurringTemplatesRepository.update).mockResolvedValue({
+      ...mockTemplate,
+      isActive: false,
+    } as never);
     const result = await RecurringTemplatesService.update('rt1', 'u1', { isActive: false });
     expect(result.isActive).toBe(false);
   });
 
   it('throws NotFoundError when template belongs to another user', async () => {
-    vi.mocked(RecurringTemplatesRepository.findById).mockResolvedValue({ ...mockTemplate, userId: 'other' } as never);
+    vi.mocked(RecurringTemplatesRepository.findById).mockResolvedValue({
+      ...mockTemplate,
+      userId: 'other',
+    } as never);
     await expect(RecurringTemplatesService.update('rt1', 'u1', {})).rejects.toThrow(NotFoundError);
   });
 });
@@ -83,7 +89,12 @@ describe('RecurringTemplatesService.previewOccurrences', () => {
   });
 
   it('handles TWICE_MONTHLY with two dates per month', async () => {
-    const twiceMonthly = { ...mockTemplate, frequency: 'TWICE_MONTHLY', dayOfMonth: 1, secondDayOfMonth: 15 };
+    const twiceMonthly = {
+      ...mockTemplate,
+      frequency: 'TWICE_MONTHLY',
+      dayOfMonth: 1,
+      secondDayOfMonth: 15,
+    };
     vi.mocked(RecurringTemplatesRepository.findById).mockResolvedValue(twiceMonthly as never);
     const result = await RecurringTemplatesService.previewOccurrences('rt1', 'u1', 4);
     expect(result.occurrences).toHaveLength(4);
@@ -133,7 +144,10 @@ describe('RecurringTemplatesService.create — fund group tagging', () => {
       estimatedAmount: 5000,
     });
 
-    const call = vi.mocked(RecurringTemplatesRepository.create).mock.calls[0][0] as Record<string, unknown>;
+    const call = vi.mocked(RecurringTemplatesRepository.create).mock.calls[0][0] as Record<
+      string,
+      unknown
+    >;
     expect(call).not.toHaveProperty('fundGroupId');
   });
 });
@@ -141,23 +155,29 @@ describe('RecurringTemplatesService.create — fund group tagging', () => {
 describe('RecurringTemplatesService.generate', () => {
   it('creates a FinanceTransaction from the template', async () => {
     vi.mocked(RecurringTemplatesRepository.findById).mockResolvedValue(mockTemplate as never);
-    vi.mocked(RecurringTemplatesRepository.createTransaction).mockResolvedValue({ id: 'tx_gen1' } as never);
-    vi.mocked(RecurringTemplatesRepository.updateLastGenerated).mockResolvedValue(mockTemplate as never);
+    vi.mocked(RecurringTemplatesRepository.createTransaction).mockResolvedValue({
+      id: 'tx_gen1',
+    } as never);
+    vi.mocked(RecurringTemplatesRepository.updateLastGenerated).mockResolvedValue(
+      mockTemplate as never,
+    );
     const result = await RecurringTemplatesService.generate('rt1', 'u1');
     expect(result.transactionId).toBe('tx_gen1');
   });
 
   it('throws ConflictError when template has no account set', async () => {
-    vi.mocked(RecurringTemplatesRepository.findById).mockResolvedValue(
-      { ...mockTemplate, accountId: null } as never,
-    );
+    vi.mocked(RecurringTemplatesRepository.findById).mockResolvedValue({
+      ...mockTemplate,
+      accountId: null,
+    } as never);
     await expect(RecurringTemplatesService.generate('rt1', 'u1')).rejects.toThrow(ConflictError);
   });
 
   it('throws NotFoundError when template belongs to another user', async () => {
-    vi.mocked(RecurringTemplatesRepository.findById).mockResolvedValue(
-      { ...mockTemplate, userId: 'other' } as never,
-    );
+    vi.mocked(RecurringTemplatesRepository.findById).mockResolvedValue({
+      ...mockTemplate,
+      userId: 'other',
+    } as never);
     await expect(RecurringTemplatesService.generate('rt1', 'u1')).rejects.toThrow(NotFoundError);
   });
 });
@@ -172,8 +192,12 @@ describe('RecurringTemplatesService.generate — fund tag propagation', () => {
       fundGroupFlow: 'IN',
     };
     vi.mocked(RecurringTemplatesRepository.findById).mockResolvedValue(taggedTemplate as never);
-    vi.mocked(RecurringTemplatesRepository.createTransaction).mockResolvedValue({ id: 'tx_gen2' } as never);
-    vi.mocked(RecurringTemplatesRepository.updateLastGenerated).mockResolvedValue(taggedTemplate as never);
+    vi.mocked(RecurringTemplatesRepository.createTransaction).mockResolvedValue({
+      id: 'tx_gen2',
+    } as never);
+    vi.mocked(RecurringTemplatesRepository.updateLastGenerated).mockResolvedValue(
+      taggedTemplate as never,
+    );
 
     await RecurringTemplatesService.generate('rt1', 'u1');
 
@@ -184,12 +208,17 @@ describe('RecurringTemplatesService.generate — fund tag propagation', () => {
 
   it('generated transaction has no fundGroupId when template is untagged', async () => {
     vi.mocked(RecurringTemplatesRepository.findById).mockResolvedValue(mockTemplate as never);
-    vi.mocked(RecurringTemplatesRepository.createTransaction).mockResolvedValue({ id: 'tx_gen3' } as never);
-    vi.mocked(RecurringTemplatesRepository.updateLastGenerated).mockResolvedValue(mockTemplate as never);
+    vi.mocked(RecurringTemplatesRepository.createTransaction).mockResolvedValue({
+      id: 'tx_gen3',
+    } as never);
+    vi.mocked(RecurringTemplatesRepository.updateLastGenerated).mockResolvedValue(
+      mockTemplate as never,
+    );
 
     await RecurringTemplatesService.generate('rt1', 'u1');
 
-    const call = vi.mocked(RecurringTemplatesRepository.createTransaction).mock.calls[0][0] as Record<string, unknown>;
+    const call = vi.mocked(RecurringTemplatesRepository.createTransaction).mock
+      .calls[0][0] as Record<string, unknown>;
     expect(call.fundGroupId).toBeUndefined();
   });
 });

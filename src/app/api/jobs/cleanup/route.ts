@@ -1,5 +1,5 @@
-import { asRouteHandler, withCronSecret } from '@/lib/api/middleware';
 import { CleanupJob } from '@/jobs/schedulers/cleanup.job';
+import { asRouteHandler, withCronSecret } from '@/lib/api/middleware';
 
 export const POST = asRouteHandler(
   withCronSecret(async () => {

@@ -1,6 +1,6 @@
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransactionFilterBar } from './TransactionFilterBar';
 
 const mockReplace = vi.fn();
@@ -13,9 +13,9 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/lib/query/fetcher', () => ({
-  apiGetV1: vi.fn().mockResolvedValue([
-    { id: 'ps1', name: 'HDFC Salary', type: 'BANK_SALARY', balance: 0 },
-  ]),
+  apiGetV1: vi
+    .fn()
+    .mockResolvedValue([{ id: 'ps1', name: 'HDFC Salary', type: 'BANK_SALARY', balance: 0 }]),
 }));
 
 function renderBar() {

@@ -1,13 +1,13 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { Mailbox } from 'lucide-react';
-import { axe, toHaveNoViolations } from 'jest-axe';
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   EMPTY_STATE_DEMO_TRANSACTIONS_ACTION,
   EMPTY_STATE_DEMO_TRANSACTIONS_DESCRIPTION,
   EMPTY_STATE_DEMO_TRANSACTIONS_TITLE,
 } from '@/constants/emptyState';
+import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { axe, toHaveNoViolations } from 'jest-axe';
+import { Mailbox } from 'lucide-react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EmptyState, emptyStateClassName } from './EmptyState';
 
 expect.extend(toHaveNoViolations);
@@ -23,7 +23,9 @@ describe('EmptyState', () => {
         description={EMPTY_STATE_DEMO_TRANSACTIONS_DESCRIPTION}
       />,
     );
-    expect(screen.getByRole('heading', { level: 3, name: EMPTY_STATE_DEMO_TRANSACTIONS_TITLE })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 3, name: EMPTY_STATE_DEMO_TRANSACTIONS_TITLE }),
+    ).toBeInTheDocument();
     expect(screen.getByText(EMPTY_STATE_DEMO_TRANSACTIONS_DESCRIPTION)).toBeInTheDocument();
     expect(document.querySelector('.empty-state__icon')).toBeInTheDocument();
   });
@@ -37,7 +39,9 @@ describe('EmptyState', () => {
         onAction={onAction}
       />,
     );
-    await userEvent.click(screen.getByRole('button', { name: EMPTY_STATE_DEMO_TRANSACTIONS_ACTION }));
+    await userEvent.click(
+      screen.getByRole('button', { name: EMPTY_STATE_DEMO_TRANSACTIONS_ACTION }),
+    );
     expect(onAction).toHaveBeenCalledOnce();
   });
 

@@ -17,21 +17,23 @@ export const SettingsTabSchema = z.object({
   }),
 });
 
-export const SettingsPageConfigSchema = z.object({
-  ariaLabel: z.string().min(1).default(SETTINGS_DEFAULT_ARIA_LABEL),
-  defaultTabId: z.string().min(1).default(SETTINGS_DEFAULT_TAB_ID),
-  tabs: z.array(SettingsTabSchema).min(1),
-}).superRefine((config, ctx) => {
-  const tabIds = new Set(config.tabs.map((tab) => tab.id));
+export const SettingsPageConfigSchema = z
+  .object({
+    ariaLabel: z.string().min(1).default(SETTINGS_DEFAULT_ARIA_LABEL),
+    defaultTabId: z.string().min(1).default(SETTINGS_DEFAULT_TAB_ID),
+    tabs: z.array(SettingsTabSchema).min(1),
+  })
+  .superRefine((config, ctx) => {
+    const tabIds = new Set(config.tabs.map((tab) => tab.id));
 
-  if (!tabIds.has(config.defaultTabId)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'defaultTabId must match a tab id',
-      path: ['defaultTabId'],
-    });
-  }
-});
+    if (!tabIds.has(config.defaultTabId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'defaultTabId must match a tab id',
+        path: ['defaultTabId'],
+      });
+    }
+  });
 
 export type SettingsPageConfigJson = z.infer<typeof SettingsPageConfigSchema>;
 export type SettingsTabJson = z.infer<typeof SettingsTabSchema>;

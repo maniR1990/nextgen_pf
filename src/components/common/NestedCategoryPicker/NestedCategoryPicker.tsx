@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
 import { Check, ChevronRight, Search } from 'lucide-react';
+import type React from 'react';
+import { useState } from 'react';
 
 export interface CategoryNode {
   id: string;
@@ -24,7 +25,12 @@ interface BreadcrumbItem {
   nodes: CategoryNode[];
 }
 
-export function NestedCategoryPicker({ categories, value, onChange, label }: NestedCategoryPickerProps) {
+export function NestedCategoryPicker({
+  categories,
+  value,
+  onChange,
+  label,
+}: NestedCategoryPickerProps) {
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([
     { id: 'root', label: 'All', nodes: categories },
   ]);
@@ -33,27 +39,22 @@ export function NestedCategoryPicker({ categories, value, onChange, label }: Nes
   const currentLevel = breadcrumbs[breadcrumbs.length - 1];
 
   const filteredNodes = search.trim()
-    ? currentLevel.nodes.filter(n =>
-        n.label.toLowerCase().includes(search.toLowerCase())
-      )
+    ? currentLevel.nodes.filter((n) => n.label.toLowerCase().includes(search.toLowerCase()))
     : currentLevel.nodes;
 
   function drillInto(node: CategoryNode) {
     if (!node.children?.length) return;
     setSearch('');
-    setBreadcrumbs(prev => [
-      ...prev,
-      { id: node.id, label: node.label, nodes: node.children! },
-    ]);
+    setBreadcrumbs((prev) => [...prev, { id: node.id, label: node.label, nodes: node.children! }]);
   }
 
   function navigateTo(index: number) {
     setSearch('');
-    setBreadcrumbs(prev => prev.slice(0, index + 1));
+    setBreadcrumbs((prev) => prev.slice(0, index + 1));
   }
 
   function handleSelect(node: CategoryNode) {
-    const path = [...breadcrumbs.slice(1).map(b => b.id), node.id];
+    const path = [...breadcrumbs.slice(1).map((b) => b.id), node.id];
     onChange?.(node.id, path);
   }
 
@@ -71,7 +72,9 @@ export function NestedCategoryPicker({ categories, value, onChange, label }: Nes
               className={[
                 'nested-cat__crumb',
                 i === breadcrumbs.length - 1 ? 'nested-cat__crumb--active' : '',
-              ].filter(Boolean).join(' ')}
+              ]
+                .filter(Boolean)
+                .join(' ')}
               onClick={() => navigateTo(i)}
               aria-current={i === breadcrumbs.length - 1 ? 'page' : undefined}
               disabled={i === breadcrumbs.length - 1}
@@ -89,7 +92,7 @@ export function NestedCategoryPicker({ categories, value, onChange, label }: Nes
           type="text"
           placeholder={`Search in ${currentLevel.label}…`}
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
           aria-label={`Search in ${currentLevel.label}`}
         />
       </div>
@@ -97,11 +100,9 @@ export function NestedCategoryPicker({ categories, value, onChange, label }: Nes
       {/* Item list */}
       <div className="nested-cat__list" role="listbox" aria-label={currentLevel.label}>
         {filteredNodes.length === 0 && (
-          <div className="nested-cat__empty">
-            {search ? 'No results' : 'No items'}
-          </div>
+          <div className="nested-cat__empty">{search ? 'No results' : 'No items'}</div>
         )}
-        {filteredNodes.map(node => {
+        {filteredNodes.map((node) => {
           const hasChildren = Boolean(node.children?.length);
           const isSelected = node.id === value;
 
@@ -113,9 +114,11 @@ export function NestedCategoryPicker({ categories, value, onChange, label }: Nes
                 'nested-cat__item',
                 isSelected ? 'nested-cat__item--selected' : '',
                 hasChildren ? 'nested-cat__item--has-children' : '',
-              ].filter(Boolean).join(' ')}
+              ]
+                .filter(Boolean)
+                .join(' ')}
               aria-selected={isSelected}
-              onClick={() => hasChildren ? drillInto(node) : handleSelect(node)}
+              onClick={() => (hasChildren ? drillInto(node) : handleSelect(node))}
             >
               <div className="nested-cat__item-left">
                 {node.icon && (
@@ -137,10 +140,11 @@ export function NestedCategoryPicker({ categories, value, onChange, label }: Nes
                 {hasChildren && (
                   <span className="nested-cat__item-count">{node.children!.length}</span>
                 )}
-                {hasChildren
-                  ? <ChevronRight size={14} className="nested-cat__item-chevron" aria-hidden />
-                  : isSelected && <Check size={14} className="nested-cat__check" aria-hidden />
-                }
+                {hasChildren ? (
+                  <ChevronRight size={14} className="nested-cat__item-chevron" aria-hidden />
+                ) : (
+                  isSelected && <Check size={14} className="nested-cat__check" aria-hidden />
+                )}
               </div>
             </button>
           );

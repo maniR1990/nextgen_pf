@@ -31,7 +31,7 @@ export const FundGroupsService = {
 
   async create(userId: string, dto: CreateFundGroupDto) {
     const maxOrder = await FundGroupsRepository.maxOrder(userId);
-    const order = dto.order ?? ((maxOrder._max?.order ?? -1) + 1);
+    const order = dto.order ?? (maxOrder._max?.order ?? -1) + 1;
 
     const baseSlug = toSlug(dto.name);
     let slug = baseSlug;

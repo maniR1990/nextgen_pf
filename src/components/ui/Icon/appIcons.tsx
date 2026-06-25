@@ -1,12 +1,4 @@
-import {
-  Bell,
-  CreditCard,
-  Home,
-  LineChart,
-  Settings,
-  User,
-  type LucideIcon,
-} from 'lucide-react';
+import { Bell, CreditCard, Home, LineChart, type LucideIcon, Settings, User } from 'lucide-react';
 
 /** Canonical app navigation / shell icons — Lucide only */
 export const AppIcons = {

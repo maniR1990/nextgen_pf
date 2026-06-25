@@ -1,8 +1,8 @@
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AppHeader } from './AppHeader';
 import type { AppHeaderConfig, AppHeaderData } from '@/lib/schemas/appHeader';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AppHeader } from './AppHeader';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname,
@@ -19,20 +19,44 @@ let mockPathname = '/dashboard';
 const mockConfig: AppHeaderConfig = {
   brand: { appName: 'PersonalFi', logoAbbr: 'PF', homeHref: '/dashboard' },
   nav: [
-    { id: 'dashboard',    label: 'Dashboard',    href: '/dashboard' },
-    { id: 'budget',       label: 'Budget',       href: '/dashboard/budget' },
+    { id: 'dashboard', label: 'Dashboard', href: '/dashboard' },
+    { id: 'budget', label: 'Budget', href: '/dashboard/budget' },
     { id: 'transactions', label: 'Transactions', href: '/dashboard/transactions' },
-    { id: 'goals',        label: 'Goals',        href: '/dashboard/goals' },
-    { id: 'reports',      label: 'Reports',      href: '/dashboard/reports' },
-    { id: 'settings',     label: 'Settings',     href: '/dashboard/settings' },
+    { id: 'goals', label: 'Goals', href: '/dashboard/goals' },
+    { id: 'reports', label: 'Reports', href: '/dashboard/reports' },
+    { id: 'settings', label: 'Settings', href: '/dashboard/settings' },
   ],
   pulseStrip: {
     collapseAfterScrollPx: 40,
     metrics: [
-      { id: 'netWorth',      label: 'NET WORTH',       dataKey: 'netWorth',      changeKey: 'netWorthChangePct', format: 'currency-inr-compact' },
-      { id: 'readyToAssign', label: 'READY TO ASSIGN', dataKey: 'readyToAssign', metaKey: 'budgetPeriodLabel',   format: 'currency-inr' },
-      { id: 'monthSpend',    label: 'MONTH SPEND',     dataKey: 'monthSpend',    metaKey: 'spendPaceLabel',      format: 'currency-inr' },
-      { id: 'monthCloses',   label: 'CLOSES IN',       dataKey: 'daysUntilClose', metaKey: 'closeDateLabel',    format: 'days' },
+      {
+        id: 'netWorth',
+        label: 'NET WORTH',
+        dataKey: 'netWorth',
+        changeKey: 'netWorthChangePct',
+        format: 'currency-inr-compact',
+      },
+      {
+        id: 'readyToAssign',
+        label: 'READY TO ASSIGN',
+        dataKey: 'readyToAssign',
+        metaKey: 'budgetPeriodLabel',
+        format: 'currency-inr',
+      },
+      {
+        id: 'monthSpend',
+        label: 'MONTH SPEND',
+        dataKey: 'monthSpend',
+        metaKey: 'spendPaceLabel',
+        format: 'currency-inr',
+      },
+      {
+        id: 'monthCloses',
+        label: 'CLOSES IN',
+        dataKey: 'daysUntilClose',
+        metaKey: 'closeDateLabel',
+        format: 'days',
+      },
     ],
     marketTicker: {
       symbols: ['NIFTY_50', 'SENSEX'],
@@ -48,20 +72,44 @@ const mockConfig: AppHeaderConfig = {
   },
   mobile: {
     tabBar: [
-      { id: 'home',   label: 'Home',   icon: 'home',      href: '/dashboard' },
+      { id: 'home', label: 'Home', icon: 'home', href: '/dashboard' },
       { id: 'budget', label: 'Budget', icon: 'bar-chart', href: '/dashboard/budget' },
-      { id: 'fab',    label: '',       icon: 'plus',      isFab: true },
-      { id: 'goals',  label: 'Goals',  icon: 'target',    href: '/dashboard/goals' },
-      { id: 'profile',label: 'Profile',icon: 'user',      href: '/dashboard/profile' },
+      { id: 'fab', label: '', icon: 'plus', isFab: true },
+      { id: 'goals', label: 'Goals', icon: 'target', href: '/dashboard/goals' },
+      { id: 'profile', label: 'Profile', icon: 'user', href: '/dashboard/profile' },
     ],
     fabRadial: {
       radiusPx: 80,
       animationMs: 200,
       actions: [
-        { id: 'expense', label: 'Expense', icon: 'arrow-down-left', color: 'error',   transactionType: 'EXPENSE' },
-        { id: 'income',  label: 'Income',  icon: 'arrow-up-right',  color: 'success', transactionType: 'INCOME' },
-        { id: 'transfer',label: 'Transfer',icon: 'arrow-left-right',color: 'info',    transactionType: 'TRANSFER' },
-        { id: 'investment',label:'Investment',icon:'trending-up',   color: 'purple',  transactionType: 'INVESTMENT' },
+        {
+          id: 'expense',
+          label: 'Expense',
+          icon: 'arrow-down-left',
+          color: 'error',
+          transactionType: 'EXPENSE',
+        },
+        {
+          id: 'income',
+          label: 'Income',
+          icon: 'arrow-up-right',
+          color: 'success',
+          transactionType: 'INCOME',
+        },
+        {
+          id: 'transfer',
+          label: 'Transfer',
+          icon: 'arrow-left-right',
+          color: 'info',
+          transactionType: 'TRANSFER',
+        },
+        {
+          id: 'investment',
+          label: 'Investment',
+          icon: 'trending-up',
+          color: 'purple',
+          transactionType: 'INVESTMENT',
+        },
       ],
     },
   },
@@ -78,7 +126,7 @@ const mockData: AppHeaderData = {
   closeDateLabel: 'Jun 30',
   market: {
     NIFTY_50: { label: 'NIFTY 50', value: 24_832, changePct: 0.4 },
-    SENSEX:   { label: 'SENSEX',   value: 81_442, changePct: 0.3 },
+    SENSEX: { label: 'SENSEX', value: 81_442, changePct: 0.3 },
   },
   pendingCount: 3,
   spendPace: 4_210,

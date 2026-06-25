@@ -1,5 +1,11 @@
-import { LOG_LEVELS, type ILogger, type ILoggerProvider, type LogContext, type LogLevel } from '../types';
 import { sanitizeContext } from '../sanitize';
+import {
+  type ILogger,
+  type ILoggerProvider,
+  LOG_LEVELS,
+  type LogContext,
+  type LogLevel,
+} from '../types';
 
 const LEVEL_COLORS: Record<LogLevel, string> = {
   debug: '\x1b[90m',

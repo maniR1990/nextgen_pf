@@ -3,17 +3,17 @@
 import { TX_TYPE_GROUPS, TX_TYPE_META } from '@/constants/finance';
 import type { TxType } from '@/constants/finance';
 import {
-  TrendingDown,
-  TrendingUp,
-  PiggyBank,
+  ArrowLeftRight,
   ArrowUpRight,
   Gift,
-  Receipt,
-  ArrowLeftRight,
   Landmark,
-  Undo2,
-  Tag,
+  PiggyBank,
+  Receipt,
   Star,
+  Tag,
+  TrendingDown,
+  TrendingUp,
+  Undo2,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = {

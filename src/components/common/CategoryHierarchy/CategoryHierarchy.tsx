@@ -1,11 +1,11 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { getDefaultRootType } from './lib/resolveCategoryIcon';
 import {
-  CategoryHierarchyTreeNode,
   type CategoryHierarchyCrudHandlers,
+  CategoryHierarchyTreeNode,
 } from './CategoryHierarchyTreeNode';
+import { getDefaultRootType } from './lib/resolveCategoryIcon';
 import type { CategoryHierarchyConfigJson, CategoryHierarchyNodeJson } from './schemas';
 
 export interface CategoryHierarchyProps extends CategoryHierarchyCrudHandlers {
@@ -74,7 +74,9 @@ export function CategoryHierarchy({
       ]
         .filter(Boolean)
         .join(' ')}
-      aria-labelledby={config.title && config.showHeader !== false ? 'cat-hierarchy-title' : undefined}
+      aria-labelledby={
+        config.title && config.showHeader !== false ? 'cat-hierarchy-title' : undefined
+      }
     >
       {config.showHeader !== false && (config.title || config.description) && (
         <header className="cat-hierarchy__header">
@@ -83,9 +85,7 @@ export function CategoryHierarchy({
               {config.title}
             </h2>
           )}
-          {config.description && (
-            <p className="cat-hierarchy__description">{config.description}</p>
-          )}
+          {config.description && <p className="cat-hierarchy__description">{config.description}</p>}
         </header>
       )}
 
@@ -117,32 +117,32 @@ export function CategoryHierarchy({
             </div>
           </div>
         ) : (
-        <ul className="cat-hierarchy__tree" role="tree" aria-label={config.ariaLabel}>
-          {config.nodes.map((node) => {
-            const variant = config.variant ?? 'category';
-            const groupType = node.type ?? getDefaultRootType(variant);
+          <ul className="cat-hierarchy__tree" role="tree" aria-label={config.ariaLabel}>
+            {config.nodes.map((node) => {
+              const variant = config.variant ?? 'category';
+              const groupType = node.type ?? getDefaultRootType(variant);
 
-            return (
-              <CategoryHierarchyTreeNode
-                key={node.id}
-                node={node}
-                groupType={groupType}
-                variant={variant}
-                density={config.density}
-                crudMode={config.crudMode}
-                showBudget={config.showBudget}
-                expandedIds={expandedSet}
-                onToggleExpand={handleToggleExpand}
-                readOnly={readOnly}
-                canEdit={canEdit}
-                canDelete={canDelete}
-                onCreate={onCreate}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-              />
-            );
-          })}
-        </ul>
+              return (
+                <CategoryHierarchyTreeNode
+                  key={node.id}
+                  node={node}
+                  groupType={groupType}
+                  variant={variant}
+                  density={config.density}
+                  crudMode={config.crudMode}
+                  showBudget={config.showBudget}
+                  expandedIds={expandedSet}
+                  onToggleExpand={handleToggleExpand}
+                  readOnly={readOnly}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                  onCreate={onCreate}
+                  onUpdate={onUpdate}
+                  onDelete={onDelete}
+                />
+              );
+            })}
+          </ul>
         )}
       </div>
     </section>

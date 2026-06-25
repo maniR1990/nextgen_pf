@@ -1,6 +1,6 @@
 import { NotFoundError } from '@/lib/api/errors';
-import { getLogger } from '@/lib/logger';
 import { prisma } from '@/lib/db/prisma';
+import { getLogger } from '@/lib/logger';
 import { PaymentSourcesRepository } from './payment-sources.repository';
 
 const log = getLogger('PaymentSourcesService');
@@ -24,14 +24,17 @@ function toDto(row: Awaited<ReturnType<typeof PaymentSourcesRepository.findByUse
 }
 
 export const PaymentSourcesService = {
-  async create(userId: string, data: {
-    name: string;
-    type: string;
-    bank?: string;
-    accountNumberLast4?: string;
-    currentBalance?: number;
-    creditLimit?: number;
-  }) {
+  async create(
+    userId: string,
+    data: {
+      name: string;
+      type: string;
+      bank?: string;
+      accountNumberLast4?: string;
+      currentBalance?: number;
+      creditLimit?: number;
+    },
+  ) {
     const group = await prisma.accountGroup.findFirst({ where: { userId } });
     if (!group) throw new NotFoundError('No account group found');
     const code = `${data.type.slice(0, 6)}-${Date.now().toString(36).toUpperCase()}`;
@@ -61,11 +64,7 @@ export const PaymentSourcesService = {
     return toDto(row);
   },
 
-  async getStatement(
-    id: string,
-    userId: string,
-    options: { limit: number; cursor?: string },
-  ) {
+  async getStatement(id: string, userId: string, options: { limit: number; cursor?: string }) {
     const source = await PaymentSourcesRepository.findById(id);
     assertOwned(source, userId);
 

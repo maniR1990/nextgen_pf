@@ -11,7 +11,9 @@ describe('MonthPicker', () => {
       render(<MonthPicker />);
       const btns = screen.getAllByRole('button');
       // 12 months + 2 nav buttons
-      const monthBtns = btns.filter(b => /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/.test(b.textContent ?? ''));
+      const monthBtns = btns.filter((b) =>
+        /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/.test(b.textContent ?? ''),
+      );
       expect(monthBtns).toHaveLength(12);
     });
 

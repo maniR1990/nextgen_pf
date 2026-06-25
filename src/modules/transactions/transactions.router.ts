@@ -1,14 +1,14 @@
-import { compose, withAuth, withValidation, withIdempotency } from '@/lib/api/middleware';
-import { created, ok, error } from '@/lib/api/response';
 import { isApiError } from '@/lib/api/errors';
-import { v1Ok, v1Created, v1Paginated, v1FromApiError } from '@/lib/api/v1/envelope';
+import { compose, withAuth, withIdempotency, withValidation } from '@/lib/api/middleware';
+import { created, error, ok } from '@/lib/api/response';
+import { v1Created, v1FromApiError, v1Ok, v1Paginated } from '@/lib/api/v1/envelope';
 import { getLogger } from '@/lib/logger';
 import { getIncomePeriodData } from '@/lib/utils/incomePeriod';
 import {
+  CheckDuplicateSchema,
   CreateTransactionSchema,
   ListTransactionsQuerySchema,
   PatchTransactionSchema,
-  CheckDuplicateSchema,
 } from './transactions.schema';
 import { TransactionService } from './transactions.service';
 
@@ -77,7 +77,12 @@ export const v1ListTransactions = compose(withAuth())(async (req, ctx) => {
   try {
     const url = new URL(req.url);
     const parsed = ListTransactionsQuerySchema.safeParse(Object.fromEntries(url.searchParams));
-    if (!parsed.success) return v1FromApiError({ message: 'Invalid query params', status: 422, code: 'VALIDATION_ERROR' });
+    if (!parsed.success)
+      return v1FromApiError({
+        message: 'Invalid query params',
+        status: 422,
+        code: 'VALIDATION_ERROR',
+      });
 
     const typesParam = parsed.data.types?.split(',').filter(Boolean) as never[] | undefined;
 
@@ -122,7 +127,8 @@ export const v1CreateTransaction = compose(
 export const v1GetTransaction = compose(withAuth())(async (req, ctx) => {
   try {
     const id = ctx.params?.id;
-    if (!id) return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
+    if (!id)
+      return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
     const tx = await TransactionService.getById(id, ctx.session!.id);
     return v1Ok(tx);
   } catch (err) {
@@ -137,7 +143,8 @@ export const v1PatchTransaction = compose(
 )(async (req, ctx) => {
   try {
     const id = ctx.params?.id;
-    if (!id) return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
+    if (!id)
+      return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
     const body = await req.json();
     const tx = await TransactionService.patch(id, ctx.session!.id, body);
     return v1Ok(tx);
@@ -150,11 +157,16 @@ export const v1PatchTransaction = compose(
 export const v1DeleteTransaction = compose(withAuth())(async (req, ctx) => {
   try {
     const id = ctx.params?.id;
-    if (!id) return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
+    if (!id)
+      return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
 
     const confirmHeader = req.headers.get('x-confirm-delete');
     if (confirmHeader !== 'true') {
-      return v1FromApiError({ message: 'X-Confirm-Delete header missing or not true', status: 400, code: 'DELETE_NOT_CONFIRMED' });
+      return v1FromApiError({
+        message: 'X-Confirm-Delete header missing or not true',
+        status: 400,
+        code: 'DELETE_NOT_CONFIRMED',
+      });
     }
 
     await TransactionService.hardDelete(id, ctx.session!.id);
@@ -168,7 +180,8 @@ export const v1DeleteTransaction = compose(withAuth())(async (req, ctx) => {
 export const v1VoidTransaction = compose(withAuth())(async (req, ctx) => {
   try {
     const id = ctx.params?.id;
-    if (!id) return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
+    if (!id)
+      return v1FromApiError({ message: 'Missing id', status: 400, code: 'VALIDATION_ERROR' });
     const tx = await TransactionService.voidTransaction(id, ctx.session!.id);
     return v1Ok(tx);
   } catch (err) {
@@ -183,7 +196,11 @@ export const v1GetIncomePeriod = compose(withAuth())(async (req) => {
   const url = new URL(req.url);
   const date = url.searchParams.get('date');
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return v1FromApiError({ message: 'date query param required (YYYY-MM-DD)', status: 400, code: 'VALIDATION_ERROR' });
+    return v1FromApiError({
+      message: 'date query param required (YYYY-MM-DD)',
+      status: 400,
+      code: 'VALIDATION_ERROR',
+    });
   }
   return v1Ok(getIncomePeriodData(date));
 });
@@ -192,7 +209,8 @@ export const v1CheckDuplicate = compose(withAuth())(async (req, ctx) => {
   try {
     const body = await req.json();
     const parsed = CheckDuplicateSchema.safeParse(body);
-    if (!parsed.success) return v1FromApiError({ message: 'Invalid body', status: 422, code: 'VALIDATION_ERROR' });
+    if (!parsed.success)
+      return v1FromApiError({ message: 'Invalid body', status: 422, code: 'VALIDATION_ERROR' });
 
     await TransactionService.checkDuplicatesV1(
       ctx.session!.id,

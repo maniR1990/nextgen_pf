@@ -1,7 +1,7 @@
 'use client';
 
-import type { ReactNode, HTMLAttributes } from 'react';
 import { AlertCircle } from 'lucide-react';
+import type { HTMLAttributes, ReactNode } from 'react';
 
 export interface FormFieldProps extends HTMLAttributes<HTMLDivElement> {
   label: string;
@@ -13,13 +13,30 @@ export interface FormFieldProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
 }
 
-export function FormField({ label, htmlFor, error, hint, required, badge, children, className = '', ...props }: FormFieldProps) {
+export function FormField({
+  label,
+  htmlFor,
+  error,
+  hint,
+  required,
+  badge,
+  children,
+  className = '',
+  ...props
+}: FormFieldProps) {
   return (
-    <div className={['form-field', error && 'form-field--error', className].filter(Boolean).join(' ')} {...props}>
+    <div
+      className={['form-field', error && 'form-field--error', className].filter(Boolean).join(' ')}
+      {...props}
+    >
       <div className="form-field__label-row">
         <label htmlFor={htmlFor} className="form-field__label">
           {label}
-          {required && <span className="form-field__required" aria-hidden>*</span>}
+          {required && (
+            <span className="form-field__required" aria-hidden>
+              *
+            </span>
+          )}
         </label>
         {badge && <span className="form-field__badge">{badge}</span>}
       </div>

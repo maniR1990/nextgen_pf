@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MerchantAliasesService } from './merchant-aliases.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MerchantAliasesRepository } from './merchant-aliases.repository';
+import { MerchantAliasesService } from './merchant-aliases.service';
 
 vi.mock('./merchant-aliases.repository');
 

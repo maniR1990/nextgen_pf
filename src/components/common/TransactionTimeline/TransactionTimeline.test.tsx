@@ -10,14 +10,35 @@ const GROUPS: TimelineGroup[] = [
   {
     date: '2026-06-13',
     transactions: [
-      { id: '1', merchant: 'Zepto', category: 'Groceries', method: 'UPI', amount: 890, type: 'debit' },
-      { id: '2', merchant: 'HDFC Salary', category: 'Income', method: 'NEFT', amount: 85000, type: 'credit' },
+      {
+        id: '1',
+        merchant: 'Zepto',
+        category: 'Groceries',
+        method: 'UPI',
+        amount: 890,
+        type: 'debit',
+      },
+      {
+        id: '2',
+        merchant: 'HDFC Salary',
+        category: 'Income',
+        method: 'NEFT',
+        amount: 85000,
+        type: 'credit',
+      },
     ],
   },
   {
     date: '2026-06-12',
     transactions: [
-      { id: '3', merchant: 'Netflix', category: 'Entertainment', method: 'Card', amount: 649, type: 'debit' },
+      {
+        id: '3',
+        merchant: 'Netflix',
+        category: 'Entertainment',
+        method: 'Card',
+        amount: 649,
+        type: 'debit',
+      },
     ],
   },
 ];

@@ -1,7 +1,19 @@
 'use client';
 
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Edit2,
+  Minus,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Edit2, Minus, Plus, Search, Trash2 } from 'lucide-react';
 
 export interface TransactionRow {
   id: string;
@@ -40,7 +52,11 @@ function formatAmount(row: TransactionRow) {
 
 function formatDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
+    return new Date(iso).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: '2-digit',
+    });
   } catch {
     return iso;
   }
@@ -52,11 +68,21 @@ function TypeIcon({ type }: { type: TransactionRow['amountSign'] }) {
   return <Minus size={14} />;
 }
 
-function SortIndicator({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
+function SortIndicator({
+  col,
+  sortKey,
+  sortDir,
+}: {
+  col: SortKey;
+  sortKey: SortKey;
+  sortDir: SortDir;
+}) {
   if (col !== sortKey) return <ChevronDown size={12} className="tx-crud__sort-idle" aria-hidden />;
-  return sortDir === 'asc'
-    ? <ChevronUp size={12} className="tx-crud__sort-active" aria-hidden />
-    : <ChevronDown size={12} className="tx-crud__sort-active" aria-hidden />;
+  return sortDir === 'asc' ? (
+    <ChevronUp size={12} className="tx-crud__sort-active" aria-hidden />
+  ) : (
+    <ChevronDown size={12} className="tx-crud__sort-active" aria-hidden />
+  );
 }
 
 export function TransactionTable({
@@ -76,7 +102,7 @@ export function TransactionTable({
 
   function handleSort(key: SortKey) {
     if (key === sortKey) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortKey(key);
       setSortDir('asc');
@@ -87,10 +113,11 @@ export function TransactionTable({
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (!q) return rows;
-    return rows.filter(r =>
-      r.merchant.toLowerCase().includes(q) ||
-      r.category.toLowerCase().includes(q) ||
-      r.status.toLowerCase().includes(q)
+    return rows.filter(
+      (r) =>
+        r.merchant.toLowerCase().includes(q) ||
+        r.category.toLowerCase().includes(q) ||
+        r.status.toLowerCase().includes(q),
     );
   }, [rows, search]);
 
@@ -113,7 +140,7 @@ export function TransactionTable({
   if (loading) {
     return (
       <div className="tx-crud__loading" aria-label="Loading">
-        {[1, 2, 3, 4].map(i => (
+        {[1, 2, 3, 4].map((i) => (
           <div key={i} className="tx-crud__skeleton" aria-hidden />
         ))}
       </div>
@@ -133,7 +160,12 @@ export function TransactionTable({
       <div className="tx-crud__header">
         <h2 className="tx-crud__header-title">{title}</h2>
         {onAdd && (
-          <button type="button" className="tx-crud__add-btn" onClick={onAdd} aria-label="Add transaction">
+          <button
+            type="button"
+            className="tx-crud__add-btn"
+            onClick={onAdd}
+            aria-label="Add transaction"
+          >
             <Plus size={16} aria-hidden />
             Add
           </button>
@@ -147,7 +179,10 @@ export function TransactionTable({
           type="text"
           placeholder="Search by merchant, category…"
           value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           aria-label="Search transactions"
         />
         {search && (
@@ -175,7 +210,7 @@ export function TransactionTable({
             <table className="tx-crud__table" aria-label={title}>
               <thead>
                 <tr>
-                  {COLS.map(col => (
+                  {COLS.map((col) => (
                     <th
                       key={col.key}
                       scope="col"
@@ -185,7 +220,13 @@ export function TransactionTable({
                         type="button"
                         className="tx-crud__sort-btn"
                         onClick={() => handleSort(col.key)}
-                        aria-sort={sortKey === col.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                        aria-sort={
+                          sortKey === col.key
+                            ? sortDir === 'asc'
+                              ? 'ascending'
+                              : 'descending'
+                            : 'none'
+                        }
                       >
                         {col.label}
                         <SortIndicator col={col.key} sortKey={sortKey} sortDir={sortDir} />
@@ -193,19 +234,24 @@ export function TransactionTable({
                     </th>
                   ))}
                   {(onEdit || onDelete) && (
-                    <th scope="col"><span className="sr-only">Actions</span></th>
+                    <th scope="col">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   )}
                 </tr>
               </thead>
               <tbody>
-                {paginated.map(row => (
+                {paginated.map((row) => (
                   <tr
                     key={row.id}
                     className={`tx-crud__tr${onRowClick ? ' tx-crud__tr--clickable' : ''}`}
                     onClick={() => onRowClick?.(row.id)}
                     tabIndex={onRowClick ? 0 : undefined}
                     onKeyDown={(e) => {
-                      if (onRowClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onRowClick(row.id); }
+                      if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        onRowClick(row.id);
+                      }
                     }}
                   >
                     <td>{formatDate(row.date)}</td>
@@ -220,7 +266,7 @@ export function TransactionTable({
                       </span>
                     </td>
                     {(onEdit || onDelete) && (
-                      <td onClick={e => e.stopPropagation()}>
+                      <td onClick={(e) => e.stopPropagation()}>
                         <div className="tx-crud__actions">
                           {onEdit && (
                             <button
@@ -253,7 +299,7 @@ export function TransactionTable({
 
           {/* Mobile cards (hidden on desktop) */}
           <div className="tx-crud__cards">
-            {paginated.map(row => (
+            {paginated.map((row) => (
               <div
                 key={row.id}
                 className={`tx-crud__card${onRowClick ? ' tx-crud__card--clickable' : ''}`}
@@ -261,7 +307,10 @@ export function TransactionTable({
                 tabIndex={onRowClick ? 0 : undefined}
                 onClick={() => onRowClick?.(row.id)}
                 onKeyDown={(e) => {
-                  if (onRowClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onRowClick(row.id); }
+                  if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    onRowClick(row.id);
+                  }
                 }}
               >
                 <div className="tx-crud__card-row">
@@ -281,10 +330,7 @@ export function TransactionTable({
                     <span>· {formatDate(row.date)}</span>
                   </div>
                   {(onEdit || onDelete) && (
-                    <div
-                      className="tx-crud__card-actions"
-                      onClick={e => e.stopPropagation()}
-                    >
+                    <div className="tx-crud__card-actions" onClick={(e) => e.stopPropagation()}>
                       {onEdit && (
                         <button
                           type="button"
@@ -321,14 +367,15 @@ export function TransactionTable({
           {totalPages > 1 && (
             <div className="tx-crud__pagination" aria-label="Pagination">
               <span className="tx-crud__pagination-info">
-                {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, sorted.length)} of {sorted.length}
+                {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, sorted.length)} of{' '}
+                {sorted.length}
               </span>
               <div className="tx-crud__pagination-controls">
                 <button
                   type="button"
                   className="tx-crud__page-btn"
                   disabled={safePage === 1}
-                  onClick={() => setPage(p => p - 1)}
+                  onClick={() => setPage((p) => p - 1)}
                   aria-label="Previous page"
                 >
                   <ChevronLeft size={16} />
@@ -340,7 +387,7 @@ export function TransactionTable({
                   type="button"
                   className="tx-crud__page-btn"
                   disabled={safePage === totalPages}
-                  onClick={() => setPage(p => p + 1)}
+                  onClick={() => setPage((p) => p + 1)}
                   aria-label="Next page"
                 >
                   <ChevronRight size={16} />

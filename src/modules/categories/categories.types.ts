@@ -1,5 +1,5 @@
-import type { CategoryFlowType, MatchRuleField, MatchRuleOperator } from '@prisma/client';
 import type { CategorySort } from '@/constants/categories';
+import type { CategoryFlowType, MatchRuleField, MatchRuleOperator } from '@prisma/client';
 
 export interface MatchRuleDto {
   field: MatchRuleField;

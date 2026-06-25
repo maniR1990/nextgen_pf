@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { chromaticBaseline } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
 import { LoginForm } from './LoginForm';
 
 const meta: Meta<typeof LoginForm> = {

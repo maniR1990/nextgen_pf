@@ -1,8 +1,19 @@
-import { DuplicateDetectedError, ForbiddenError, NotFoundError, TxLockedError, ValidationError } from '@/lib/api/errors';
+import {
+  DuplicateDetectedError,
+  ForbiddenError,
+  NotFoundError,
+  TxLockedError,
+  ValidationError,
+} from '@/lib/api/errors';
 import { evaluateFraud } from '@/lib/rules-engine/evaluator';
 import { UserRepository } from '@/modules/users/users.repository';
 import { TransactionRepository } from './transactions.repository';
-import type { CreateTransactionDto, GetTransactionsQuery, ListWithCursorQuery, PatchTransactionDto } from './transactions.types';
+import type {
+  CreateTransactionDto,
+  GetTransactionsQuery,
+  ListWithCursorQuery,
+  PatchTransactionDto,
+} from './transactions.types';
 
 const FUND_ALLOWED_TYPES = new Set(['TRANSFER', 'INVESTMENT', 'SINKING_DEPOSIT']);
 
@@ -124,15 +135,19 @@ export const TransactionService = {
       notes: dto.notes,
       tags: dto.tags ?? [],
       ...(dto.idempotencyKey && { idempotencyKey: dto.idempotencyKey }),
-      ...(dto.fundGroupId && { fundGroupId: dto.fundGroupId, fundGroupFlow: dto.fundGroupFlow as never }),
-      ...(dto.isRecurring && dto.recSchedule && {
-        recurringConfig: {
-          type: dto.recSchedule.frequency,
-          startDate: txDate,
-          dayOfMonth: txDate.getDate(),
-          ...(dto.recSchedule.endDate && { endDate: new Date(dto.recSchedule.endDate) }),
-        },
+      ...(dto.fundGroupId && {
+        fundGroupId: dto.fundGroupId,
+        fundGroupFlow: dto.fundGroupFlow as never,
       }),
+      ...(dto.isRecurring &&
+        dto.recSchedule && {
+          recurringConfig: {
+            type: dto.recSchedule.frequency,
+            startDate: txDate,
+            dayOfMonth: txDate.getDate(),
+            ...(dto.recSchedule.endDate && { endDate: new Date(dto.recSchedule.endDate) }),
+          },
+        }),
     });
   },
 
@@ -223,7 +238,12 @@ export const TransactionService = {
   },
 
   async checkDuplicatesV1(userId: string, merchant: string, amount: number, dateStr: string) {
-    const dupes = await TransactionRepository.findDuplicates(userId, merchant, amount, new Date(dateStr));
+    const dupes = await TransactionRepository.findDuplicates(
+      userId,
+      merchant,
+      amount,
+      new Date(dateStr),
+    );
     if (dupes.length > 0) throw new DuplicateDetectedError(dupes[0].id);
     return null;
   },

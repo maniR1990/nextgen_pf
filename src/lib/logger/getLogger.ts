@@ -1,5 +1,5 @@
-import type { ILogger, LogLevel } from './types';
 import { resolveLoggerProvider } from './providers';
+import type { ILogger, LogLevel } from './types';
 
 const loggers = new Map<string, ILogger>();
 let rootProvider = resolveLoggerProvider(resolveMinLevel());

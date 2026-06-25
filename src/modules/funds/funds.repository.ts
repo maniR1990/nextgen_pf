@@ -1,6 +1,6 @@
 import type { FundSort } from '@/constants/funds';
-import type { FundPurpose, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import type { FundPurpose, Prisma } from '@prisma/client';
 
 // Prisma MongoDB stores optional DateTime as absent (not BSON null) when unset.
 // { archivedAt: null } only matches BSON null; use isSet: false to match absent fields.
@@ -68,10 +68,7 @@ export const FundsRepository = {
       select: FUND_SELECT,
     }),
 
-  countMany: (
-    userId: string,
-    options: { includeArchived?: boolean; purpose?: FundPurpose },
-  ) =>
+  countMany: (userId: string, options: { includeArchived?: boolean; purpose?: FundPurpose }) =>
     prisma.fund.count({
       where: {
         userId,
@@ -80,8 +77,7 @@ export const FundsRepository = {
       },
     }),
 
-  findById: (id: string) =>
-    prisma.fund.findUniqueOrThrow({ where: { id }, select: FUND_SELECT }),
+  findById: (id: string) => prisma.fund.findUniqueOrThrow({ where: { id }, select: FUND_SELECT }),
 
   findAccountsByIds: (userId: string, ids: string[]) => {
     if (ids.length === 0) return Promise.resolve([]);
@@ -97,8 +93,7 @@ export const FundsRepository = {
       select: { id: true, name: true, code: true, balance: true },
     }),
 
-  create: (data: Prisma.FundCreateInput) =>
-    prisma.fund.create({ data, select: FUND_SELECT }),
+  create: (data: Prisma.FundCreateInput) => prisma.fund.create({ data, select: FUND_SELECT }),
 
   update: (id: string, data: Prisma.FundUpdateInput) =>
     prisma.fund.update({ where: { id }, data, select: FUND_SELECT }),

@@ -1,8 +1,8 @@
+import type { AccountSummary } from '@/modules/accounts/accounts.types';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { TransferModal } from './TransferModal';
-import type { AccountSummary } from '@/modules/accounts/accounts.types';
 
 const makeAccount = (id: string, name: string, balance: number): AccountSummary => ({
   id,
@@ -21,7 +21,10 @@ const makeAccount = (id: string, name: string, balance: number): AccountSummary 
   archivedAt: null,
 });
 
-const accounts = [makeAccount('a1', 'HDFC Salary', 100000), makeAccount('a2', 'SBI Savings', 50000)];
+const accounts = [
+  makeAccount('a1', 'HDFC Salary', 100000),
+  makeAccount('a2', 'SBI Savings', 50000),
+];
 
 describe('TransferModal', () => {
   it('renders when open', () => {

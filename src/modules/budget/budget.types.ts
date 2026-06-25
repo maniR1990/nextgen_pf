@@ -1,8 +1,4 @@
-import type {
-  BudgetEntryTag,
-  BudgetLineKind,
-  BudgetSectionVariant,
-} from '@prisma/client';
+import type { BudgetEntryTag, BudgetLineKind, BudgetSectionVariant } from '@prisma/client';
 
 export interface BudgetLineRecord {
   id: string;

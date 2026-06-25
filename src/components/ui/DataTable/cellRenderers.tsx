@@ -1,13 +1,7 @@
-import {
-  Briefcase,
-  ShoppingCart,
-  Tv,
-  Zap,
-  type LucideIcon,
-} from 'lucide-react';
 import type { BadgeVariant } from '@/components/ui/Badge';
 import { Badge } from '@/components/ui/Badge';
 import { Icon } from '@/components/ui/Icon';
+import { Briefcase, type LucideIcon, ShoppingCart, Tv, Zap } from 'lucide-react';
 import { getCellValue } from './dataTableUtils';
 import type { DataTableColumnDef } from './types';
 
@@ -73,7 +67,12 @@ export function renderDataTableCell<T extends Record<string, unknown>>(
       const IconComponent = TRANSACTION_ICONS[iconName] ?? ShoppingCart;
       return (
         <span className="data-table__transaction">
-          <Icon icon={IconComponent} size="sm" tone="muted" className="data-table__transaction-icon" />
+          <Icon
+            icon={IconComponent}
+            size="sm"
+            tone="muted"
+            className="data-table__transaction-icon"
+          />
           <span className="data-table__transaction-label">{String(value ?? '')}</span>
         </span>
       );

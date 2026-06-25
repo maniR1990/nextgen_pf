@@ -1,13 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import {
   addMonths,
   format,
-  getDaysInMonth,
   getDay,
+  getDaysInMonth,
   isSameDay,
   isToday,
   isValid,
@@ -15,6 +12,9 @@ import {
   parseISO,
   startOfDay,
 } from 'date-fns';
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface DatePickerProps {
   value?: string | null;
@@ -77,7 +77,9 @@ export function DatePicker({
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close on outside click (desktop popover only)
   useEffect(() => {
@@ -93,7 +95,9 @@ export function DatePicker({
 
   useEffect(() => {
     if (!open) return;
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false); }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
@@ -177,30 +181,55 @@ export function DatePicker({
   const calendarBody = (
     <>
       <div className="date-picker__nav">
-        <button type="button" className="date-picker__nav-btn" onClick={prevMonth} aria-label="Previous month">
+        <button
+          type="button"
+          className="date-picker__nav-btn"
+          onClick={prevMonth}
+          aria-label="Previous month"
+        >
           <ChevronLeft size={16} />
         </button>
         <span className="date-picker__nav-label">
           {format(new Date(viewYear, viewMonth, 1), 'MMMM yyyy')}
         </span>
-        <button type="button" className="date-picker__nav-btn" onClick={nextMonth} aria-label="Next month">
+        <button
+          type="button"
+          className="date-picker__nav-btn"
+          onClick={nextMonth}
+          aria-label="Next month"
+        >
           <ChevronRight size={16} />
         </button>
       </div>
-      <div className="date-picker__grid" role="grid" aria-label={format(new Date(viewYear, viewMonth, 1), 'MMMM yyyy')}>
-        {WEEKDAYS.map(w => (
-          <div key={w} className="date-picker__weekday" role="columnheader">{w}</div>
+      <div
+        className="date-picker__grid"
+        role="grid"
+        aria-label={format(new Date(viewYear, viewMonth, 1), 'MMMM yyyy')}
+      >
+        {WEEKDAYS.map((w) => (
+          <div key={w} className="date-picker__weekday" role="columnheader">
+            {w}
+          </div>
         ))}
         {days.map((day, i) => {
           if (!day) {
-            return <div key={`e-${i}`} className="date-picker__day date-picker__day--empty" aria-hidden />;
+            return (
+              <div
+                key={`e-${i}`}
+                className="date-picker__day date-picker__day--empty"
+                aria-hidden
+              />
+            );
           }
           const d = new Date(viewYear, viewMonth, day);
           const isRangeStart = mode === 'range' && parsedStart && isSameDay(d, parsedStart);
           const isRangeEnd = mode === 'range' && parsedEnd && isSameDay(d, parsedEnd);
-          const isSelected = mode === 'single'
-            ? (parsedValue ? isSameDay(d, parsedValue) : false)
-            : Boolean(isRangeStart || isRangeEnd);
+          const isSelected =
+            mode === 'single'
+              ? parsedValue
+                ? isSameDay(d, parsedValue)
+                : false
+              : Boolean(isRangeStart || isRangeEnd);
           const disabledDay = isDisabled(d);
 
           const classes = [
@@ -211,7 +240,9 @@ export function DatePicker({
             isRangeStart ? 'date-picker__day--range-start' : '',
             isRangeEnd ? 'date-picker__day--range-end' : '',
             disabledDay ? 'date-picker__day--disabled' : '',
-          ].filter(Boolean).join(' ');
+          ]
+            .filter(Boolean)
+            .join(' ');
 
           return (
             <button
@@ -244,12 +275,20 @@ export function DatePicker({
       )}
       <div style={{ flex: 1 }} />
       {mode === 'range' && (parsedStart || parsedEnd) && clearable && (
-        <button type="button" className="btn btn--ghost date-picker__clear-btn" onClick={handleClear}>
+        <button
+          type="button"
+          className="btn btn--ghost date-picker__clear-btn"
+          onClick={handleClear}
+        >
           Clear range
         </button>
       )}
       {mode === 'range' && parsedStart && parsedEnd && (
-        <button type="button" className="btn btn--primary date-picker__apply-btn" onClick={() => setOpen(false)}>
+        <button
+          type="button"
+          className="btn btn--primary date-picker__apply-btn"
+          onClick={() => setOpen(false)}
+        >
           Apply
         </button>
       )}
@@ -263,44 +302,59 @@ export function DatePicker({
     </div>
   );
 
-  const sheet = mounted ? createPortal(
-    <div
-      className="date-picker__overlay"
-      role="dialog"
-      aria-modal
-      aria-label="Date picker"
-      onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
-    >
-      <div className="date-picker__sheet">
-        <div className="date-picker__sheet-handle" />
-        {calendarBody}
-        <div className="date-picker__footer">
-          {!isCurrentView && (
-            <button type="button" className="date-picker__today-btn" onClick={goToToday}>
-              Today
-            </button>
-          )}
-          <div style={{ flex: 1 }} />
-          {mode === 'range' && parsedStart && parsedEnd && clearable && (
-            <button type="button" className="btn btn--ghost date-picker__clear-btn" onClick={handleClear}>
-              Clear
-            </button>
-          )}
-          <button type="button" className="btn btn--secondary" style={{ minWidth: 80 }} onClick={() => setOpen(false)}>
-            {mode === 'range' && parsedStart && parsedEnd ? 'Apply' : 'Close'}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  ) : null;
+  const sheet = mounted
+    ? createPortal(
+        <div
+          className="date-picker__overlay"
+          role="dialog"
+          aria-modal
+          aria-label="Date picker"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setOpen(false);
+          }}
+        >
+          <div className="date-picker__sheet">
+            <div className="date-picker__sheet-handle" />
+            {calendarBody}
+            <div className="date-picker__footer">
+              {!isCurrentView && (
+                <button type="button" className="date-picker__today-btn" onClick={goToToday}>
+                  Today
+                </button>
+              )}
+              <div style={{ flex: 1 }} />
+              {mode === 'range' && parsedStart && parsedEnd && clearable && (
+                <button
+                  type="button"
+                  className="btn btn--ghost date-picker__clear-btn"
+                  onClick={handleClear}
+                >
+                  Clear
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn--secondary"
+                style={{ minWidth: 80 }}
+                onClick={() => setOpen(false)}
+              >
+                {mode === 'range' && parsedStart && parsedEnd ? 'Apply' : 'Close'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )
+    : null;
 
   const triggerCls = [
     'date-picker__trigger',
     error ? 'date-picker__trigger--error' : '',
     disabled ? 'date-picker__trigger--disabled' : '',
     open ? 'date-picker__trigger--open' : '',
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className="date-picker" ref={containerRef}>
@@ -309,12 +363,14 @@ export function DatePicker({
         type="button"
         className={triggerCls}
         disabled={disabled}
-        onClick={() => setOpen(v => !v)}
+        onClick={() => setOpen((v) => !v)}
         aria-haspopup="dialog"
         aria-expanded={open}
       >
         <CalendarDays size={16} className="date-picker__trigger-icon" aria-hidden />
-        <span className={`date-picker__trigger-text${!displayText ? ' date-picker__trigger-text--placeholder' : ''}`}>
+        <span
+          className={`date-picker__trigger-text${!displayText ? ' date-picker__trigger-text--placeholder' : ''}`}
+        >
           {displayText ?? placeholder}
         </span>
         {clearable && hasValue && (
@@ -324,7 +380,9 @@ export function DatePicker({
             aria-label="Clear date"
             onClick={handleClear}
             tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClear(e as unknown as React.MouseEvent); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') handleClear(e as unknown as React.MouseEvent);
+            }}
           >
             <X size={14} />
           </span>
@@ -335,7 +393,11 @@ export function DatePicker({
           aria-hidden
         />
       </button>
-      {error && <span className="date-picker__error" role="alert">{error}</span>}
+      {error && (
+        <span className="date-picker__error" role="alert">
+          {error}
+        </span>
+      )}
       {open && !isMobile && popover}
       {open && isMobile && sheet}
     </div>

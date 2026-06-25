@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CategoriesService } from './categories.service';
-import { CategoriesRepository } from './categories.repository';
 import {
   CategoryHasTransactionsError,
   CategoryNotFoundError,
   ConflictError,
 } from '@/lib/api/errors';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CategoriesRepository } from './categories.repository';
+import { CategoriesService } from './categories.service';
 
 vi.mock('./categories.repository');
 
@@ -136,9 +136,12 @@ describe('CategoriesService.getById', () => {
 
 describe('CategoriesService.update', () => {
   it('throws for wrong owner', async () => {
-    vi.mocked(CategoriesRepository.findById).mockResolvedValue({ ...mockCategory, userId: 'other' });
-    await expect(
-      CategoriesService.update('c1', userId, { name: 'New' }),
-    ).rejects.toThrow(CategoryNotFoundError);
+    vi.mocked(CategoriesRepository.findById).mockResolvedValue({
+      ...mockCategory,
+      userId: 'other',
+    });
+    await expect(CategoriesService.update('c1', userId, { name: 'New' })).rejects.toThrow(
+      CategoryNotFoundError,
+    );
   });
 });

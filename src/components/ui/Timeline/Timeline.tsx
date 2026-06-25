@@ -1,7 +1,4 @@
-import {
-  TIMELINE_DEFAULT_DENSITY,
-  type TimelineDensity,
-} from '@/constants/timeline';
+import { TIMELINE_DEFAULT_DENSITY, type TimelineDensity } from '@/constants/timeline';
 import { TimelineItem } from './TimelineItem';
 import type { TimelineConfigJson } from './schemas';
 
@@ -31,7 +28,10 @@ export function Timeline({
   className = '',
 }: TimelineProps) {
   return (
-    <ol className={timelineClassName({ variant: config.variant, density, className })} aria-label={config.ariaLabel}>
+    <ol
+      className={timelineClassName({ variant: config.variant, density, className })}
+      aria-label={config.ariaLabel}
+    >
       {config.items.map((item) => (
         <TimelineItem key={item.id} item={item} />
       ))}

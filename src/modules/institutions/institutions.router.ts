@@ -1,11 +1,11 @@
-import type { InstitutionType } from '@prisma/client';
+import { ConflictError, isApiError } from '@/lib/api/errors';
 import { compose, withAuth, withValidation } from '@/lib/api/middleware';
-import { isApiError, ConflictError } from '@/lib/api/errors';
+import type { RouteContext } from '@/lib/api/middleware/types';
 import { v1Created, v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { getLogger } from '@/lib/logger';
+import type { InstitutionType } from '@prisma/client';
 import { InstitutionsRepository } from './institutions.repository';
 import { CreateInstitutionSchema, ListInstitutionsQuerySchema } from './institutions.schema';
-import type { RouteContext } from '@/lib/api/middleware/types';
 
 const log = getLogger('InstitutionsRouter');
 
@@ -42,7 +42,9 @@ export const v1CreateInstitution = compose(
     log.error('v1CreateInstitution', { err });
     if (isApiError(err)) return v1FromApiError(err);
     if (err instanceof Error && err.message.includes('Unique constraint')) {
-      return v1FromApiError(new ConflictError('An institution with that short name already exists'));
+      return v1FromApiError(
+        new ConflictError('An institution with that short name already exists'),
+      );
     }
     throw err;
   }

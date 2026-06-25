@@ -1,10 +1,10 @@
+import { toAccountGroupType } from '@/constants/account-groups';
 import {
   AccountGroupHasAccountsError,
   AccountGroupNotFoundError,
   ConflictError,
 } from '@/lib/api/errors';
 import { buildMeta } from '@/lib/api/pagination';
-import { toAccountGroupType } from '@/constants/account-groups';
 import { AccountGroupsRepository } from './account-groups.repository';
 import type {
   AccountGroupSummary,
@@ -15,12 +15,14 @@ import type {
 } from './account-groups.types';
 
 function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 48) || 'group';
+  return (
+    name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 48) || 'group'
+  );
 }
 
 async function uniqueSlug(userId: string, base: string): Promise<string> {
@@ -114,7 +116,7 @@ export const AccountGroupsService = {
     const baseSlug = slugify(dto.name);
     const slug = await uniqueSlug(userId, baseSlug);
     const maxOrder = await AccountGroupsRepository.maxOrder(userId);
-    const order = dto.order ?? ((maxOrder._max?.order ?? -1) + 1);
+    const order = dto.order ?? (maxOrder._max?.order ?? -1) + 1;
 
     const created = await AccountGroupsRepository.create({
       user: { connect: { id: userId } },

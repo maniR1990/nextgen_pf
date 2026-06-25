@@ -1,5 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from 'storybook/test';
 import {
   chromaticBaseline,
   storySectionStyle,
@@ -7,6 +5,8 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from 'storybook/test';
 import { Toast } from './Toast';
 
 const meta: Meta<typeof Toast> = {

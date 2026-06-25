@@ -1,5 +1,1 @@
-export {
-  EmptyState,
-  emptyStateClassName,
-  type EmptyStateProps,
-} from './EmptyState';
+export { EmptyState, emptyStateClassName, type EmptyStateProps } from './EmptyState';

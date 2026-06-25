@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { CreateFundSchema, UpdateFundSchema } from './funds.schema';
 
 describe('CreateFundSchema', () => {
@@ -50,7 +50,16 @@ describe('CreateFundSchema', () => {
   });
 
   it('accepts all 8 fund purposes', () => {
-    const purposes = ['EMERGENCY', 'OPS', 'GOAL', 'TAX', 'INSURANCE', 'SINKING', 'INVESTMENT', 'WEALTH'] as const;
+    const purposes = [
+      'EMERGENCY',
+      'OPS',
+      'GOAL',
+      'TAX',
+      'INSURANCE',
+      'SINKING',
+      'INVESTMENT',
+      'WEALTH',
+    ] as const;
     for (const purpose of purposes) {
       const result = CreateFundSchema.safeParse({ name: purpose, purpose, targetAmount: 1000 });
       expect(result.success, `purpose ${purpose} should be valid`).toBe(true);

@@ -1,8 +1,5 @@
 import { Card } from '@/components/ui/Card';
-import {
-  KPI_CARD_DENSITY,
-  type KpiCardDensity,
-} from '@/constants/kpiCards';
+import { KPI_CARD_DENSITY, type KpiCardDensity } from '@/constants/kpiCards';
 import type { ReactNode } from 'react';
 
 export type KpiCardShellVariant = 'default' | 'warning';

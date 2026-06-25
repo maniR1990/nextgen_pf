@@ -489,7 +489,13 @@ export const DEFAULT_ACCOUNT_GROUP_TEMPLATES: ReadonlyArray<{
   { name: 'Investment', slug: 'investment', type: 'ASSET', order: 3, taxonomyGroup: 'investment' },
   { name: 'Alternate', slug: 'alternate', type: 'ASSET', order: 4, taxonomyGroup: 'alternate' },
   { name: 'Rewards', slug: 'rewards', type: 'ASSET', order: 5, taxonomyGroup: 'rewards' },
-  { name: 'Liabilities', slug: 'liabilities', type: 'LIABILITY', order: 6, taxonomyGroup: 'liabilities' },
+  {
+    name: 'Liabilities',
+    slug: 'liabilities',
+    type: 'LIABILITY',
+    order: 6,
+    taxonomyGroup: 'liabilities',
+  },
 ];
 
 /** Map v1 legacy PaymentSource types → v2 AccountType */
@@ -550,4 +556,8 @@ export const RECENT_ACTIVITY_LIMIT = 10;
 export const UPCOMING_EVENTS_DAYS = 90;
 
 /** Credit types where utilisation % health metric applies */
-export const UTILISATION_ACCOUNT_TYPES: readonly AccountType[] = ['CREDIT_CARD', 'BNPL', 'LOAN_OVERDRAFT'];
+export const UTILISATION_ACCOUNT_TYPES: readonly AccountType[] = [
+  'CREDIT_CARD',
+  'BNPL',
+  'LOAN_OVERDRAFT',
+];

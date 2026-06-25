@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
 import { MODAL_ANIMATION_MS, MODAL_FOCUSABLE_SELECTOR } from '@/constants/modal';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface UseModalBehaviorOptions {
   /** Locks body scroll while the portal is mounted (includes exit animation) */
@@ -72,8 +72,7 @@ export function useModalBehavior({
     if (!interactive) return;
 
     previousFocusRef.current =
-      (triggerRef?.current as HTMLElement | null) ??
-      (document.activeElement as HTMLElement | null);
+      (triggerRef?.current as HTMLElement | null) ?? (document.activeElement as HTMLElement | null);
 
     const dialog = dialogRef.current;
     if (!dialog) return;

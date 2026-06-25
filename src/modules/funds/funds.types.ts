@@ -1,5 +1,5 @@
-import type { FundAllocationType, FundPurpose } from '@prisma/client';
 import type { FundSort } from '@/constants/funds';
+import type { FundAllocationType, FundPurpose } from '@prisma/client';
 
 export interface FundAllocationInput {
   accountId: string;

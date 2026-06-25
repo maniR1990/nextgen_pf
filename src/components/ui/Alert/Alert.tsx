@@ -1,8 +1,8 @@
 'use client';
 
-import { Info, SquareCheck, TriangleAlert, type LucideIcon } from 'lucide-react';
-import type { HTMLAttributes, ReactNode } from 'react';
 import { Icon } from '@/components/ui/Icon';
+import { Info, type LucideIcon, SquareCheck, TriangleAlert } from 'lucide-react';
+import type { HTMLAttributes, ReactNode } from 'react';
 
 export type AlertVariant = 'success' | 'error' | 'warning' | 'info';
 
@@ -43,20 +43,15 @@ export function alertClassName({
   return ['alert', VARIANT_CLASS[variant], className].filter(Boolean).join(' ');
 }
 
-export function Alert({
-  variant = 'info',
-  title,
-  children,
-  className = '',
-  ...props
-}: AlertProps) {
+export function Alert({ variant = 'info', title, children, className = '', ...props }: AlertProps) {
   return (
-    <div
-      className={alertClassName({ variant, className })}
-      role="alert"
-      {...props}
-    >
-      <Icon icon={VARIANT_ICONS[variant]} size="sm" tone={VARIANT_TONE[variant]} className="alert__icon" />
+    <div className={alertClassName({ variant, className })} role="alert" {...props}>
+      <Icon
+        icon={VARIANT_ICONS[variant]}
+        size="sm"
+        tone={VARIANT_TONE[variant]}
+        className="alert__icon"
+      />
       <div className="alert__body">
         {title ? <p className="alert__title">{title}</p> : null}
         {children ? <p className="alert__message">{children}</p> : null}

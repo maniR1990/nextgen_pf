@@ -1,11 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
 import { CategoryPicker } from '@/components/common/CategoryPicker';
 import type { CategoryPickerOption } from '@/components/common/CategoryPicker';
-import type {
-  PickerGroup,
-} from '@/modules/categories/lib/map-category-tree-to-picker-options';
+import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
+import { useEffect, useMemo, useState } from 'react';
 
 export interface CascadingCategoryPickerProps {
   groups: PickerGroup[];
@@ -50,7 +48,7 @@ export function CascadingCategoryPicker({
   useEffect(() => {
     const l1 = findL1ForValue(groups, value);
     setActiveL1Id(l1?.id ?? null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const activeL1 = useMemo(
@@ -128,7 +126,9 @@ export function CascadingCategoryPicker({
 
         {showCol2 && (
           <>
-            <span className="casc-cat__sep" aria-hidden>›</span>
+            <span className="casc-cat__sep" aria-hidden>
+              ›
+            </span>
             <div className="casc-cat__col">
               <span className="casc-cat__col-heading">SUB-CATEGORY</span>
               <CategoryPicker
@@ -137,9 +137,9 @@ export function CascadingCategoryPicker({
                 onChange={onChange}
                 placeholder="Select subcategory…"
                 error={col2Error}
-                onCreate={onCreateL2 && activeL1Id
-                  ? (name) => onCreateL2(name, activeL1Id)
-                  : undefined}
+                onCreate={
+                  onCreateL2 && activeL1Id ? (name) => onCreateL2(name, activeL1Id) : undefined
+                }
               />
             </div>
           </>

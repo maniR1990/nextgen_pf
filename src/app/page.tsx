@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { ROUTES } from '@/constants/routes';
+import Link from 'next/link';
 
 export default function HomePage() {
   return (

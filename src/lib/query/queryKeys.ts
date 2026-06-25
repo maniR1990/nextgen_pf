@@ -52,8 +52,7 @@ export const queryKeys = {
   },
   reports: {
     all: ['reports'] as const,
-    kpi: (year: number, month: number) =>
-      [...queryKeys.reports.all, 'kpi', year, month] as const,
+    kpi: (year: number, month: number) => [...queryKeys.reports.all, 'kpi', year, month] as const,
   },
 };
 

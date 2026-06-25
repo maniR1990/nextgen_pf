@@ -1,27 +1,42 @@
 'use client';
 
 import { FormField } from '@/components/common/FormField';
-import { CommonFormFields } from './CommonFormFields';
-import type { TransactionFormValues, FormErrors } from '@/store/transactionFormStore';
+import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption } from '@/types/finance';
+import { CommonFormFields } from './CommonFormFields';
 
 interface ReimbursementFormProps {
   values: TransactionFormValues;
   errors: FormErrors;
-  onChange: <K extends keyof TransactionFormValues>(key: K, value: TransactionFormValues[K]) => void;
+  onChange: <K extends keyof TransactionFormValues>(
+    key: K,
+    value: TransactionFormValues[K],
+  ) => void;
   paymentSources: PaymentSourceOption[];
 }
 
-export function ReimbursementForm({ values, errors, onChange, paymentSources }: ReimbursementFormProps) {
+export function ReimbursementForm({
+  values,
+  errors,
+  onChange,
+  paymentSources,
+}: ReimbursementFormProps) {
   return (
     <div className="tx-form tx-form--reimbursement">
       {/* Merchant | Reimbursed by | Original ref */}
       <div className="tx-form__row">
-        <FormField label="Merchant / Expense Name" htmlFor="tx-merchant" error={errors.merchant} required>
+        <FormField
+          label="Merchant / Expense Name"
+          htmlFor="tx-merchant"
+          error={errors.merchant}
+          required
+        >
           <input
             id="tx-merchant"
             type="text"
-            className={['form-input', errors.merchant && 'form-input--error'].filter(Boolean).join(' ')}
+            className={['form-input', errors.merchant && 'form-input--error']
+              .filter(Boolean)
+              .join(' ')}
             value={values.merchant}
             placeholder="e.g. Uber, Hotel Taj"
             onChange={(e) => onChange('merchant', e.target.value)}

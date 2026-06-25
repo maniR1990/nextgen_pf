@@ -1,6 +1,6 @@
+import type { AccountGroupWithAccounts } from '@/modules/accounts/accounts.types';
 import { describe, expect, it } from 'vitest';
 import { flattenAccountsForPicker } from './flatten-accounts-for-picker';
-import type { AccountGroupWithAccounts } from '@/modules/accounts/accounts.types';
 
 const groups: AccountGroupWithAccounts[] = [
   {

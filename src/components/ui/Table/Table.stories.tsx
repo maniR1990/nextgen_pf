@@ -1,4 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { Badge } from '@/components/ui/Badge';
 import {
   chromaticBaseline,
@@ -7,6 +6,7 @@ import {
   viewportMobile,
   viewportTablet,
 } from '@/components/ui/storyLayout';
+import type { Meta, StoryObj } from '@storybook/react';
 import { Table } from './Table';
 
 type Transaction = {
@@ -52,17 +52,13 @@ const columns = [
   {
     key: 'amount',
     header: 'Amount',
-    render: (row: Transaction) => (
-      <span className="table__cell--amount">{row.amount}</span>
-    ),
+    render: (row: Transaction) => <span className="table__cell--amount">{row.amount}</span>,
   },
   {
     key: 'status',
     header: 'Status',
     render: (row: Transaction) => (
-      <Badge variant={row.status === 'completed' ? 'success' : 'warning'}>
-        {row.status}
-      </Badge>
+      <Badge variant={row.status === 'completed' ? 'success' : 'warning'}>{row.status}</Badge>
     ),
   },
 ];

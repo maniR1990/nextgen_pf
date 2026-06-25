@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '@/lib/db/prisma';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { isEnabled } from './evaluate';
 
 vi.mock('@/lib/db/prisma', () => ({

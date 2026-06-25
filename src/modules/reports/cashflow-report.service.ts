@@ -1,9 +1,13 @@
 import { CashflowReportRepository } from './cashflow-report.repository';
-import type { CashflowReportData, FundGroupContributionResult, FundGroupLineItem } from './cashflow-report.types';
+import type {
+  CashflowReportData,
+  FundGroupContributionResult,
+  FundGroupLineItem,
+} from './cashflow-report.types';
 
-const INCOME_TYPES  = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND'] as const;
+const INCOME_TYPES = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND'] as const;
 const EXPENSE_TYPES = ['EXPENSE'] as const;
-const ATM_TYPES     = ['ATM_WITHDRAWAL'] as const;
+const ATM_TYPES = ['ATM_WITHDRAWAL'] as const;
 
 function safePct(numerator: number, denominator: number): number | null {
   if (denominator === 0) return null;
@@ -32,7 +36,10 @@ export const CashflowReportService = {
     const expensesPct = safePct(expensesTotal, denominator);
     const remainingPct = safePct(remaining, denominator);
 
-    const toLineItem = (r: { fundGroupId: string; fundGroupName: string; totalAmount: number }, denom: number): FundGroupLineItem => ({
+    const toLineItem = (
+      r: { fundGroupId: string; fundGroupName: string; totalAmount: number },
+      denom: number,
+    ): FundGroupLineItem => ({
       fundGroupId: r.fundGroupId,
       fundGroupName: r.fundGroupName,
       fundGroupColor: null,
@@ -63,7 +70,10 @@ export const CashflowReportService = {
     fundGroupId: string,
     targetAmount?: number,
   ): Promise<FundGroupContributionResult> {
-    const { totalIn, totalOut } = await CashflowReportRepository.lifetimeContribution(userId, fundGroupId);
+    const { totalIn, totalOut } = await CashflowReportRepository.lifetimeContribution(
+      userId,
+      fundGroupId,
+    );
     const netContributed = totalIn - totalOut;
 
     let progressPct: number | null = null;

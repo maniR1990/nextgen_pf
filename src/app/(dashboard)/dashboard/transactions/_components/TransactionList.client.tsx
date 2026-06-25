@@ -1,16 +1,16 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
-import { ReceiptText, RefreshCw } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
-import { TransactionTimeline } from '@/components/common/TransactionTimeline';
+import { useToast } from '@/components/common/ToastProvider/useToast';
 import { TransactionDialog } from '@/components/common/TransactionDialog';
+import type { FormOptions } from '@/components/common/TransactionDialog';
+import { TransactionTimeline } from '@/components/common/TransactionTimeline';
 import { useTransactionFilters } from '@/hooks/useTransactionFilters';
 import { groupTransactionsByDate } from '@/lib/utils/transactionTimeline';
 import { useTransactionsList } from '@/modules/transactions/hooks/useTransactionsList';
-import { useToast } from '@/components/common/ToastProvider/useToast';
-import type { FormOptions } from '@/components/common/TransactionDialog';
 import type { TransactionFormValues } from '@/store/transactionFormStore';
+import { useQueryClient } from '@tanstack/react-query';
+import { ReceiptText, RefreshCw } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 
 interface TransactionListProps {
   initialOptions?: FormOptions;
@@ -90,51 +90,47 @@ export function TransactionList({ initialOptions }: TransactionListProps = {}) {
 
   const [editState, setEditState] = useState<EditState | null>(null);
 
-  const {
-    data,
-    isLoading,
-    isError,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useTransactionsList(filters);
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useTransactionsList(filters);
 
-  const rows = useMemo(
-    () => data?.pages.flatMap((p) => p.rows) ?? [],
-    [data],
-  );
+  const rows = useMemo(() => data?.pages.flatMap((p) => p.rows) ?? [], [data]);
 
   const groups = useMemo(() => groupTransactionsByDate(rows), [rows]);
 
-  const handleEditClick = useCallback(async (id: string) => {
-    try {
-      const res = await fetch(`/api/v1/transactions/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to load transaction');
-      const json = await res.json();
-      const tx = json.data as Record<string, unknown>;
-      setEditState({ id, prefillValues: mapTxToFormValues(tx) });
-    } catch {
-      toast.error('Could not load transaction for editing');
-    }
-  }, [toast]);
+  const handleEditClick = useCallback(
+    async (id: string) => {
+      try {
+        const res = await fetch(`/api/v1/transactions/${id}`, { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to load transaction');
+        const json = await res.json();
+        const tx = json.data as Record<string, unknown>;
+        setEditState({ id, prefillValues: mapTxToFormValues(tx) });
+      } catch {
+        toast.error('Could not load transaction for editing');
+      }
+    },
+    [toast],
+  );
 
-  const handleDeleteClick = useCallback(async (id: string) => {
-    if (!window.confirm('Delete this transaction? This cannot be undone.')) return;
-    try {
-      const res = await fetch(`/api/v1/transactions/${id}`, {
-        method: 'DELETE',
-        headers: { 'X-Confirm-Delete': 'true' },
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Failed to delete');
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['budget'] });
-      toast.success('Transaction deleted');
-    } catch {
-      toast.error('Failed to delete transaction');
-    }
-  }, [queryClient, toast]);
+  const handleDeleteClick = useCallback(
+    async (id: string) => {
+      if (!window.confirm('Delete this transaction? This cannot be undone.')) return;
+      try {
+        const res = await fetch(`/api/v1/transactions/${id}`, {
+          method: 'DELETE',
+          headers: { 'X-Confirm-Delete': 'true' },
+          credentials: 'include',
+        });
+        if (!res.ok) throw new Error('Failed to delete');
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['budget'] });
+        toast.success('Transaction deleted');
+      } catch {
+        toast.error('Failed to delete transaction');
+      }
+    },
+    [queryClient, toast],
+  );
 
   const handleEditClose = useCallback(() => {
     setEditState(null);

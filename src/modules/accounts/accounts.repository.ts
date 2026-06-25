@@ -1,6 +1,6 @@
 import type { AccountSort } from '@/constants/accounts';
-import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import type { Prisma } from '@prisma/client';
 
 const SUMMARY_SELECT = {
   id: true,
@@ -86,8 +86,7 @@ export const AccountsRepository = {
   findInstitutionById: (id: string) =>
     prisma.institution.findUnique({ where: { id }, select: { shortName: true } }),
 
-  findGroupById: (id: string) =>
-    prisma.accountGroup.findUnique({ where: { id } }),
+  findGroupById: (id: string) => prisma.accountGroup.findUnique({ where: { id } }),
 
   findMany: (
     userId: string,

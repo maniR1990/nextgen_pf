@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import type { ToastVariant } from '@/components/ui/Toast';
+import type { ReactNode } from 'react';
 
 export const DEFAULT_TOAST_DURATION = 5_000;
 export const MAX_TOASTS = 5;

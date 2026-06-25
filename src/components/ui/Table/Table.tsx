@@ -17,28 +17,28 @@ export interface TableProps<T> {
 export function Table<T>({ columns, data, keyExtractor }: TableProps<T>) {
   return (
     <div className="table-scroll">
-    <table className="table">
-      <thead>
-        <tr>
-          {columns.map((col) => (
-            <th key={col.key} className="table__head-cell">
-              {col.header}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((row) => (
-          <tr key={keyExtractor(row)} className="table__row">
+      <table className="table">
+        <thead>
+          <tr>
             {columns.map((col) => (
-              <td key={col.key} className="table__cell">
-                {col.render(row)}
-              </td>
+              <th key={col.key} className="table__head-cell">
+                {col.header}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {data.map((row) => (
+            <tr key={keyExtractor(row)} className="table__row">
+              {columns.map((col) => (
+                <td key={col.key} className="table__cell">
+                  {col.render(row)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

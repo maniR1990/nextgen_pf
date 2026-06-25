@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import { IMAGE_LAZY_LOAD_MAX_WIDTH, type ImageAspect, type ImageRadius } from '@/constants/media';
+import Image from 'next/image';
 import { ImagePlaceholder } from './ImagePlaceholder';
 
 export interface MediaImageProps {

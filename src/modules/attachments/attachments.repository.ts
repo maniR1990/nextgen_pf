@@ -7,8 +7,7 @@ export const AttachmentsRepository = {
       select: { id: true, userId: true, status: true },
     }),
 
-  countByTxId: (txId: string) =>
-    prisma.attachment.count({ where: { txId, deletedAt: null } }),
+  countByTxId: (txId: string) => prisma.attachment.count({ where: { txId, deletedAt: null } }),
 
   findByTxId: (txId: string) =>
     prisma.attachment.findMany({
@@ -22,8 +21,7 @@ export const AttachmentsRepository = {
     url: string;
     mimeType: string;
     sizeBytes: number;
-  }) =>
-    prisma.attachment.create({ data }),
+  }) => prisma.attachment.create({ data }),
 
   findByIdAndTxId: (id: string, txId: string) =>
     prisma.attachment.findFirstOrThrow({ where: { id, txId, deletedAt: null } }),

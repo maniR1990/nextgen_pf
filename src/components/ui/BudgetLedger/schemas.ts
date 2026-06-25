@@ -1,9 +1,5 @@
+import { BUDGET_ENTRY_TAG, BUDGET_LINE_KIND, BUDGET_SECTION_VARIANT } from '@/constants/budget';
 import { z } from 'zod';
-import {
-  BUDGET_ENTRY_TAG,
-  BUDGET_LINE_KIND,
-  BUDGET_SECTION_VARIANT,
-} from '@/constants/budget';
 
 export const BudgetMetricsSchema = z.object({
   plannedMinor: z.number().int(),

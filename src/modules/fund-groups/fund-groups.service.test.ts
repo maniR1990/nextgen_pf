@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FundGroupsService } from './fund-groups.service';
-import { FundGroupsRepository } from './fund-groups.repository';
 import { ConflictError, NotFoundError } from '@/lib/api/errors';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FundGroupsRepository } from './fund-groups.repository';
+import { FundGroupsService } from './fund-groups.service';
 
 vi.mock('./fund-groups.repository');
 
@@ -91,7 +91,9 @@ describe('FundGroupsService.update', () => {
       ...mockGroup,
       userId: 'other-user',
     } as never);
-    await expect(FundGroupsService.update('fg1', 'u1', { name: 'X' })).rejects.toThrow(NotFoundError);
+    await expect(FundGroupsService.update('fg1', 'u1', { name: 'X' })).rejects.toThrow(
+      NotFoundError,
+    );
   });
 });
 

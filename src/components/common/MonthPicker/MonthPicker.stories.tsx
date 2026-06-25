@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, within } from 'storybook/test';
 import { useState } from 'react';
+import { expect, fn, userEvent, within } from 'storybook/test';
 import { MonthPicker } from './MonthPicker';
 
 const chromatic = { chromatic: { disableSnapshot: false } };
@@ -30,7 +30,10 @@ export const WithValue: Story = {
 export const Desktop: Story = {
   parameters: { viewport: { defaultViewport: 'lg' }, ...chromatic },
   render: () => {
-    const [val, setVal] = useState<{ month: number; year: number } | null>({ month: 6, year: 2026 });
+    const [val, setVal] = useState<{ month: number; year: number } | null>({
+      month: 6,
+      year: 2026,
+    });
     return <MonthPicker label="Budget month" value={val} onChange={setVal} />;
   },
 };
@@ -53,7 +56,10 @@ export const DarkMode: Story = {
     ),
   ],
   render: () => {
-    const [val, setVal] = useState<{ month: number; year: number } | null>({ month: 6, year: 2026 });
+    const [val, setVal] = useState<{ month: number; year: number } | null>({
+      month: 6,
+      year: 2026,
+    });
     return <MonthPicker label="Budget month" value={val} onChange={setVal} />;
   },
 };

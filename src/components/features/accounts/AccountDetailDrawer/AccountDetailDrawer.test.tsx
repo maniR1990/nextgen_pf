@@ -1,8 +1,8 @@
+import type { AccountDetail } from '@/modules/accounts/accounts.types';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AccountDetailDrawer } from './AccountDetailDrawer';
-import type { AccountDetail } from '@/modules/accounts/accounts.types';
 
 const mockDetail: AccountDetail = {
   id: 'acc-1',
