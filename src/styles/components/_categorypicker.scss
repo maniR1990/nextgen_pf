@@ -1,0 +1,254 @@
+@use '../mixins' as m;
+
+.cat-picker {
+  position: relative;
+  @include m.flex-col;
+  width: 100%;
+
+  &__label {
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--comp-input-label, var(--color-text-muted));
+    margin-bottom: var(--space-1-5);
+  }
+
+  &__trigger {
+    @include m.flex-between;
+    gap: var(--space-2);
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    font-family: inherit;
+    color: var(--color-text);
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color var(--transition-fast);
+
+    &:hover { border-color: var(--color-brand); }
+    &:focus-visible { @include m.focus-ring; }
+    &--open { border-color: var(--color-brand); }
+    &--error { border-color: var(--color-error); }
+  }
+
+  &__trigger-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  &__trigger-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-shrink: 0;
+  }
+
+  &__clear {
+    @include m.flex-center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-full);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    &:hover { background: var(--color-bg-subtle); color: var(--color-text); }
+  }
+
+  // Trigger: colored icon box (rounded square)
+  &__trigger-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-sm);
+    @include m.flex-center;
+    flex-shrink: 0;
+    font-size: var(--font-size-xs);
+  }
+
+  &__trigger-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: var(--font-variation-medium);
+    &--placeholder { color: var(--color-text-muted); font-weight: var(--font-variation-medium); }
+  }
+
+  &__chevron {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    transition: transform var(--transition-fast);
+    &--open { transform: rotate(180deg); }
+  }
+
+  &__error {
+    font-size: var(--font-size-xs);
+    color: var(--color-error);
+    margin-top: var(--space-1);
+  }
+
+  &__dropdown {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    max-height: 320px;
+    @include m.flex-col;
+  }
+
+  &__search {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    background: var(--color-bg-subtle);
+
+    input {
+      flex: 1;
+      font-size: var(--font-size-sm);
+      font-family: inherit;
+      color: var(--color-text);
+      background: none;
+      border: none;
+      outline: none;
+      &::placeholder { color: var(--color-text-muted); }
+    }
+  }
+
+  &__search-icon { color: var(--color-text-muted); flex-shrink: 0; }
+
+  &__list {
+    overflow-y: auto;
+    flex: 1;
+    padding: var(--space-1) 0;
+  }
+
+  &__group-label {
+    padding: var(--space-1-5) var(--space-3) var(--space-1);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  &__option {
+    @include m.flex-between;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    font-family: inherit;
+    color: var(--color-text);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background var(--transition-fast);
+
+    &:hover, &--focused { background: var(--color-bg-subtle); }
+    &--selected { background: color-mix(in srgb, var(--color-brand) 8%, var(--color-bg-surface)); }
+    &:focus-visible { @include m.focus-ring; }
+  }
+
+  &__option-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  // Small colored circle (matches parent category color)
+  &__option-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  // Colored rounded-square icon box
+  &__option-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-sm);
+    @include m.flex-center;
+    font-size: var(--font-size-xs);
+    flex-shrink: 0;
+  }
+
+  &__option-text { @include m.flex-col; min-width: 0; gap: 1px; }
+
+  &__option-name {
+    font-weight: var(--font-variation-medium);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__option-parent {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__check { color: var(--color-brand); flex-shrink: 0; }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    justify-content: center;
+
+    &-icon { animation: cat-spin 1s linear infinite; }
+  }
+
+  &__empty {
+    padding: var(--space-4);
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__create-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    font-family: inherit;
+    font-weight: 600;
+    color: var(--color-brand);
+    background: none;
+    border: none;
+    border-top: 1px solid var(--color-border);
+    cursor: pointer;
+    text-align: left;
+    transition: background var(--transition-fast);
+
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--color-brand) 8%, var(--color-bg-surface));
+    }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+    &:focus-visible { @include m.focus-ring; }
+  }
+}
+
+@keyframes cat-spin {
+  to { transform: rotate(360deg); }
+}

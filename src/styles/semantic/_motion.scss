@@ -1,0 +1,24 @@
+@use '../tokens' as t;
+
+// Tier 2 — Semantic motion tokens
+
+:root {
+  --duration-instant: #{t.$duration-instant};
+  --duration-fast: #{t.$duration-fast};
+  --duration-base: #{t.$duration-base};
+  --duration-slow: #{t.$duration-slow};
+  --duration-slower: #{t.$duration-slower};
+
+  --ease-default: #{t.$ease-default};
+  --ease-in: #{t.$ease-in};
+  --ease-out: #{t.$ease-out};
+  --ease-spring: #{t.$ease-spring};
+
+  --ring-width: #{t.$ring-width};
+  --ring-offset: #{t.$ring-offset};
+  --border-width: #{t.$border-width};
+
+  --transition-default: var(--duration-base) var(--ease-out);
+  --transition-fast: var(--duration-fast) var(--ease-out);
+  --transition-spring: var(--duration-base) var(--ease-spring);
+}

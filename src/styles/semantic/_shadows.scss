@@ -1,0 +1,19 @@
+@use '../tokens' as t;
+
+// Tier 2 — Semantic shadow / elevation tokens
+
+:root {
+  --shadow-none: #{t.$shadow-none};
+  --shadow-xs: #{t.$shadow-xs};
+  --shadow-sm: #{t.$shadow-sm};
+  --shadow-md: #{t.$shadow-md};
+  --shadow-lg: #{t.$shadow-lg};
+  --shadow-default: var(--shadow-sm);
+}
+
+[data-theme='dark'] {
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 24%);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 32%), 0 1px 2px rgb(0 0 0 / 20%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 36%);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 44%);
+}

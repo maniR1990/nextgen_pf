@@ -1,0 +1,105 @@
+@use '../mixins' as m;
+
+.toast {
+  --toast-bg: var(--comp-toast-info-bg);
+  --toast-border: var(--comp-toast-info-border);
+  --toast-icon-color: var(--comp-toast-info-icon);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--comp-toast-gap);
+  width: 100%;
+  padding: var(--comp-toast-padding);
+  border: var(--comp-toast-border-width) solid var(--toast-border);
+  border-radius: var(--comp-toast-radius);
+  background: var(--toast-bg);
+}
+
+.toast__icon {
+  flex-shrink: 0;
+  margin-top: calc(var(--space-1) / 2);
+  color: var(--toast-icon-color);
+}
+
+.toast__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.toast__title {
+  margin: 0;
+  color: var(--comp-toast-title-color);
+  font-size: var(--comp-toast-title-size);
+  font-weight: var(--comp-toast-title-weight);
+  line-height: var(--line-height-tight);
+}
+
+.toast__description {
+  margin: 0;
+  color: var(--comp-toast-desc-color);
+  font-size: var(--comp-toast-desc-size);
+  line-height: var(--line-height-base);
+}
+
+.toast__dismiss {
+  flex-shrink: 0;
+  border: none;
+  padding: var(--space-1);
+  background: transparent;
+  color: var(--comp-toast-desc-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+
+  &:hover {
+    color: var(--comp-toast-title-color);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.toast--success {
+  --toast-bg: var(--comp-toast-success-bg);
+  --toast-border: var(--comp-toast-success-border);
+  --toast-icon-color: var(--comp-toast-success-icon);
+}
+
+.toast--error {
+  --toast-bg: var(--comp-toast-error-bg);
+  --toast-border: var(--comp-toast-error-border);
+  --toast-icon-color: var(--comp-toast-error-icon);
+}
+
+.toast--warning {
+  --toast-bg: var(--comp-toast-warning-bg);
+  --toast-border: var(--comp-toast-warning-border);
+  --toast-icon-color: var(--comp-toast-warning-icon);
+}
+
+.toast--info {
+  --toast-bg: var(--comp-toast-info-bg);
+  --toast-border: var(--comp-toast-info-border);
+  --toast-icon-color: var(--comp-toast-info-icon);
+}
+
+.toast-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: calc(40 * var(--space-4));
+}
+
+.toast-region {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 1000;
+  width: calc(40 * var(--space-4));
+  max-width: calc(100vw - 2 * var(--space-4));
+}

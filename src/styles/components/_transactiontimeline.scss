@@ -1,0 +1,390 @@
+@use '../mixins' as m;
+
+.tx-timeline {
+  @include m.flex-col($gap: var(--space-3));
+
+  // Header: title + optional Add button
+  &__header {
+    @include m.flex-between;
+    align-items: center;
+  }
+
+  &__title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-variation-semibold);
+    color: var(--color-text);
+  }
+
+  &__add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-variation-medium);
+    font-family: inherit;
+    color: #fff;
+    background: var(--color-brand);
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+
+    &:hover { background: var(--color-brand-hover); }
+    &:focus-visible { @include m.focus-ring; }
+  }
+
+  // Optional summary bar
+  &__summary {
+    display: flex;
+    align-items: stretch;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  &__summary-item {
+    @include m.flex-col($gap: var(--space-1));
+    flex: 1;
+    padding: var(--space-3);
+  }
+
+  &__summary-divider {
+    width: 1px;
+    background: var(--color-border);
+    flex-shrink: 0;
+  }
+
+  &__summary-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__summary-value {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-variation-semibold);
+    &--credit { color: var(--color-success); }
+    &--debit  { color: var(--color-error); }
+  }
+
+  // Filter tabs
+  &__filters {
+    display: flex;
+    gap: var(--space-1);
+    background: var(--color-bg-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-1);
+  }
+
+  &__filter-tab {
+    flex: 1;
+    padding: var(--space-1-5) var(--space-3);
+    font-size: var(--font-size-sm);
+    font-family: inherit;
+    font-weight: var(--font-variation-medium);
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+
+    &:hover:not(&--active) { color: var(--color-text); background: rgba(255, 255, 255, 0.4); }
+    &:focus-visible { @include m.focus-ring; }
+
+    &--active {
+      background: var(--color-bg-surface);
+      color: var(--color-text);
+      font-weight: var(--font-variation-semibold);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  // Timeline groups container — gap between groups creates the break in the line
+  &__list {
+    @include m.flex-col($gap: var(--space-8));
+  }
+
+  &__group {
+    @include m.flex-col($gap: 0);
+
+    @include m.respond-to(sm) {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      align-items: stretch;
+    }
+  }
+
+  // Desktop-only left date column — date at top, track line below
+  &__date-col {
+    display: none;
+
+    @include m.respond-to(sm) {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: var(--space-2);
+      padding-right: var(--space-3);
+    }
+  }
+
+  &__date {
+    font-family: var(--font-family-sans);
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-brand);
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  // Per-group track line — only spans the height of its own cards
+  &__date-track {
+    flex: 1;
+    width: 1px;
+    background: var(--color-border);
+    margin-top: var(--space-2);
+    min-height: var(--space-4);
+  }
+
+  // Cards column
+  &__cards-col {
+    @include m.flex-col($gap: 0);
+
+    @include m.respond-to(sm) {
+      padding-left: var(--space-4);
+    }
+  }
+
+  // Mobile sticky date + net total row
+  &__mobile-header {
+    @include m.flex-between;
+    align-items: center;
+    padding: var(--space-2) 0 var(--space-2);
+    position: sticky;
+    top: 0;
+    background: var(--color-bg);
+    z-index: 2;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-1);
+
+    @include m.respond-to(sm) { display: none; }
+  }
+
+  &__mobile-date {
+    font-family: var(--font-family-sans);
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+
+  &__mobile-total {
+    font-family: var(--font-family-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    &--credit { color: var(--color-success); }
+    &--debit  { color: var(--color-error); }
+  }
+
+  // Independent transaction cards within a date group
+  &__cards-list {
+    @include m.flex-col($gap: var(--space-2));
+  }
+
+  &__card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: color-mix(in srgb, var(--color-brand) 5%, var(--color-bg-surface));
+    border: 1px solid color-mix(in srgb, var(--color-brand) 14%, var(--color-border));
+    border-radius: var(--radius-md);
+    transition: background var(--transition-fast);
+
+    &--clickable {
+      cursor: pointer;
+      &:hover { background: color-mix(in srgb, var(--color-brand) 10%, var(--color-bg-surface)); }
+      &:focus-visible { @include m.focus-ring; }
+    }
+
+    &--has-actions:hover &-actions,
+    &--has-actions:focus-within &-actions {
+      opacity: 1;
+    }
+  }
+
+  // Edit / delete action buttons — appear on card hover
+  &__card-actions {
+    display: flex;
+    gap: var(--space-1);
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+  }
+
+  &__card-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    transition: background var(--transition-fast), color var(--transition-fast);
+    flex-shrink: 0;
+
+    &:hover {
+      background: var(--color-bg-subtle);
+      color: var(--color-text);
+    }
+
+    &:focus-visible { @include m.focus-ring; }
+
+    &--delete:hover {
+      background: color-mix(in srgb, var(--color-error) 12%, transparent);
+      color: var(--color-error);
+    }
+  }
+
+  // Colored dot indicator
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &--credit  { background: var(--color-success); }
+    &--debit   { background: var(--color-error); }
+    &--neutral { background: var(--color-text-muted); }
+  }
+
+  &__card-body {
+    @include m.flex-col;
+    flex: 1;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  &__card-merchant {
+    font-family: var(--font-family-sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    @include m.respond-below(sm) {
+      font-size: 0.7rem;
+    }
+  }
+
+  &__card-subtitle {
+    // category label
+    font-family: var(--font-family-sans);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    @include m.respond-below(sm) {
+      font-size: 0.7rem;
+    }
+  }
+
+  // Payment method chip (UPI, Auto Debit, etc.)
+  &__card-method {
+    font-family: var(--font-family-sans);
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    font-weight: 400;
+    margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__card-amount {
+    font-family: var(--font-family-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+    white-space: nowrap;
+
+    @include m.respond-below(sm) {
+      font-size: 0.7rem;
+    }
+
+    &--debit   { color: var(--color-error); }
+    &--credit  { color: var(--color-success); }
+    &--neutral { color: var(--color-text-muted); }
+  }
+
+  // Load older link
+  &__load-more {
+    display: block;
+    width: 100%;
+    padding: var(--space-3);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-variation-medium);
+    font-style: italic;
+    font-family: inherit;
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    transition: color var(--transition-fast);
+
+    &:hover { color: var(--color-brand); }
+    &:focus-visible { @include m.focus-ring; }
+    &:disabled { opacity: 0.55; cursor: not-allowed; }
+  }
+
+  // Loading skeleton
+  &--loading { gap: var(--space-4); }
+
+  &__skeleton {
+    @include m.flex-col($gap: var(--space-2));
+    animation: tx-timeline-pulse 1.5s ease-in-out infinite;
+
+    &-header {
+      height: 12px;
+      width: 80px;
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius-sm);
+    }
+
+    &-card {
+      height: 56px;
+      background: var(--color-bg-subtle);
+      border-radius: var(--radius-md);
+      &--short { width: 70%; }
+    }
+  }
+
+  &__empty {
+    padding: var(--space-8);
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    background: var(--color-bg-subtle);
+    border-radius: var(--radius-md);
+  }
+}
+
+@keyframes tx-timeline-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

@@ -1,0 +1,77 @@
+{
+  "title": "3-Level Classification Hierarchy",
+  "description": "Level 0 = Group (Income, Expense, Investment, Transfer). Level 1 = Category (Food, Transport, Tax-Saving). Level 2 = Subcategory (Groceries, Metro, PPF). Each level can carry its own budget. Click to expand.",
+  "ariaLabel": "Category hierarchy",
+  "defaultExpandedIds": ["income", "active-income"],
+  "nodes": [
+    {
+      "id": "income",
+      "name": "Income",
+      "level": 0,
+      "type": "income",
+      "emoji": "💰",
+      "children": [
+        {
+          "id": "active-income",
+          "name": "Active Income",
+          "level": 1,
+          "emoji": "🏢",
+          "children": [
+            { "id": "salary", "name": "Salary", "level": 2, "emoji": "🏛️" },
+            { "id": "freelance", "name": "Freelance / Contract", "level": 2, "emoji": "💼" },
+            { "id": "bonus", "name": "Bonus / Incentive", "level": 2, "emoji": "🎁" },
+            { "id": "business-revenue", "name": "Business Revenue", "level": 2, "emoji": "🏪" }
+          ]
+        },
+        {
+          "id": "passive-income",
+          "name": "Passive Income",
+          "level": 1,
+          "emoji": "🌱",
+          "children": [
+            { "id": "dividends", "name": "Dividends", "level": 2, "emoji": "📈" },
+            { "id": "rental", "name": "Rental Income", "level": 2, "emoji": "🏠" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "expense",
+      "name": "Expenses",
+      "level": 0,
+      "type": "expense",
+      "emoji": "💸",
+      "children": [
+        {
+          "id": "housing",
+          "name": "Housing",
+          "level": 1,
+          "emoji": "🏠",
+          "children": [
+            { "id": "rent", "name": "Rent", "level": 2, "emoji": "🔑" },
+            { "id": "utilities", "name": "Utilities", "level": 2, "emoji": "💡" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "investment",
+      "name": "Investments",
+      "level": 0,
+      "type": "investment",
+      "emoji": "📈",
+      "children": [
+        {
+          "id": "equity",
+          "name": "Equity",
+          "level": 1,
+          "emoji": "📊",
+          "children": [
+            { "id": "mutual-funds", "name": "Mutual Funds", "level": 2, "emoji": "📦" },
+            { "id": "stocks", "name": "Stocks", "level": 2, "emoji": "💹" }
+          ]
+        }
+      ]
+    }
+  ]
+}

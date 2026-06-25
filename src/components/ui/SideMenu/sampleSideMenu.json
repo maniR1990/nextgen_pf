@@ -1,0 +1,51 @@
+{
+  "brand": {
+    "appName": "PersonalFi",
+    "logoIcon": "indian-rupee",
+    "homeHref": "/dashboard"
+  },
+  "items": [
+    {
+      "id": "dashboard",
+      "label": "Dashboard",
+      "icon": "layout-grid",
+      "href": "/dashboard"
+    },
+    {
+      "id": "budget",
+      "label": "Budget",
+      "icon": "bar-chart",
+      "href": "/dashboard/budget"
+    },
+    {
+      "id": "transactions",
+      "label": "Transactions",
+      "icon": "list",
+      "href": "/dashboard/transactions"
+    },
+    {
+      "id": "accounts",
+      "label": "Accounts",
+      "icon": "landmark",
+      "href": "/dashboard/accounts"
+    },
+    {
+      "id": "sinking-funds",
+      "label": "Sinking Funds",
+      "icon": "piggy-bank",
+      "href": "/dashboard/sinking-funds"
+    },
+    {
+      "id": "events",
+      "label": "Events",
+      "icon": "calendar",
+      "href": "/dashboard/events"
+    },
+    {
+      "id": "recurring",
+      "label": "Recurring",
+      "icon": "refresh-cw",
+      "href": "/dashboard/recurring"
+    }
+  ]
+}

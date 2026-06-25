@@ -1,0 +1,4 @@
+@mixin focus-ring {
+  outline: var(--ring-width) solid var(--color-brand);
+  outline-offset: var(--ring-offset);
+}

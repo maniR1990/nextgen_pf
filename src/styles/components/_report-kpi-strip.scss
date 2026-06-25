@@ -1,0 +1,137 @@
+@use '../mixins' as m;
+
+// ─── Report KPI Strip ─────────────────────────────────────────────────────────
+// Horizontal 5-cell summary bar that sits below the AppHeader on /dashboard/reports.
+// Desktop: 5 equal columns with vertical dividers.
+// Tablet (< md): 2-column grid, bottom dividers between rows.
+// Mobile (< sm): single-column stack, no dividers.
+
+.report-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: var(--color-bg-surface);
+  border-bottom: 1px solid var(--color-border);
+
+  @include m.respond-below(md) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include m.respond-below(sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ─── Cell ─────────────────────────────────────────────────────────────────────
+
+.report-kpi-strip__cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  padding: var(--space-4) var(--space-4);
+  border-right: 1px solid var(--color-border);
+  min-width: 0;
+
+  &:last-child {
+    border-right: none;
+  }
+
+  // 2-column layout: remove right border on even cells, add bottom border on non-last rows
+  @include m.respond-below(md) {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+
+    &:nth-child(even) {
+      border-right: none;
+    }
+
+    // Last row (items 4–5) gets no bottom border
+    &:nth-last-child(-n+2) {
+      border-bottom: none;
+    }
+
+    // If 5th cell is alone in its row (odd total), also clear right border
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  @include m.respond-below(sm) {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-3) var(--space-4);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+// ─── Label ────────────────────────────────────────────────────────────────────
+
+.report-kpi-strip__label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-variation-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ─── Value ────────────────────────────────────────────────────────────────────
+
+.report-kpi-strip__value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-variation-bold);
+  color: var(--color-text);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  &--income {
+    color: var(--color-success);
+  }
+
+  &--money {
+    color: var(--color-text);
+  }
+
+  @include m.respond-below(md) {
+    font-size: var(--font-size-lg);
+  }
+
+  @include m.respond-below(sm) {
+    font-size: var(--font-size-xl);
+  }
+}
+
+// ─── Sub-line ─────────────────────────────────────────────────────────────────
+
+.report-kpi-strip__sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-height: 20px;
+}
+
+.report-kpi-strip__sub-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.report-kpi-strip__trend-icon {
+  flex-shrink: 0;
+  color: var(--color-success);
+}
+
+// ─── Skeleton modifier ────────────────────────────────────────────────────────
+
+.report-kpi-strip--loading {
+  .report-kpi-strip__cell {
+    gap: var(--space-2);
+    padding-block: var(--space-4);
+  }
+}

@@ -1,0 +1,10 @@
+// Tier 1 — Border radius primitives
+// Never use directly in components — map through semantic → component tokens only.
+
+$radius-xs: 2px; // tags, chips
+$radius-sm: 4px; // badges, code
+$radius-md: 7px; // buttons, inputs ★
+$radius-lg: 10px; // cards, panels
+$radius-xl: 16px; // modals, sheets
+$radius-2xl: 24px; // feature cards
+$radius-full: 999px; // pills, avatars

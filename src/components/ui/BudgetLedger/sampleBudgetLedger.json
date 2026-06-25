@@ -1,0 +1,177 @@
+{
+  "rows": [
+    {
+      "id": "income",
+      "title": "INCOME",
+      "kind": "section",
+      "variant": "income",
+      "plannedMinor": 22000000,
+      "spentMinor": 0,
+      "remainingMinor": 22000000,
+      "percent": 0,
+      "sortOrder": 0
+    },
+    {
+      "id": "household",
+      "title": "HOUSEHOLD ESSENTIALS",
+      "kind": "section",
+      "variant": "household",
+      "plannedMinor": 3542000,
+      "spentMinor": 1900000,
+      "remainingMinor": 1642000,
+      "percent": 54,
+      "sortOrder": 1,
+      "children": [
+        {
+          "id": "groceries",
+          "title": "Groceries & Essentials",
+          "kind": "group",
+          "plannedMinor": 1900000,
+          "spentMinor": 1900000,
+          "remainingMinor": 0,
+          "percent": 100,
+          "tag": "manual",
+          "note": "Can adjust slightly",
+          "sortOrder": 0,
+          "children": [
+            {
+              "id": "meat",
+              "title": "Meat",
+              "kind": "line",
+              "plannedMinor": 500000,
+              "spentMinor": 500000,
+              "remainingMinor": 0,
+              "percent": 100,
+              "typeLabel": "Expense",
+              "sortOrder": 0
+            },
+            {
+              "id": "rice",
+              "title": "Rice",
+              "kind": "line",
+              "plannedMinor": 400000,
+              "spentMinor": 400000,
+              "remainingMinor": 0,
+              "percent": 100,
+              "typeLabel": "Expense",
+              "sortOrder": 1
+            },
+            {
+              "id": "oil-milk",
+              "title": "Oil | Milk",
+              "kind": "line",
+              "plannedMinor": 1000000,
+              "spentMinor": 1000000,
+              "remainingMinor": 0,
+              "percent": 100,
+              "typeLabel": "Expense",
+              "sortOrder": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "insurance",
+      "title": "INSURANCE & PROTECTION",
+      "kind": "section",
+      "variant": "insurance",
+      "plannedMinor": 1691300,
+      "spentMinor": 0,
+      "remainingMinor": 1691300,
+      "percent": 0,
+      "sortOrder": 2
+    },
+    {
+      "id": "sinking",
+      "title": "SINKING FUNDS",
+      "kind": "section",
+      "variant": "sinking",
+      "plannedMinor": 3885000,
+      "spentMinor": 0,
+      "remainingMinor": 3885000,
+      "percent": 0,
+      "sortOrder": 3
+    },
+    {
+      "id": "subscriptions",
+      "title": "SUBSCRIPTIONS & LEARNING",
+      "kind": "section",
+      "variant": "subscriptions",
+      "plannedMinor": 200000,
+      "spentMinor": 0,
+      "remainingMinor": 200000,
+      "percent": 0,
+      "sortOrder": 4
+    },
+    {
+      "id": "investments",
+      "title": "INVESTMENTS & GOALS",
+      "kind": "section",
+      "variant": "investments",
+      "plannedMinor": 12000000,
+      "spentMinor": 12000000,
+      "remainingMinor": 0,
+      "percent": 100,
+      "sortOrder": 5
+    },
+    {
+      "id": "emis",
+      "title": "EMIS & LOAN REPAYMENTS",
+      "kind": "section",
+      "variant": "emis",
+      "plannedMinor": 0,
+      "spentMinor": 0,
+      "remainingMinor": 0,
+      "percent": 0,
+      "sortOrder": 6
+    },
+    {
+      "id": "unplanned",
+      "title": "UNPLANNED EXPENSES",
+      "kind": "section",
+      "variant": "unplanned",
+      "plannedMinor": 0,
+      "spentMinor": 0,
+      "remainingMinor": 0,
+      "percent": 0,
+      "sortOrder": 7
+    }
+  ],
+  "summaries": [
+    {
+      "id": "summary-essential-total",
+      "title": "TOTAL ESSENTIAL + PROTECTION + FUTURE FUNDS",
+      "plannedMinor": 9118300,
+      "spentMinor": 1900000,
+      "remainingMinor": 7218300,
+      "percent": 21
+    },
+    {
+      "id": "summary-investments-total",
+      "title": "TOTAL INVESTMENTS",
+      "plannedMinor": 12000000,
+      "spentMinor": 12000000,
+      "remainingMinor": 0,
+      "percent": 100,
+      "tone": "success"
+    },
+    {
+      "id": "summary-monthly-outflow",
+      "title": "TOTAL MONTHLY OUTFLOW (EXPENSES + INVESTMENTS)",
+      "plannedMinor": 21318300,
+      "spentMinor": 13900000,
+      "remainingMinor": 7418300,
+      "percent": 65
+    },
+    {
+      "id": "summary-surplus",
+      "title": "SURPLUS (Income − Total Outflow)",
+      "plannedMinor": 681700,
+      "spentMinor": -13900000,
+      "remainingMinor": 14581700,
+      "percent": 0,
+      "tone": "success"
+    }
+  ]
+}

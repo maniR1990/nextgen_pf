@@ -1,0 +1,35 @@
+@use 'sass:map';
+@use '../tokens/breakpoints' as bp;
+
+$breakpoints: (
+  xs: bp.$bp-xs,
+  sm: bp.$bp-sm,
+  md: bp.$bp-md,
+  lg: bp.$bp-lg,
+  xl: bp.$bp-xl,
+  '2xl': bp.$bp-2xl,
+);
+
+@function breakpoint($name) {
+  @if not map.has-key($breakpoints, $name) {
+    @error 'Unknown breakpoint `#{$name}`. Available: #{map.keys($breakpoints)}';
+  }
+
+  @return map.get($breakpoints, $name);
+}
+
+// Mobile-first — min-width
+@mixin respond-to($name) {
+  @media (min-width: breakpoint($name)) {
+    @content;
+  }
+}
+
+// Max-width (exclusive) — use sparingly for mobile-only overrides
+@mixin respond-below($name) {
+  $width: breakpoint($name);
+
+  @media (max-width: calc(#{$width} - 0.02px)) {
+    @content;
+  }
+}

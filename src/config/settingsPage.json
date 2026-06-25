@@ -1,0 +1,117 @@
+{
+  "ariaLabel": "Settings sections",
+  "defaultTabId": "accounts",
+  "tabs": [
+    {
+      "id": "accounts",
+      "label": "Accounts",
+      "crud": true,
+      "panel": {
+        "type": "hierarchy",
+        "hierarchy": {
+          "variant": "account",
+          "density": "compact",
+          "crudMode": "inline",
+          "showHeader": false,
+          "defaultExpandedIds": []
+        }
+      }
+    },
+    {
+      "id": "categories",
+      "label": "Categories",
+      "crud": true,
+      "panel": {
+        "type": "hierarchy",
+        "hierarchy": {
+          "variant": "category",
+          "density": "compact",
+          "crudMode": "inline",
+          "showHeader": false,
+          "showBudget": false,
+          "defaultExpandedIds": ["income", "active-income", "expense", "housing"],
+          "nodes": [
+            {
+              "id": "income",
+              "name": "Income",
+              "level": 0,
+              "type": "income",
+              "emoji": "💰",
+              "children": [
+                {
+                  "id": "active-income",
+                  "name": "Active Income",
+                  "level": 1,
+                  "emoji": "🏢",
+                  "children": [
+                    { "id": "salary", "name": "Salary", "level": 2, "emoji": "🏛️" },
+                    { "id": "freelance", "name": "Freelance / Contract", "level": 2, "emoji": "💼" }
+                  ]
+                },
+                {
+                  "id": "passive-income",
+                  "name": "Passive Income",
+                  "level": 1,
+                  "emoji": "🌱",
+                  "children": [
+                    { "id": "dividends", "name": "Dividends", "level": 2, "emoji": "📈" },
+                    { "id": "rental", "name": "Rental Income", "level": 2, "emoji": "🏠" }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "expense",
+              "name": "Expenses",
+              "level": 0,
+              "type": "expense",
+              "emoji": "💸",
+              "children": [
+                {
+                  "id": "housing",
+                  "name": "Housing",
+                  "level": 1,
+                  "emoji": "🏠",
+                  "children": [
+                    { "id": "rent", "name": "Rent / EMI", "level": 2, "emoji": "🔑" },
+                    { "id": "utilities", "name": "Electricity", "level": 2, "emoji": "💡" },
+                    { "id": "maintenance", "name": "Maintenance", "level": 2, "emoji": "🔧" }
+                  ]
+                },
+                {
+                  "id": "transport",
+                  "name": "Transport",
+                  "level": 1,
+                  "emoji": "🚗",
+                  "children": [
+                    { "id": "fuel", "name": "Fuel", "level": 2, "emoji": "⛽" },
+                    { "id": "metro", "name": "Metro / Cab", "level": 2, "emoji": "🚇" }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "investment",
+              "name": "Investments",
+              "level": 0,
+              "type": "investment",
+              "emoji": "📈",
+              "children": [
+                {
+                  "id": "equity",
+                  "name": "Equity",
+                  "level": 1,
+                  "emoji": "📊",
+                  "children": [
+                    { "id": "mutual-funds", "name": "Mutual Funds", "level": 2, "emoji": "📦" },
+                    { "id": "stocks", "name": "Stocks", "level": 2, "emoji": "💹" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

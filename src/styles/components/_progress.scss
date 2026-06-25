@@ -1,0 +1,65 @@
+@use '../mixins' as m;
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--comp-progress-gap);
+  width: 100%;
+}
+
+.progress__header {
+  @include m.flex-between;
+  gap: var(--space-4);
+}
+
+.progress__label {
+  font-size: var(--comp-progress-label-size);
+  font-weight: var(--comp-progress-label-weight);
+  color: var(--color-text);
+}
+
+.progress__value {
+  font-size: var(--comp-progress-value-size);
+  font-weight: var(--comp-progress-value-weight);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress__track {
+  width: 100%;
+  height: var(--comp-progress-height);
+  overflow: hidden;
+  border-radius: var(--comp-progress-radius);
+  background: var(--comp-progress-track);
+}
+
+.progress__bar {
+  height: 100%;
+  border-radius: var(--comp-progress-radius);
+  background: var(--progress-fill, var(--comp-progress-fill-brand));
+  transition: width var(--transition-default);
+}
+
+.progress--success {
+  --progress-fill: var(--comp-progress-fill-success);
+
+  .progress__value {
+    color: var(--color-success);
+  }
+}
+
+.progress--error {
+  --progress-fill: var(--comp-progress-fill-error);
+
+  .progress__value {
+    color: var(--color-error);
+  }
+}
+
+.progress--warning {
+  --progress-fill: var(--comp-progress-fill-warning);
+}
+
+.progress--brand {
+  --progress-fill: var(--comp-progress-fill-brand);
+}

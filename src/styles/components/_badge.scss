@@ -1,0 +1,99 @@
+.badge {
+  --badge-bg: var(--comp-badge-active-bg);
+  --badge-border: var(--comp-badge-active-border);
+  --badge-text: var(--comp-badge-active-text);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--comp-badge-gap);
+  max-width: 100%;
+  padding: var(--comp-badge-padding-y) var(--comp-badge-padding-x);
+  border: var(--border-width) solid var(--badge-border);
+  border-radius: var(--comp-badge-radius-pill);
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  font-size: var(--comp-badge-font-size);
+  font-weight: var(--comp-badge-font-weight);
+  line-height: var(--line-height-tight);
+  white-space: nowrap;
+
+  &--label {
+    font-size: var(--comp-badge-label-font-size);
+    font-weight: var(--comp-badge-label-font-weight);
+    letter-spacing: var(--comp-badge-label-spacing);
+    text-transform: uppercase;
+  }
+
+  &--active {
+    --badge-bg: var(--comp-badge-active-bg);
+    --badge-border: var(--comp-badge-active-border);
+    --badge-text: var(--comp-badge-active-text);
+  }
+
+  &--success {
+    --badge-bg: var(--comp-badge-success-soft-bg);
+    --badge-border: var(--comp-badge-success-soft-border);
+    --badge-text: var(--comp-badge-success-soft-text);
+  }
+
+  &--error {
+    --badge-bg: var(--comp-badge-error-soft-bg);
+    --badge-border: var(--comp-badge-error-soft-border);
+    --badge-text: var(--comp-badge-error-soft-text);
+  }
+
+  &--warning {
+    --badge-bg: var(--comp-badge-warning-soft-bg);
+    --badge-border: var(--comp-badge-warning-soft-border);
+    --badge-text: var(--comp-badge-warning-soft-text);
+  }
+
+  &--inactive {
+    --badge-bg: var(--comp-badge-inactive-bg);
+    --badge-border: var(--comp-badge-inactive-border);
+    --badge-text: var(--comp-badge-inactive-text);
+  }
+
+  &--beta {
+    --badge-bg: var(--comp-badge-beta-bg);
+    --badge-border: var(--comp-badge-beta-border);
+    --badge-text: var(--comp-badge-beta-text);
+  }
+
+  &--admin {
+    --badge-bg: var(--comp-badge-admin-bg);
+    --badge-border: var(--comp-badge-admin-border);
+    --badge-text: var(--comp-badge-admin-text);
+  }
+
+  &--pro {
+    --badge-bg: var(--comp-badge-pro-bg);
+    --badge-border: var(--comp-badge-pro-border);
+    --badge-text: var(--comp-badge-pro-text);
+  }
+
+  &--free {
+    --badge-bg: var(--comp-badge-free-bg);
+    --badge-border: var(--comp-badge-free-border);
+    --badge-text: var(--comp-badge-free-text);
+  }
+
+  &--verified {
+    --badge-bg: var(--comp-badge-verified-bg);
+    --badge-border: var(--comp-badge-verified-border);
+    --badge-text: var(--comp-badge-verified-text);
+  }
+}
+
+.badge__dot {
+  flex-shrink: 0;
+  width: var(--comp-badge-dot-size);
+  height: var(--comp-badge-dot-size);
+  border-radius: var(--radius-full);
+  background: currentcolor;
+}
+
+.badge__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

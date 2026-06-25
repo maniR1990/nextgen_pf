@@ -1,0 +1,88 @@
+@use '../mixins' as m;
+
+.chip {
+  --chip-bg: var(--comp-chip-brand-bg);
+  --chip-border: var(--comp-chip-brand-border);
+  --chip-text: var(--comp-chip-brand-text);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--comp-chip-gap);
+  min-height: var(--comp-chip-min-height);
+  padding: var(--comp-chip-padding-y) var(--comp-chip-padding-x);
+  border: var(--border-width) solid var(--chip-border);
+  border-radius: var(--comp-chip-radius);
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  font-size: var(--comp-chip-font-size);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+  white-space: nowrap;
+  font-family: var(--font-family-sans);
+
+  @include m.respond-to(md) {
+    min-height: auto;
+  }
+
+  &--brand {
+    --chip-bg: var(--comp-chip-brand-bg);
+    --chip-border: var(--comp-chip-brand-border);
+    --chip-text: var(--comp-chip-brand-text);
+  }
+
+  &--success {
+    --chip-bg: var(--comp-chip-success-bg);
+    --chip-border: var(--comp-chip-success-border);
+    --chip-text: var(--comp-chip-success-text);
+  }
+
+  &--neutral {
+    --chip-bg: var(--comp-chip-neutral-bg);
+    --chip-border: var(--comp-chip-neutral-border);
+    --chip-text: var(--comp-chip-neutral-text);
+  }
+
+  &:is(button) {
+    cursor: pointer;
+    transition: var(--transition-fast);
+
+    &:hover:not(:disabled) {
+      filter: brightness(0.97);
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+
+    &:disabled {
+      opacity: var(--comp-btn-disabled-opacity);
+      cursor: not-allowed;
+    }
+  }
+}
+
+.chip__icon {
+  flex-shrink: 0;
+  width: var(--comp-chip-icon-size);
+  height: var(--comp-chip-icon-size);
+}
+
+.chip__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+
+  @include m.respond-to(md) {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}

@@ -1,0 +1,106 @@
+.media-image {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: var(--color-bg-subtle);
+
+  &--aspect-1-1 {
+    aspect-ratio: 1 / 1;
+  }
+
+  &--aspect-3-2 {
+    aspect-ratio: 3 / 2;
+  }
+
+  &--aspect-16-9 {
+    aspect-ratio: 16 / 9;
+  }
+
+  &--aspect-3-4 {
+    aspect-ratio: 3 / 4;
+  }
+
+  &--radius-none {
+    border-radius: var(--comp-image-radius-none);
+  }
+
+  &--radius-sm {
+    border-radius: var(--comp-image-radius-sm);
+  }
+
+  &--radius-md {
+    border-radius: var(--comp-image-radius-md);
+  }
+
+  &--radius-lg {
+    border-radius: var(--comp-image-radius-lg);
+  }
+
+  &--radius-full {
+    border-radius: var(--comp-image-radius-full);
+  }
+}
+
+.media-image__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: calc(20 * var(--space-1));
+  padding: var(--space-4);
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--comp-image-placeholder-stripe-a),
+    var(--comp-image-placeholder-stripe-a) 10px,
+    var(--comp-image-placeholder-stripe-b) 10px,
+    var(--comp-image-placeholder-stripe-b) 20px
+  );
+  color: var(--comp-image-placeholder-text);
+  font-size: var(--comp-image-placeholder-font-size);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+}
+
+.image-placeholder--aspect-1-1 {
+  aspect-ratio: 1 / 1;
+}
+
+.image-placeholder--aspect-3-2 {
+  aspect-ratio: 3 / 2;
+}
+
+.image-placeholder--aspect-16-9 {
+  aspect-ratio: 16 / 9;
+}
+
+.image-placeholder--aspect-3-4 {
+  aspect-ratio: 3 / 4;
+}
+
+.image-placeholder--radius-none {
+  border-radius: var(--comp-image-radius-none);
+}
+
+.image-placeholder--radius-sm {
+  border-radius: var(--comp-image-radius-sm);
+}
+
+.image-placeholder--radius-md {
+  border-radius: var(--comp-image-radius-md);
+}
+
+.image-placeholder--radius-lg {
+  border-radius: var(--comp-image-radius-lg);
+}
+
+.image-placeholder--radius-full {
+  border-radius: var(--comp-image-radius-full);
+}

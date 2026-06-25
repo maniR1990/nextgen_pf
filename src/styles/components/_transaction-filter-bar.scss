@@ -1,0 +1,140 @@
+@use '../mixins' as m;
+
+.tx-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--color-border);
+
+  @include m.respond-below(md) {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-2) var(--space-3);
+  }
+}
+
+.tx-filter-bar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-1);
+}
+
+.tx-filter-bar__chip {
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  font-weight: var(--font-variation-medium);
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+
+  &:hover:not(&--active) {
+    color: var(--color-text);
+    background: var(--color-bg-subtle);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+
+  &--active {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-weight: var(--font-variation-semibold);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.tx-filter-bar__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+
+  @include m.respond-below(md) {
+    width: 100%;
+  }
+}
+
+.tx-filter-bar__control {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  min-height: calc(4 * var(--space-2));
+
+  &:focus-within {
+    @include m.focus-ring;
+  }
+
+  &--month {
+    position: relative;
+    overflow: hidden;
+  }
+}
+
+.tx-filter-bar__control-icon {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.tx-filter-bar__control-label {
+  white-space: nowrap;
+}
+
+.tx-filter-bar__month-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.tx-filter-bar__select {
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  min-width: calc(8 * var(--space-4));
+  appearance: none;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.tx-filter-bar__sort {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-surface);
+}
+
+.tx-page {
+  &__content {
+    padding: var(--space-4) var(--space-4) var(--space-8);
+
+    @include m.respond-below(md) {
+      padding: var(--space-3);
+    }
+  }
+}

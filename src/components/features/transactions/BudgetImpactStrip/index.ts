@@ -1,0 +1,1 @@
+export { BudgetImpactStrip } from './BudgetImpactStrip';

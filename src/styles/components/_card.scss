@@ -1,0 +1,17 @@
+.card {
+  --card-bg: var(--comp-card-bg);
+  --card-border: var(--comp-card-border);
+  --card-radius: var(--comp-card-radius);
+  --card-padding: var(--comp-card-padding);
+  --card-shadow: var(--comp-card-shadow);
+
+  background: var(--card-bg);
+  border: var(--border-width) solid var(--card-border);
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+  box-shadow: var(--card-shadow);
+
+  &--feature {
+    --card-radius: var(--comp-card-radius-feature);
+  }
+}

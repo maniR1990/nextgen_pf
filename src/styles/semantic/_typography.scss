@@ -1,0 +1,89 @@
+@use '../tokens' as t;
+
+// Tier 2 — Semantic typography tokens
+// Primitives → meaning. Components use these or Tier 3 comp tokens.
+
+:root {
+  // Families — Geist variables set on <html> by layout.tsx
+  --font-family-sans: #{t.$font-sans};
+  --font-family-mono: #{t.$font-mono};
+
+  // Geist uses standard font-weight; these aliases kept for component compatibility
+  --font-variation-regular: #{t.$font-weight-regular};
+  --font-variation-medium: #{t.$font-weight-medium};
+  --font-variation-semibold: #{t.$font-weight-semibold};
+  --font-variation-bold: #{t.$font-weight-bold};
+  --font-variation-extrabold: #{t.$font-weight-extrabold};
+
+  // Scale
+  --font-size-xs: #{t.$font-size-xs};
+  --font-size-sm: #{t.$font-size-sm};
+  --font-size-base: #{t.$font-size-base};
+  --font-size-lg: #{t.$font-size-lg};
+  --font-size-xl: #{t.$font-size-xl};
+  --font-size-2xl: #{t.$font-size-2xl};
+  --font-size-3xl: #{t.$font-size-3xl};
+  --font-size-4xl: #{t.$font-size-4xl};
+  --font-size-5xl: #{t.$font-size-5xl};
+  --font-size-mono: #{t.$font-size-mono};
+
+  // Weights
+  --font-weight-normal: #{t.$font-weight-normal};
+  --font-weight-medium: #{t.$font-weight-medium};
+  --font-weight-semibold: #{t.$font-weight-semibold};
+  --font-weight-bold: #{t.$font-weight-bold};
+  --font-weight-extrabold: #{t.$font-weight-extrabold};
+
+  // Line heights
+  --line-height-tight: #{t.$line-height-tight};
+  --line-height-base: #{t.$line-height-base};
+  --line-height-relaxed: #{t.$line-height-relaxed};
+
+  // Letter spacing
+  --letter-spacing-tight: #{t.$letter-spacing-tight};
+  --letter-spacing-wide: #{t.$letter-spacing-wide};
+  --letter-spacing-wider: #{t.$letter-spacing-wider};
+
+  // Type roles — one scale, consistent pairing
+  --type-display-size: var(--font-size-5xl);
+  --type-display-weight: var(--font-weight-bold);
+  --type-display-leading: var(--line-height-tight);
+
+  // Mobile-first — scaled in semantic/_responsive.scss (24 → 28 → 36px)
+  --type-h1-size: var(--font-size-3xl);
+  --type-h1-weight: var(--font-weight-bold);
+  --type-h1-leading: var(--line-height-tight);
+
+  --type-h2-size: var(--font-size-3xl);
+  --type-h2-weight: var(--font-weight-bold);
+  --type-h2-leading: var(--line-height-tight);
+
+  --type-h3-size: var(--font-size-2xl);
+  --type-h3-weight: var(--font-weight-bold);
+  --type-h3-leading: var(--line-height-tight);
+
+  --type-h4-size: var(--font-size-xl);
+  --type-h4-weight: var(--font-weight-bold);
+  --type-h4-leading: var(--line-height-tight);
+
+  --type-h5-size: var(--font-size-lg);
+  --type-h5-weight: var(--font-weight-bold);
+  --type-h5-leading: var(--line-height-tight);
+
+  --type-body-size: var(--font-size-base);
+  --type-body-weight: var(--font-weight-normal);
+  --type-body-leading: var(--line-height-base);
+
+  --type-caption-size: var(--font-size-sm);
+  --type-caption-weight: var(--font-weight-normal);
+  --type-caption-leading: var(--line-height-base);
+
+  --type-label-size: var(--font-size-xs);
+  --type-label-weight: var(--font-weight-bold);
+  --type-label-leading: var(--line-height-tight);
+  --type-label-spacing: var(--letter-spacing-wide);
+
+  --type-mono-size: var(--font-size-mono);
+  --type-mono-weight: var(--font-weight-normal);
+  --type-mono-leading: var(--line-height-base);
+}

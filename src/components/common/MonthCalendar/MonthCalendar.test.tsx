@@ -1,0 +1,91 @@
+import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { MonthCalendar } from './MonthCalendar';
+import type { CalendarTransaction } from './MonthCalendar';
+
+afterEach(() => cleanup());
+
+const TRANSACTIONS: Record<string, CalendarTransaction[]> = {
+  '2026-06-13': [
+    { id: '1', merchant: 'Zepto', amount: 890, type: 'debit' },
+    { id: '2', merchant: 'Salary', amount: 85000, type: 'credit' },
+  ],
+};
+
+describe('MonthCalendar', () => {
+  describe('rendering', () => {
+    it('renders month and year heading', () => {
+      render(<MonthCalendar month={6} year={2026} />);
+      expect(screen.getByText('June 2026')).toBeInTheDocument();
+    });
+
+    it('renders weekday headers', () => {
+      render(<MonthCalendar month={6} year={2026} />);
+      expect(screen.getByText('Sun')).toBeInTheDocument();
+      expect(screen.getByText('Sat')).toBeInTheDocument();
+    });
+
+    it('renders day buttons for June 2026 (30 days)', () => {
+      render(<MonthCalendar month={6} year={2026} />);
+      const dayBtns = screen.getAllByRole('gridcell').filter(
+        el => el.tagName === 'BUTTON'
+      );
+      expect(dayBtns).toHaveLength(30);
+    });
+
+    it('renders nav buttons', () => {
+      render(<MonthCalendar month={6} year={2026} />);
+      expect(screen.getByRole('button', { name: /previous month/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /next month/i })).toBeInTheDocument();
+    });
+
+    it('shows transaction panel when selectedDate provided', () => {
+      render(
+        <MonthCalendar
+          month={6}
+          year={2026}
+          transactions={TRANSACTIONS}
+          selectedDate="2026-06-13"
+          onDayClick={vi.fn()}
+        />
+      );
+      expect(screen.getByText('Zepto')).toBeInTheDocument();
+      expect(screen.getByText('Salary')).toBeInTheDocument();
+    });
+
+    it('shows "No transactions" for day with no transactions', () => {
+      render(
+        <MonthCalendar month={6} year={2026} transactions={{}} selectedDate="2026-06-13" onDayClick={vi.fn()} />
+      );
+      expect(screen.getByText('No transactions')).toBeInTheDocument();
+    });
+  });
+
+  describe('navigation', () => {
+    it('navigates to previous month', async () => {
+      const user = userEvent.setup();
+      render(<MonthCalendar month={6} year={2026} />);
+      await user.click(screen.getByRole('button', { name: /previous month/i }));
+      expect(screen.getByText('May 2026')).toBeInTheDocument();
+    });
+
+    it('navigates to next month', async () => {
+      const user = userEvent.setup();
+      render(<MonthCalendar month={6} year={2026} />);
+      await user.click(screen.getByRole('button', { name: /next month/i }));
+      expect(screen.getByText('July 2026')).toBeInTheDocument();
+    });
+  });
+
+  describe('interaction', () => {
+    it('calls onDayClick with date string', async () => {
+      const user = userEvent.setup();
+      const onDayClick = vi.fn();
+      render(<MonthCalendar month={6} year={2026} onDayClick={onDayClick} />);
+      const day13 = screen.getByRole('gridcell', { name: /June 13, 2026/i });
+      await user.click(day13);
+      expect(onDayClick).toHaveBeenCalledWith('2026-06-13');
+    });
+  });
+});

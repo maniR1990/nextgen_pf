@@ -1,0 +1,1789 @@
+generator client {
+
+  provider = "prisma-client-js"
+
+}
+
+
+
+datasource db {
+
+  provider = "mongodb"
+
+  url      = env("DATABASE_URL")
+
+}
+
+
+
+// ─── Auth & Identity ─────────────────────────────────────────────────────────
+
+
+
+model User {
+
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+
+  email            String    @unique // always lowercase (enforced in service layer)
+
+  name             String
+
+  passwordHash     String? // null for OAuth-only users
+
+  role             Role      @default(USER)
+
+  currency         String    @default("INR")
+
+  fiscalYearStart  Int       @default(4) // 1–12, April = 4
+
+  emailVerified    DateTime?
+
+  image            String? // OAuth avatar URL
+
+  isActive         Boolean   @default(true)
+
+  failedLoginCount Int       @default(0)
+
+  lockedUntil      DateTime?
+
+  lastLoginAt      DateTime?
+
+  createdAt        DateTime  @default(now())
+
+  updatedAt        DateTime  @updatedAt
+
+
+
+  accountGroups           AccountGroup[]
+
+  accounts                Account[]
+
+  categories              Category[]
+
+  funds                   Fund[]
+
+  fundGroups              FundGroup[]
+
+  financeTransactions     FinanceTransaction[]
+
+  recurringTemplates      RecurringTemplate[]
+
+  budgets                 Budget[]
+
+  events                  Event[]
+
+  giftTrackings           GiftTracking[]
+
+  atmWithdrawals          ATMWithdrawal[]
+
+  passwordResetTokens     PasswordResetToken[]
+
+  emailVerificationTokens EmailVerificationToken[]
+
+  oauthAccounts           OAuthAccount[]
+
+
+
+  @@index([isActive])
+
+}
+
+
+
+model PasswordResetToken {
+
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  token     String   @unique
+
+  userId    String   @db.ObjectId
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+
+  used      Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+
+
+  @@index([userId])
+
+}
+
+
+
+model EmailVerificationToken {
+
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  token     String   @unique
+
+  userId    String   @db.ObjectId
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+
+
+  @@index([userId])
+
+}
+
+
+
+model OAuthAccount {
+
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId            String  @db.ObjectId
+
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider          String
+
+  providerAccountId String
+
+  accessToken       String?
+
+
+
+  @@unique([provider, providerAccountId])
+
+  @@index([userId])
+
+}
+
+
+
+// JWT session state — replaces Redis for Vercel + Atlas deploys
+
+model RefreshToken {
+
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  jti       String   @unique
+
+  userId    String   @db.ObjectId
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+
+
+  @@index([userId])
+
+  @@index([expiresAt])
+
+}
+
+
+
+model RevokedAccessToken {
+
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  jti       String   @unique
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+
+
+  @@index([expiresAt])
+
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+
+// PersonalFi v2 — 7 core domain collections (normalized)
+
+// ───────────────────────────────────────────────────────────────────────────
+
+// Replaces: PaymentSource → Account, CategoryNode → Category, SinkingFund → Fund
+
+// New: AccountGroup, Institution (catalog)
+
+// Monetary Float = INR rupees at rest (services use decimal.js / dinero.js).
+
+// Soft-delete financial records via archivedAt — never hard-delete accounts/categories/funds.
+
+// Fund.currentAmount / budget spent / event actualAmount = COMPUTED in services only.
+
+// ═══════════════════════════════════════════════════════════════════════════
+
+
+
+// ─── Embedded value types ────────────────────────────────────────────────────
+
+
+
+type BillingCycle {
+
+  startDay Int
+
+  dueDay   Int
+
+}
+
+
+
+type FundAllocation {
+
+  fundId    String             @db.ObjectId
+
+  accountId String             @db.ObjectId
+
+  type      FundAllocationType
+
+  value     Float // 0.40 = 40% OR fixed INR amount
+
+  priority  Int   @default(0)
+
+}
+
+
+
+type MatchRule {
+
+  field    MatchRuleField
+
+  operator MatchRuleOperator
+
+  value    Json // string | number | [min,max] — validated in service layer
+
+  priority Int            @default(0)
+
+}
+
+
+
+type RecurringConfig {
+
+  type       String
+
+  startDate  DateTime
+
+  dayOfMonth Int?
+
+  endDate    DateTime?
+
+}
+
+
+
+type RecurrenceConfig {
+
+  frequency String?
+
+  month     Int?
+
+  day       Int?
+
+}
+
+
+
+type GiftCardDetails {
+
+  provider   String?
+
+  balance    Float?
+
+  expiryDate DateTime?
+
+}
+
+
+
+type Milestone {
+
+  amount  Float
+
+  label   String
+
+  reached Boolean @default(false)
+
+}
+
+
+
+// ─── Institution — global/provider catalog (not user-owned) ─────────────────
+
+
+
+model Institution {
+
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+
+  name        String // "HDFC Bank"
+
+  shortName   String // "HDFC"
+
+  type        InstitutionType
+
+  logoUrl     String?
+
+  color       String?
+
+  ifscPattern String?
+
+  isActive    Boolean         @default(true)
+
+  isVerified  Boolean         @default(false)
+
+  createdAt   DateTime        @default(now())
+
+  updatedAt   DateTime        @updatedAt
+
+
+
+  accounts Account[]
+
+
+
+  @@unique([shortName])
+
+  @@index([type])
+
+  @@index([isActive])
+
+}
+
+
+
+// ─── AccountGroup — net-worth buckets (asset vs liability) ──────────────────
+
+
+
+model AccountGroup {
+
+  id          String           @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId      String           @db.ObjectId
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String // "Investments"
+
+  type        AccountGroupType // asset | liability
+
+  slug        String // for net-worth rollup
+
+  order       Int              @default(0)
+
+  icon        String?
+
+  color       String?
+
+  isDefault   Boolean          @default(false)
+
+  isCollapsed Boolean          @default(false)
+
+  archivedAt  DateTime?
+
+  createdAt   DateTime         @default(now())
+
+  updatedAt   DateTime         @updatedAt
+
+
+
+  accounts Account[]
+
+
+
+  @@unique([userId, slug])
+
+  @@index([userId])
+
+  @@index([userId, type])
+
+  @@index([userId, archivedAt])
+
+}
+
+
+
+// ─── Account — replaces PaymentSource (banks, cards, investments, loans) ──
+
+
+
+model Account {
+
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId   String @db.ObjectId
+
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  groupId  String @db.ObjectId
+
+  group    AccountGroup @relation(fields: [groupId], references: [id])
+
+  institutionId String? @db.ObjectId
+
+  institution   Institution? @relation(fields: [institutionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+
+
+  name     String // "HDFC Savings – Main"
+
+  code     String // auto "HDFC-SAV-01"
+
+  type     AccountType
+
+  subtype  String? // "NRE" | "salary" | "SIP"
+
+
+
+  // Balance (INR)
+
+  balance        Float    @default(0)
+
+  openingBalance Float    @default(0)
+
+  currency       String   @default("INR")
+
+  balanceAsOf    DateTime?
+
+
+
+  // Banking
+
+  accountNumber String? // last 4 digits only in UI; full tokenized server-side if stored
+
+  ifscCode      String?
+
+  upiId         String?
+
+
+
+  // Credit card
+
+  creditLimit   Float?
+
+  billingCycle  BillingCycle?
+
+  interestRate  Float? // annual APR %
+
+  minimumPayment Float?
+
+
+
+  // Investment
+
+  investedAmount  Float?
+
+  currentValue    Float?
+
+  absoluteReturn  Float?
+
+  xirr            Float?
+
+  maturityDate    DateTime?
+
+  lockInMonths    Int?
+
+  expectedReturn  Float?
+
+  category80C     Boolean @default(false)
+
+
+
+  // Loan
+
+  principalAmount   Float?
+
+  emi               Float?
+
+  remainingEmis     Int?
+
+  interestPaidTotal Float?
+
+
+
+  // Virtual bucket splits on this account
+
+  fundAllocations FundAllocation[]
+
+
+
+  // Linked accounts (UPI→savings, CC→salary) — stored as IDs; resolve in service
+
+  linkedAccountIds String[] @db.ObjectId
+
+
+
+  status            AccountStatus @default(ACTIVE)
+
+  isPrimary         Boolean       @default(false)
+
+  isExcludeNetWorth Boolean       @default(false)
+
+  isHidden          Boolean       @default(false)
+
+
+
+  color String?
+
+  icon  String?
+
+  note  String?
+
+  tags  String[]
+
+
+
+  openedOn   DateTime?
+
+  archivedAt DateTime?
+
+  createdAt  DateTime  @default(now())
+
+  updatedAt  DateTime  @updatedAt
+
+
+
+  outgoingTransactions FinanceTransaction[] @relation("TransactionAccount")
+
+  incomingTransactions FinanceTransaction[] @relation("TransactionToAccount")
+
+  atmSources           ATMWithdrawal[]      @relation("ATMSourceAccount")
+
+  atmBuffers           ATMWithdrawal[]      @relation("ATMCashBuffer")
+
+  atmTargets           ATMWithdrawal[]      @relation("ATMTargetWallet")
+
+  createdFromGifts     GiftTracking[]       @relation("GiftAccountCreated")
+
+  recurringTemplates   RecurringTemplate[]  @relation("RecurringTemplateAccount")
+
+  recurringToAccounts  RecurringTemplate[]  @relation("RecurringTemplateToAccount")
+
+
+
+  @@unique([userId, code])
+
+  @@index([userId])
+
+  @@index([userId, groupId])
+
+  @@index([userId, type])
+
+  @@index([userId, status])
+
+  @@index([userId, archivedAt])
+
+  @@index([institutionId])
+
+}
+
+
+
+// ─── Category — 3-level hierarchy (group → category → subcategory) ──────────
+
+
+
+model Category {
+
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId   String? @db.ObjectId // null = system default template
+
+  user     User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name     String
+
+  slug     String
+
+  parentId String? @db.ObjectId
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  children Category[] @relation("CategoryHierarchy")
+
+  level    Int // 0 = group, 1 = category, 2 = subcategory
+
+  path     String // "expense/food/groceries" — indexed for fast lookup
+
+  type     CategoryFlowType // income | expense | investment | transfer
+
+
+
+  monthlyBudget  Float   @default(0)
+
+  budgetRollover Boolean @default(false)
+
+  matchRules     MatchRule[]
+
+
+
+  linkedFundId String? @db.ObjectId
+
+  linkedFund   Fund?   @relation("CategoryLinkedFund", fields: [linkedFundId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  linkedEventId String? @db.ObjectId
+
+  linkedEvent   Event?  @relation("CategoryLinkedEvent", fields: [linkedEventId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+
+
+  color  String?
+
+  icon   String?
+
+  order  Int     @default(0)
+
+  isSystem Boolean @default(false)
+
+  isActive Boolean @default(true)
+
+
+
+  archivedAt DateTime?
+
+  createdAt  DateTime  @default(now())
+
+  updatedAt  DateTime  @updatedAt
+
+
+
+  transactions       FinanceTransaction[] @relation("TransactionCategory")
+
+  budgets            Budget[]
+
+  budgetOverrides    BudgetOverride[]
+
+  events             Event[]
+
+  recurringTemplates RecurringTemplate[]
+
+  merchantAliases    MerchantAlias[]
+
+
+
+  @@unique([userId, slug])
+
+  @@unique([userId, path])
+
+  @@index([userId])
+
+  @@index([userId, parentId])
+
+  @@index([userId, level])
+
+  @@index([userId, type])
+
+  @@index([userId, archivedAt])
+
+  @@index([isSystem])
+
+  @@index([isSystem, slug])
+
+  @@index([linkedFundId])
+
+  @@index([linkedEventId])
+
+}
+
+
+
+// ─── FundGroup — user-defined groupings for funds (replaces hardcoded PURPOSE_TIERS) ──
+
+
+
+model FundGroup {
+
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId      String      @db.ObjectId
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String // "Emergency", "Kids Education"
+
+  description String?
+
+  slug        String // "emergency", "kids-education" — url-safe, unique per user
+
+  purposeHint FundPurpose? // only set for the 8 system groups; drives financial recommendations
+
+  order       Int         @default(0)
+
+  color       String?
+
+  isSystem    Boolean     @default(false) // system groups cannot be deleted
+
+  archivedAt  DateTime?
+
+  createdAt   DateTime    @default(now())
+
+  updatedAt   DateTime    @updatedAt
+
+
+
+  funds              Fund[]
+
+  transactions       FinanceTransaction[] @relation("TransactionFundGroup")
+
+  recurringTemplates RecurringTemplate[]  @relation("RecurringTemplateFundGroup")
+
+
+
+  @@unique([userId, slug])
+
+  @@index([userId])
+
+  @@index([userId, isSystem])
+
+  @@index([userId, archivedAt])
+
+}
+
+
+
+// ─── Fund — replaces SinkingFund; virtual savings buckets ───────────────────
+
+
+
+model Fund {
+
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId       String     @db.ObjectId
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name         String // "Emergency Fund"
+
+  purpose      FundPurpose
+
+  groupId      String?    @db.ObjectId // FK to FundGroup; optional for backward compat
+
+  group        FundGroup? @relation(fields: [groupId], references: [id])
+
+  targetAmount Float
+
+  targetMonths Int? // emergency: 3 or 6
+
+  // currentAmount: COMPUTED from fundAllocations × account balances — not stored
+
+
+
+  sources FundAllocation[] // which accounts feed this fund
+
+
+
+  goalId     String?  @db.ObjectId // future Goal model; optional Event link via service
+
+
+
+  color String?
+
+  icon  String?
+
+  order Int     @default(0)
+
+
+
+  milestones Milestone[]
+
+
+
+  archivedAt DateTime?
+
+  createdAt  DateTime  @default(now())
+
+  updatedAt  DateTime  @updatedAt
+
+
+
+  linkedCategories Category[] @relation("CategoryLinkedFund")
+
+  linkedEvents     Event[]    @relation("EventLinkedFund")
+
+
+
+  @@index([userId])
+
+  @@index([userId, purpose])
+
+  @@index([userId, groupId])
+
+  @@index([userId, archivedAt])
+
+}
+
+
+
+// ─── FinanceTransaction — every financial movement ─────────────────────────
+
+
+
+model FinanceTransaction {
+
+  id                String                   @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId            String                   @db.ObjectId
+
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date              DateTime
+
+  postedDate        DateTime?
+
+  budgetPeriodYear  Int
+
+  budgetPeriodMonth Int // 1–12
+
+  type              FinanceTransactionType
+
+  amount            Float // always positive; sign from type
+
+  currency          String                   @default("INR")
+
+
+
+  accountId   String  @db.ObjectId
+
+  account     Account @relation("TransactionAccount", fields: [accountId], references: [id])
+
+  toAccountId String? @db.ObjectId
+
+  toAccount   Account? @relation("TransactionToAccount", fields: [toAccountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+
+
+  categoryId String?   @db.ObjectId // leaf category (level 2 preferred)
+
+  category   Category? @relation("TransactionCategory", fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+
+
+  isPlanned           Boolean                  @default(false)
+
+  isRecurring         Boolean                  @default(false)
+
+  recurringConfig     RecurringConfig?
+
+  recurringTemplateId String?                  @db.ObjectId
+
+  recurringTemplate   RecurringTemplate?       @relation(fields: [recurringTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  paymentMethod       PaymentMethod
+
+  eventId             String?                  @db.ObjectId
+
+  event               Event?                   @relation(fields: [eventId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  merchant            String?
+
+  tags                String[]
+
+  notes               String?
+
+  referenceNumber     String?
+
+  giftFrom            String?
+
+  status              FinanceTransactionStatus @default(PENDING)
+
+  budgetType          BudgetType?
+
+
+
+  fundGroupId   String?       @db.ObjectId
+
+  fundGroup     FundGroup?    @relation("TransactionFundGroup", fields: [fundGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  fundGroupFlow FundGroupFlow?
+
+  merchantId      String?   @db.ObjectId
+
+  reconciledAt    DateTime?
+
+  refundOrigTxId  String?   @db.ObjectId
+
+  reimbOrigTxId   String?   @db.ObjectId
+
+  idempotencyKey  String?   @unique
+
+  voidedAt        DateTime?
+
+  createdAt       DateTime  @default(now())
+
+  updatedAt       DateTime  @updatedAt
+
+
+
+  giftTracking    GiftTracking?
+
+  atmWithdrawal   ATMWithdrawal?
+
+  attachmentFiles Attachment[]
+
+  merchantAlias   MerchantAlias? @relation(fields: [merchantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+
+
+  @@index([userId, date])
+
+  @@index([userId, budgetPeriodYear, budgetPeriodMonth])
+
+  @@index([userId, type])
+
+  @@index([userId, status])
+
+  @@index([accountId])
+
+  @@index([categoryId])
+
+  @@index([eventId])
+
+  @@index([status])
+
+  @@index([merchantId])
+
+  @@index([fundGroupId])
+
+  @@index([userId, fundGroupId])
+
+}
+
+
+
+// ─── RecurringTemplate ───────────────────────────────────────────────────────
+
+
+
+model RecurringTemplate {
+
+  id                String                @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId            String                @db.ObjectId
+
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name              String
+
+  type              RecurringTemplateType
+
+  frequency         RecurringFrequency
+
+  dayOfMonth        Int?
+
+  secondDayOfMonth  Int?
+
+  months            Int[]
+
+  estimatedAmount   Float
+
+  budgetType        BudgetType            @default(NONE)
+
+  categoryId        String?               @db.ObjectId
+
+  category          Category?             @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  accountId         String?               @db.ObjectId
+
+  account           Account?              @relation("RecurringTemplateAccount", fields: [accountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  toAccountId       String?               @db.ObjectId
+
+  toAccount         Account?              @relation("RecurringTemplateToAccount", fields: [toAccountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  fundGroupId   String?       @db.ObjectId
+
+  fundGroup     FundGroup?    @relation("RecurringTemplateFundGroup", fields: [fundGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  fundGroupFlow FundGroupFlow?
+
+  isActive          Boolean               @default(true)
+
+  lastGeneratedDate DateTime?
+
+  tags              String[]
+
+  createdAt         DateTime              @default(now())
+
+
+
+  transactions FinanceTransaction[]
+
+
+
+  @@index([userId])
+
+  @@index([userId, isActive])
+
+}
+
+
+
+// ─── Budget — planned amount per category per period (spent = computed) ─────
+
+
+
+model Budget {
+
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId           String       @db.ObjectId
+
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  period           BudgetPeriod
+
+  year             Int
+
+  month            Int?
+
+  categoryId       String       @db.ObjectId
+
+  category         Category     @relation(fields: [categoryId], references: [id])
+
+  plannedAmount    Float
+
+  carryOverEnabled Boolean      @default(false)
+
+  carryOverAmount  Float?
+
+  notes            String?
+
+
+
+  @@unique([userId, period, year, month, categoryId])
+
+  @@index([userId])
+
+  @@index([userId, year, month])
+
+  @@index([categoryId])
+
+}
+
+
+
+// ─── Event — planned / unplanned one-time financial events ─────────────────
+
+
+
+model Event {
+
+  id            String            @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId        String            @db.ObjectId
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name          String
+
+  description   String?
+
+  eventType     EventType
+
+  scheduledDate DateTime
+
+  recurrenceConfig RecurrenceConfig?
+
+  estimatedAmount Float
+
+  categoryId    String            @db.ObjectId
+
+  category      Category          @relation(fields: [categoryId], references: [id])
+
+  transactionIds String[]         @db.ObjectId
+
+  linkedFundId  String?           @db.ObjectId
+
+  linkedFund    Fund?             @relation("EventLinkedFund", fields: [linkedFundId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  status        EventStatus       @default(UPCOMING)
+
+  tags          String[]
+
+
+
+  linkedByCategories Category[] @relation("CategoryLinkedEvent")
+
+  transactions       FinanceTransaction[]
+
+
+
+  @@index([userId])
+
+  @@index([userId, scheduledDate])
+
+  @@index([userId, eventType])
+
+  @@index([userId, status])
+
+  @@index([categoryId])
+
+  @@index([linkedFundId])
+
+}
+
+
+
+// ─── GiftTracking ────────────────────────────────────────────────────────────
+
+
+
+model GiftTracking {
+
+  id                  String           @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId              String           @db.ObjectId
+
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date                DateTime
+
+  from                String
+
+  occasion            String?
+
+  type                GiftTrackingType
+
+  amount              Float?
+
+  giftCardDetails     GiftCardDetails?
+
+  transactionId       String           @unique @db.ObjectId
+
+  transaction         FinanceTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  accountCreatedId    String?          @db.ObjectId
+
+  accountCreated      Account?         @relation("GiftAccountCreated", fields: [accountCreatedId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+
+
+  @@index([userId])
+
+  @@index([userId, date])
+
+}
+
+
+
+// ─── ATMWithdrawal ───────────────────────────────────────────────────────────
+
+
+
+model ATMWithdrawal {
+
+  id              String             @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId          String             @db.ObjectId
+
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date            DateTime
+
+  amount          Float
+
+  sourceAccountId String             @db.ObjectId
+
+  sourceAccount   Account            @relation("ATMSourceAccount", fields: [sourceAccountId], references: [id])
+
+  atmCashBufferId String             @db.ObjectId
+
+  atmCashBuffer   Account            @relation("ATMCashBuffer", fields: [atmCashBufferId], references: [id])
+
+  targetWalletId  String             @db.ObjectId
+
+  targetWallet    Account            @relation("ATMTargetWallet", fields: [targetWalletId], references: [id])
+
+  atmLocation     String?
+
+  purpose         String?
+
+  transactionId   String             @unique @db.ObjectId
+
+  transaction     FinanceTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+
+
+  @@index([userId])
+
+  @@index([userId, date])
+
+}
+
+
+
+// ─── Attachment ──────────────────────────────────────────────────────────────
+
+
+
+model Attachment {
+
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
+
+  txId        String             @db.ObjectId
+
+  transaction FinanceTransaction @relation(fields: [txId], references: [id], onDelete: Cascade)
+
+  filename    String
+
+  url         String
+
+  mimeType    String
+
+  sizeBytes   Int
+
+  uploadedAt  DateTime           @default(now())
+
+  deletedAt   DateTime?
+
+
+
+  @@index([txId])
+
+}
+
+
+
+// ─── MerchantAlias — legacy auto-categorise (prefer Category.matchRules) ───
+
+
+
+model MerchantAlias {
+
+  id         String              @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId     String?             @db.ObjectId
+
+  pattern    String
+
+  categoryId String              @db.ObjectId
+
+  category   Category            @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  method     PaymentMethod?
+
+  confidence Float               @default(1.0)
+
+  source     MerchantAliasSource @default(USER)
+
+  createdAt  DateTime            @default(now())
+
+
+
+  transactions FinanceTransaction[]
+
+
+
+  @@index([userId])
+
+  @@index([categoryId])
+
+}
+
+
+
+// ─── BudgetOverride ──────────────────────────────────────────────────────────
+
+
+
+model BudgetOverride {
+
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId     String @db.ObjectId
+
+  year       Int
+
+  month      Int
+
+  categoryId String @db.ObjectId
+
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  planned    Float
+
+
+
+  @@unique([userId, year, month, categoryId])
+
+  @@index([userId, year, month])
+
+  @@index([categoryId])
+
+}
+
+
+
+model FeatureFlag {
+
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+
+  key     String
+
+  enabled Boolean @default(false)
+
+  userId  String? @db.ObjectId
+
+  role    Role?
+
+
+
+  @@index([key])
+
+  @@index([userId])
+
+}
+
+
+
+// ─── Enumerations ────────────────────────────────────────────────────────────
+
+
+
+enum Role {
+
+  USER
+
+  ADMIN
+
+  SUPER_ADMIN
+
+}
+
+
+
+enum InstitutionType {
+
+  BANK
+
+  NBFC
+
+  AMC
+
+  BROKER
+
+  INSURER
+
+  WALLET
+
+  POST_OFFICE
+
+}
+
+
+
+enum AccountGroupType {
+
+  ASSET
+
+  LIABILITY
+
+}
+
+
+
+enum AccountType {
+
+  // ── ASSETS: Banking ──────────────────────────────────────────────────────
+
+  BANK_SALARY
+
+  BANK_SAVINGS
+
+  BANK_CURRENT
+
+  BANK_NRE
+
+  BANK_JAN_DHAN
+
+
+
+  // ── ASSETS: Cash ─────────────────────────────────────────────────────────
+
+  CASH_ENVELOPE
+
+  CASH_ATM
+
+
+
+  // ── ASSETS: Wallets ──────────────────────────────────────────────────────
+
+  WALLET_DIGITAL
+
+  WALLET_UPI
+
+  WALLET_GIFT
+
+
+
+  // ── ASSETS: Investment ───────────────────────────────────────────────────
+
+  INV_PPF
+
+  INV_EPF
+
+  INV_NPS_T1
+
+  INV_NPS_T2
+
+  INV_ELSS
+
+  INV_MF_EQUITY
+
+  INV_MF_DEBT
+
+  INV_MF_LIQUID
+
+  INV_FD
+
+  INV_RD
+
+  INV_SSY
+
+  INV_STOCKS
+
+
+
+  // ── ASSETS: Alternate ────────────────────────────────────────────────────
+
+  GOLD_PHYSICAL
+
+  GOLD_SGB
+
+  GOLD_DIGITAL
+
+  REAL_ESTATE
+
+  CHIT_FUND
+
+  ESOP
+
+
+
+  // ── ASSETS: Rewards ────────────────────────────────────────────────────────
+
+  REWARDS_POINTS
+
+  CASHBACK_BALANCE
+
+  STORE_CREDIT
+
+
+
+  // ── LIABILITIES ──────────────────────────────────────────────────────────
+
+  LOAN_HOME
+
+  LOAN_CAR
+
+  LOAN_PERSONAL
+
+  LOAN_EDUCATION
+
+  LOAN_GOLD
+
+  CREDIT_CARD
+
+  BNPL
+
+  LOAN_INFORMAL
+
+  LOAN_OVERDRAFT
+
+  INSURANCE_PREMIUM_DUE
+
+}
+
+
+
+enum AccountStatus {
+
+  ACTIVE
+
+  INACTIVE
+
+  CLOSED
+
+  FROZEN
+
+}
+
+
+
+enum FundPurpose {
+
+  EMERGENCY
+
+  OPS
+
+  GOAL
+
+  TAX
+
+  INSURANCE
+
+  SINKING
+
+  INVESTMENT
+
+  WEALTH
+
+}
+
+
+
+enum FundAllocationType {
+
+  PERCENTAGE
+
+  FIXED
+
+}
+
+
+
+enum CategoryFlowType {
+
+  INCOME
+
+  EXPENSE
+
+  INVESTMENT
+
+  TRANSFER
+
+}
+
+
+
+enum FundGroupFlow {
+
+  IN
+
+  OUT
+
+}
+
+
+
+enum MatchRuleField {
+
+  PAYEE
+
+  DESCRIPTION
+
+  AMOUNT
+
+}
+
+
+
+enum MatchRuleOperator {
+
+  CONTAINS
+
+  EQUALS
+
+  STARTS_WITH
+
+  REGEX
+
+  BETWEEN
+
+}
+
+
+
+enum FinanceTransactionType {
+
+  INCOME
+
+  EXPENSE
+
+  INVESTMENT
+
+  TRANSFER
+
+  SINKING_DEPOSIT
+
+  ATM_WITHDRAWAL
+
+  GIFT_RECEIVED
+
+  REFUND
+
+  ADJUSTMENT
+
+  COUPON_REDEMPTION
+
+  POINTS_REDEMPTION
+
+  REIMBURSEMENT
+
+  INSURANCE_CLAIM
+
+}
+
+
+
+enum RecurringTemplateType {
+
+  INCOME
+
+  EXPENSE
+
+  INVESTMENT
+
+  SINKING_DEPOSIT
+
+}
+
+
+
+enum RecurringFrequency {
+
+  MONTHLY
+
+  TWICE_MONTHLY
+
+  QUARTERLY
+
+  HALF_YEARLY
+
+  ANNUAL
+
+  EVERY_2_MONTHS
+
+}
+
+
+
+enum PaymentMethod {
+
+  UPI
+
+  NEFT
+
+  IMPS
+
+  RTGS
+
+  CARD_SWIPE
+
+  CARD_ONLINE
+
+  CASH
+
+  CHEQUE
+
+  AUTO_DEBIT
+
+  ATM
+
+  GIFT_CARD
+
+  POINTS
+
+  COUPON
+
+  STORE_CREDIT
+
+}
+
+
+
+enum BudgetType {
+
+  AUTO
+
+  MANUAL
+
+  NONE
+
+}
+
+
+
+enum EventType {
+
+  PLANNED
+
+  UNPLANNED
+
+}
+
+
+
+enum FinanceTransactionStatus {
+
+  PENDING
+
+  CLEARED
+
+  RECONCILED
+
+  VOID
+
+}
+
+
+
+enum BudgetPeriod {
+
+  MONTHLY
+
+  ANNUAL
+
+}
+
+
+
+enum EventStatus {
+
+  UPCOMING
+
+  IN_PROGRESS
+
+  COMPLETED
+
+  CANCELLED
+
+}
+
+
+
+enum GiftTrackingType {
+
+  CASH
+
+  GIFT_CARD
+
+  COUPON
+
+  PHYSICAL_ITEM
+
+  POINTS_TRANSFER
+
+}
+
+
+
+enum MerchantAliasSource {
+
+  SYSTEM
+
+  USER
+
+}
+
+

@@ -1,0 +1,23 @@
+// Variable Public Sans — font files loaded in src/styles/fonts.ts
+@use 'tokens' as t;
+
+$font-family-base: t.$font-family-base;
+
+// Typography tokens (re-export for consumers that @use this module)
+$font-weight-regular: t.$font-weight-regular;
+$font-weight-medium: t.$font-weight-medium;
+$font-weight-bold: t.$font-weight-bold;
+
+/// Variable-font weight axis for headings and labels.
+@mixin font-header {
+  font-family: $font-family-base;
+  font-weight: $font-weight-bold;
+  font-variation-settings: 'wght' #{$font-weight-bold};
+}
+
+/// Apply a specific weight on the Public Sans variable axis.
+@mixin font-sans-weight($weight) {
+  font-family: $font-family-base;
+  font-weight: $weight;
+  font-variation-settings: 'wght' #{$weight};
+}

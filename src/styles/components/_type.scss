@@ -1,0 +1,51 @@
+@use '../mixins' as m;
+
+// Tier 3 — Type scale utility classes (semantic tokens only)
+
+.type-display {
+  @include m.type-display;
+}
+
+.type-h1 {
+  @include m.type-h1;
+}
+
+.type-h2 {
+  @include m.type-h2;
+}
+
+.type-h3 {
+  @include m.type-h3;
+}
+
+.type-h4 {
+  @include m.type-h4;
+}
+
+.type-h5 {
+  @include m.type-h5;
+}
+
+.type-body {
+  @include m.type-body;
+}
+
+.type-caption {
+  @include m.type-caption;
+  color: var(--color-text-muted);
+}
+
+.type-label {
+  @include m.type-label;
+  color: var(--color-text-muted);
+}
+
+.type-mono {
+  @include m.type-mono;
+  color: var(--color-text-muted);
+
+  &--accent {
+    color: var(--color-brand);
+    font-weight: var(--font-weight-semibold);
+  }
+}

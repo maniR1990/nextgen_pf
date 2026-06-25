@@ -1,0 +1,356 @@
+@use '../mixins' as m;
+
+.budget-ledger {
+  --budget-gap: var(--comp-budget-gap);
+  --budget-padding: var(--comp-budget-padding);
+  --budget-indent: var(--comp-budget-indent-step);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--budget-gap);
+  width: 100%;
+  min-width: 0;
+
+  &--compact {
+    --budget-gap: var(--comp-budget-gap-compact);
+    --budget-padding: var(--comp-budget-padding-compact);
+  }
+}
+
+.budget-ledger__toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.budget-ledger__desktop {
+  display: none;
+  overflow-x: auto;
+  border: var(--border-width) solid var(--comp-budget-border);
+  border-radius: var(--comp-budget-radius);
+  background: var(--comp-budget-bg);
+
+  @include m.respond-to(md) {
+    display: block;
+  }
+}
+
+.budget-ledger__mobile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  @include m.respond-to(md) {
+    display: none;
+  }
+}
+
+.budget-ledger__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--comp-budget-font-size);
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: var(--comp-budget-header-padding);
+    text-align: left;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--comp-budget-header-text);
+    background: var(--comp-budget-header-bg);
+    border-bottom: var(--border-width) solid var(--comp-budget-border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: var(--budget-padding);
+    border-bottom: var(--border-width) solid var(--comp-budget-row-border);
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.budget-ledger__money {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.budget-ledger__notes {
+  color: var(--comp-budget-note-text);
+  font-size: var(--font-size-sm);
+  min-width: calc(20 * var(--space-1));
+}
+
+.budget-ledger__note {
+  display: block;
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+.budget-ledger__row--line td {
+  background: var(--comp-budget-line-bg);
+}
+
+.budget-ledger__section-row--income td {
+  background: var(--comp-budget-section-income-bg);
+  color: var(--comp-budget-section-income-text);
+}
+
+.budget-ledger__section-row--household td {
+  background: var(--comp-budget-section-household-bg);
+  color: var(--comp-budget-section-household-text);
+}
+
+.budget-ledger__section-row--insurance td {
+  background: var(--comp-budget-section-insurance-bg);
+  color: var(--comp-budget-section-insurance-text);
+}
+
+.budget-ledger__section-row--sinking td {
+  background: var(--comp-budget-section-sinking-bg);
+  color: var(--comp-budget-section-sinking-text);
+}
+
+.budget-ledger__section-row--subscriptions td {
+  background: var(--comp-budget-section-subscriptions-bg);
+  color: var(--comp-budget-section-subscriptions-text);
+}
+
+.budget-ledger__section-row--investments td {
+  background: var(--comp-budget-section-investments-bg);
+  color: var(--comp-budget-section-investments-text);
+}
+
+.budget-ledger__section-row--emis td {
+  background: var(--comp-budget-section-emis-bg);
+  color: var(--comp-budget-section-emis-text);
+}
+
+.budget-ledger__section-row--unplanned td {
+  background: var(--comp-budget-section-unplanned-bg);
+  color: var(--comp-budget-section-unplanned-text);
+}
+
+.budget-ledger__category {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.budget-ledger__expand,
+.budget-ledger__expand-spacer,
+.budget-ledger__line-marker {
+  flex-shrink: 0;
+  width: var(--space-6);
+}
+
+.budget-ledger__expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.budget-ledger__category-copy {
+  min-width: 0;
+}
+
+.budget-ledger__category-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.budget-ledger__category-title {
+  font-weight: var(--font-weight-semibold);
+}
+
+.budget-ledger__category-note {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  opacity: 0.85;
+}
+
+.budget-ledger__percent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: calc(16 * var(--space-1));
+}
+
+.budget-ledger__percent-track {
+  flex: 1;
+  height: var(--comp-budget-percent-height);
+  border-radius: var(--radius-full);
+  background: var(--comp-budget-percent-track);
+  overflow: hidden;
+}
+
+.budget-ledger__percent-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--comp-budget-percent-fill, var(--color-brand));
+}
+
+.budget-ledger__percent--success {
+  --comp-budget-percent-fill: var(--color-success);
+}
+
+.budget-ledger__percent--warning {
+  --comp-budget-percent-fill: var(--color-warning);
+}
+
+.budget-ledger__percent--error {
+  --comp-budget-percent-fill: var(--color-error);
+}
+
+.budget-ledger__percent-value {
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  min-width: calc(6 * var(--space-1));
+  text-align: right;
+}
+
+.budget-ledger__actions,
+.budget-ledger__actions-head {
+  width: calc(16 * var(--space-1));
+  text-align: right;
+  white-space: nowrap;
+}
+
+.budget-ledger__mobile-card {
+  border: var(--border-width) solid var(--comp-budget-border);
+  border-radius: var(--comp-budget-radius);
+  background: var(--comp-budget-bg);
+  padding: var(--budget-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.budget-ledger__mobile-card--income,
+.budget-ledger__mobile-card--household,
+.budget-ledger__mobile-card--insurance,
+.budget-ledger__mobile-card--sinking,
+.budget-ledger__mobile-card--subscriptions,
+.budget-ledger__mobile-card--investments,
+.budget-ledger__mobile-card--emis,
+.budget-ledger__mobile-card--unplanned {
+  color: var(--comp-budget-section-income-text);
+}
+
+.budget-ledger__mobile-card--household {
+  background: var(--comp-budget-section-household-bg);
+  color: var(--comp-budget-section-household-text);
+}
+
+.budget-ledger__mobile-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+
+  dt {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+.budget-ledger__mobile-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--comp-budget-note-text);
+}
+
+.budget-ledger__mobile-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.budget-ledger__summaries {
+  border: var(--border-width) solid var(--comp-budget-border);
+  border-radius: var(--comp-budget-radius);
+  overflow: hidden;
+}
+
+.budget-ledger__summary-row {
+  @include m.flex-between;
+  gap: var(--space-3);
+  padding: var(--budget-padding);
+  background: var(--comp-budget-summary-bg);
+  border-bottom: var(--border-width) solid var(--comp-budget-row-border);
+  font-size: var(--font-size-sm);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &--success {
+    color: var(--color-success);
+  }
+
+  &--warning {
+    color: var(--color-warning);
+  }
+
+  @include m.respond-below(sm) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.budget-ledger__summary-title {
+  font-weight: var(--font-weight-semibold);
+}
+
+.budget-ledger__summary-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-ledger__summary-label {
+  margin-inline-end: var(--space-1);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.budget-ledger__summary-sep {
+  color: var(--color-border);
+}
+
+.budget-ledger__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.budget-ledger__form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

@@ -1,0 +1,70 @@
+@use '../typography' as font;
+
+@mixin type-display {
+  @include font.font-header;
+  font-size: var(--type-display-size);
+  line-height: var(--type-display-leading);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+@mixin type-h1 {
+  @include font.font-header;
+  font-size: var(--type-h1-size);
+  line-height: var(--type-h1-leading);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+@mixin type-h2 {
+  @include font.font-header;
+  font-size: var(--type-h2-size);
+  line-height: var(--type-h2-leading);
+}
+
+@mixin type-h3 {
+  @include font.font-header;
+  font-size: var(--type-h3-size);
+  line-height: var(--type-h3-leading);
+}
+
+@mixin type-h4 {
+  @include font.font-header;
+  font-size: var(--type-h4-size);
+  line-height: var(--type-h4-leading);
+}
+
+@mixin type-h5 {
+  @include font.font-header;
+  font-size: var(--type-h5-size);
+  line-height: var(--type-h5-leading);
+}
+
+@mixin type-body {
+  font-family: font.$font-family-base;
+  font-size: var(--type-body-size);
+  font-weight: var(--type-body-weight);
+  font-variation-settings: 'wght' var(--type-body-weight);
+  line-height: var(--type-body-leading);
+}
+
+@mixin type-caption {
+  font-family: font.$font-family-base;
+  font-size: var(--type-caption-size);
+  font-weight: var(--type-caption-weight);
+  font-variation-settings: 'wght' var(--type-caption-weight);
+  line-height: var(--type-caption-leading);
+}
+
+@mixin type-label {
+  @include font.font-header;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-leading);
+  letter-spacing: var(--type-label-spacing);
+  text-transform: uppercase;
+}
+
+@mixin type-mono {
+  font-family: var(--font-family-mono);
+  font-size: var(--type-mono-size);
+  font-weight: var(--type-mono-weight);
+  line-height: var(--type-mono-leading);
+}

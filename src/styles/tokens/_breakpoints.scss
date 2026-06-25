@@ -1,0 +1,12 @@
+// Tier 1 — Breakpoint primitives (mobile-first min-width)
+// Design target: 375px. xs (320px) covers small phones (e.g. iPhone SE).
+
+$bp-xs: 320px;
+$bp-sm: 640px;
+$bp-md: 768px;
+$bp-lg: 1024px;
+$bp-xl: 1280px; // default desktop ★
+$bp-2xl: 1536px;
+
+// Canonical mobile design width (documentation + Storybook default)
+$bp-mobile-design: 375px;

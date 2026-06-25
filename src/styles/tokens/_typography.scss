@@ -1,0 +1,38 @@
+// Tier 1 — Typography primitives
+// Never use directly in components — map through semantic → component tokens only.
+
+// ─── Font families ────────────────────────────────────────────────────────────
+// Geist CSS variables are injected onto <html> by layout.tsx via geist/font/sans and geist/font/mono.
+$font-family-base: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+$font-sans: $font-family-base;
+$font-mono: var(--font-geist-mono), 'Geist Mono', monospace;
+
+// ─── Font size scale ──────────────────────────────────────────────────────────
+$font-size-xs: 10px;
+$font-size-sm: 12px;
+$font-size-base: 14px;
+$font-size-lg: 16px;
+$font-size-xl: 18px;
+$font-size-2xl: 20px;
+$font-size-3xl: 24px;
+$font-size-4xl: 30px;
+$font-size-5xl: 36px;
+$font-size-mono: 13px;
+
+// ─── Font weights ─────────────────────────────────────────────────────────────
+$font-weight-regular: 400;
+$font-weight-normal: $font-weight-regular;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+$font-weight-extrabold: 800;
+
+// ─── Line heights ─────────────────────────────────────────────────────────────
+$line-height-tight: 1.2;
+$line-height-base: 1.5;
+$line-height-relaxed: 1.75;
+
+// ─── Letter spacing ───────────────────────────────────────────────────────────
+$letter-spacing-tight: -0.3px;
+$letter-spacing-wide: 0.5px;
+$letter-spacing-wider: 0.8px;

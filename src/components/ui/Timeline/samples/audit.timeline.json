@@ -1,0 +1,41 @@
+{
+  "variant": "audit",
+  "ariaLabel": "Audit activity log",
+  "items": [
+    {
+      "id": "au-1",
+      "timestampLabel": "Today • 1:05 PM",
+      "title": "Login • Safari / macOS",
+      "description": "IP 103.21.44.12 • Bengaluru, IN",
+      "tone": "info"
+    },
+    {
+      "id": "au-2",
+      "timestampLabel": "Today • 1:04 PM",
+      "title": "2FA Challenge",
+      "description": "Authenticator app verified",
+      "tone": "warning"
+    },
+    {
+      "id": "au-3",
+      "timestampLabel": "Jun 11 • 10:32 AM",
+      "title": "Budget Updated",
+      "description": "Groceries $400 → $500/mo",
+      "tone": "success"
+    },
+    {
+      "id": "au-4",
+      "timestampLabel": "Jun 10 • 4:18 PM",
+      "title": "Alert Triggered",
+      "description": "Large transaction > $2,000",
+      "tone": "error"
+    },
+    {
+      "id": "au-5",
+      "timestampLabel": "Jun 9 • 9:00 AM",
+      "title": "Rule Created",
+      "description": "Auto-categorize UPI groceries",
+      "tone": "success"
+    }
+  ]
+}

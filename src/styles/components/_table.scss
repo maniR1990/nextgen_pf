@@ -1,0 +1,39 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table__head-cell {
+  border-bottom: var(--comp-table-border-width) solid var(--comp-table-border);
+  padding: var(--comp-table-cell-padding);
+  text-align: left;
+  font-size: var(--comp-table-header-size);
+  font-weight: var(--comp-table-header-weight);
+  letter-spacing: var(--comp-table-header-spacing);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.table__cell {
+  border-bottom: var(--comp-table-border-width) solid var(--comp-table-border);
+  padding: var(--comp-table-cell-padding);
+  font-size: var(--comp-table-cell-size);
+  font-weight: var(--comp-table-cell-weight);
+  color: var(--comp-table-text);
+}
+
+.table__row:hover {
+  background: var(--comp-table-row-hover);
+}
+
+.table__cell--mono {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-mono);
+}
+
+.table__cell--amount {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-mono);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-brand);
+}

@@ -1,0 +1,182 @@
+@use '../mixins' as m;
+
+@keyframes modal-overlay-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--comp-modal-enter-offset-y)) scale(var(--comp-modal-enter-scale));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--comp-modal-z-index);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  background: var(--comp-modal-overlay);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+
+  &--visible {
+    opacity: 1;
+    animation: modal-overlay-in var(--duration-fast) var(--ease-out);
+  }
+}
+
+.modal {
+  --modal-bg: var(--comp-modal-bg);
+  --modal-radius: var(--layout-modal-radius);
+  --modal-shadow: var(--comp-modal-shadow);
+
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--layout-modal-max-width);
+  max-height: 96vh;
+  background: var(--modal-bg);
+  border-radius: var(--modal-radius);
+  box-shadow: var(--modal-shadow);
+  opacity: 0;
+  transform: translateY(var(--comp-modal-enter-offset-y)) scale(var(--comp-modal-enter-scale));
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
+
+  &--visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    animation: modal-panel-in var(--duration-fast) var(--ease-out);
+  }
+
+  &--fullscreen {
+    width: 100vw;
+    max-width: none;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  &--lg {
+    @include m.respond-to(md) { max-width: 640px; }
+    @include m.respond-to(lg) { max-width: 720px; }
+  }
+
+  @include m.respond-to(md) {
+    max-height: calc(100vh - var(--space-6));
+    align-self: center;
+  }
+}
+
+.modal__header {
+  @include m.flex-between;
+  flex-shrink: 0;
+  gap: var(--space-3);
+  padding: var(--comp-modal-padding);
+  padding-bottom: var(--comp-modal-header-padding-bottom);
+  border-bottom: var(--border-width) solid var(--comp-modal-divider);
+}
+
+.modal__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--comp-modal-padding);
+}
+
+.modal__footer {
+  @include m.flex-between;
+  flex-shrink: 0;
+  gap: var(--space-3);
+  padding: var(--comp-modal-padding);
+  padding-top: var(--comp-modal-footer-padding-top);
+  border-top: var(--border-width) solid var(--comp-modal-divider);
+}
+
+.modal__title-group {
+  @include m.flex-col($gap: 2px);
+  flex: 1;
+  min-width: 0;
+}
+
+.modal__title {
+  font-size: var(--comp-modal-title-size);
+  font-weight: var(--comp-modal-title-weight);
+  color: var(--comp-modal-title);
+  margin: 0;
+}
+
+.modal__subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+// ─── Session Expired Modal ────────────────────────────────────────────────────
+
+.session-expired-modal {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-surface));
+    color: var(--color-warning);
+  }
+
+  &__message {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    line-height: var(--line-height-base);
+  }
+}
+
+.modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  padding: var(--space-2);
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--comp-modal-close);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--comp-modal-title);
+    background: var(--color-bg-subtle);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}

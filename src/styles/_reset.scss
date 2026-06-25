@@ -1,0 +1,63 @@
+*,
+
+*::before,
+
+*::after {
+
+  box-sizing: border-box;
+
+}
+
+
+
+html,
+
+body {
+
+  margin: 0;
+
+  padding: 0;
+
+}
+
+
+
+body {
+
+  font-family: var(--font-family-sans);
+
+  font-size: var(--type-body-size);
+
+  font-weight: var(--type-body-weight);
+
+  line-height: var(--type-body-leading);
+
+  color: var(--color-text);
+
+  background: var(--color-bg);
+
+  -webkit-font-smoothing: antialiased;
+
+  -moz-osx-font-smoothing: grayscale;
+
+}
+
+
+
+a {
+
+  color: inherit;
+
+}
+
+
+
+button,
+
+input {
+
+  font: inherit;
+
+}
+
+

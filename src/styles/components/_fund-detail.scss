@@ -1,0 +1,349 @@
+@use '../mixins' as m;
+
+// ─── Fund Detail Page — split list/detail layout ─────────────────────────────
+// Mirrors the accounts page split (list-pane + detail-pane).
+// Covers: FundDetailClient, FundDetailHeader, FundAllocationList, AccountDetailDrawer (inline).
+
+.fund-detail {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+
+  // ── Nav bar ───────────────────────────────────────────────────────────────
+
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: var(--border-width) solid var(--color-border);
+    flex-shrink: 0;
+
+    @include m.respond-to(md) { padding-inline: var(--space-4); }
+  }
+
+  // ── Compact horizontal fund header strip ─────────────────────────────────
+
+  &__header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-4);
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-bg-surface);
+    border-bottom: var(--border-width) solid var(--color-border);
+    border-left: 4px solid var(--fund-color, var(--color-brand));
+    flex-shrink: 0;
+
+    @include m.respond-to(md) { padding: var(--space-3) var(--space-5); }
+  }
+
+  &__header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  &__icon {
+    font-size: 1.4rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  &__header-info {
+    @include m.flex-col;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  &__title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    line-height: var(--line-height-tight);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__health-icon {
+    flex-shrink: 0;
+    &--healthy { color: var(--color-success); }
+    &--ok      { color: var(--color-warning); }
+    &--low     { color: var(--color-error); }
+  }
+
+  &__subtitle {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__header-right {
+    @include m.flex-col;
+    gap: var(--space-2);
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  &__stats {
+    display: flex;
+    gap: var(--space-5);
+  }
+
+  &__stat {
+    @include m.flex-col;
+    gap: 1px;
+    align-items: flex-end;
+
+    &--center { align-items: center; }
+  }
+
+  &__stat-value {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    line-height: var(--line-height-tight);
+  }
+
+  &__stat-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__progress {
+    width: 140px;
+    height: 5px;
+    background: var(--color-bg-subtle);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+
+    @include m.respond-to(md) { width: 180px; }
+  }
+
+  &__progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--fund-color, var(--color-brand));
+    transition: width 0.4s ease;
+  }
+
+  // ── Split layout ──────────────────────────────────────────────────────────
+
+  &__split {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  // Left pane: scrollable account allocation list
+  &__list-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+    background: var(--color-bg-surface);
+
+    @include m.respond-to(md) {
+      flex: 0 0 42%;
+      border-right: 2px solid var(--color-border);
+    }
+  }
+
+  &__list-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    border-bottom: var(--border-width) solid var(--color-border);
+    flex-shrink: 0;
+
+    @include m.respond-to(md) { padding-inline: var(--space-5); }
+  }
+
+  &__list-title {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--color-text-muted);
+    flex: 1;
+  }
+
+  &__alloc-list {
+    @include m.flex-col;
+    gap: 0;
+    flex: 1;
+  }
+
+  // Clickable allocation rows (rendered as <button>)
+  &__alloc-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: none;
+    border-bottom: var(--border-width) solid var(--color-border);
+    border-left: 3px solid transparent;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+
+    @include m.respond-to(md) { padding-inline: var(--space-5); }
+
+    &:last-child { border-bottom: none; }
+    &:hover      { background: var(--color-bg-subtle); }
+    &:focus-visible { @include m.focus-ring; }
+
+    &--active {
+      background: color-mix(in srgb, var(--fund-color, var(--color-brand)) 8%, transparent);
+      border-left-color: var(--fund-color, var(--color-brand));
+    }
+  }
+
+  &__alloc-avatar {
+    @include m.flex-center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-subtle);
+    border: var(--border-width) solid var(--color-border);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    font-family: var(--font-family-mono);
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+
+    .fund-detail__alloc-row--active & {
+      background: color-mix(in srgb, var(--fund-color, var(--color-brand)) 12%, var(--color-bg-surface));
+      border-color: var(--fund-color, var(--color-brand));
+      color: var(--fund-color, var(--color-brand));
+    }
+  }
+
+  &__alloc-info {
+    @include m.flex-col;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__alloc-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__alloc-meta {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__alloc-bar {
+    width: 60px;
+    height: 3px;
+    background: var(--color-bg-subtle);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  &__alloc-bar-fill {
+    height: 100%;
+    background: var(--fund-color, var(--color-brand));
+    border-radius: inherit;
+    transition: width 0.3s ease;
+  }
+
+  &__alloc-right {
+    @include m.flex-col;
+    gap: 2px;
+    align-items: flex-end;
+    flex-shrink: 0;
+    min-width: 4.5rem;
+  }
+
+  &__alloc-amount {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__alloc-balance {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  // ── Right detail pane (desktop only) ─────────────────────────────────────
+
+  &__detail-pane {
+    display: none;
+
+    @include m.respond-to(md) {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      min-height: 0;
+      background: var(--color-bg-subtle);
+    }
+  }
+
+  &__detail-loading {
+    @include m.flex-col;
+    gap: var(--space-3);
+    padding: var(--space-5);
+  }
+
+  // ── Page-level loading / error states ─────────────────────────────────────
+
+  &__loading {
+    @include m.flex-col;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    flex-shrink: 0;
+  }
+
+  &__error {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8);
+  }
+}

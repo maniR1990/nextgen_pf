@@ -1,0 +1,48 @@
+@use '../tokens' as t;
+
+// Tier 2 — Semantic color tokens
+// Map primitives → meaning. Components must use these (or Tier 3), never primitives.
+
+:root {
+  --color-bg: #{t.$color-gray-50};
+  --color-bg-surface: #{t.$color-white};
+  --color-bg-subtle: #{t.$color-gray-100};
+  --color-text: #{t.$color-gray-900};
+  --color-text-muted: #{t.$color-gray-500};
+  --color-border: #{t.$color-gray-200};
+  --color-brand: #{t.$color-blue-500};
+  --color-brand-hover: #{t.$color-blue-600};
+  --color-success: #{t.$color-green-500};
+  --color-error: #{t.$color-red-500};
+  --color-error-hover: #{t.$color-red-600};
+  --color-warning: #{t.$color-amber-500};
+  --color-info: #{t.$color-sky-500};
+  --color-accent: #{t.$color-purple-500};
+  --color-on-brand: #{t.$color-white};
+  --color-on-success: #{t.$color-white};
+  --color-on-error: #{t.$color-white};
+  --color-on-warning: #{t.$color-gray-900};
+  --color-overlay: #{rgba(t.$color-black, 0.5)};
+}
+
+[data-theme='dark'] {
+  --color-bg: #{t.$color-ink-bg};
+  --color-bg-surface: #{t.$color-ink-surface};
+  --color-bg-subtle: #{t.$color-ink-subtle};
+  --color-text: #{t.$color-ink-text};
+  --color-text-muted: #{t.$color-ink-text-muted};
+  --color-border: #{t.$color-ink-border};
+  --color-brand: #{t.$color-blue-400};
+  --color-brand-hover: #{t.$color-blue-500};
+  --color-success: #{t.$color-green-on-dark};
+  --color-error: #{t.$color-red-on-dark};
+  --color-error-hover: #{t.$color-red-500};
+  --color-warning: #{t.$color-amber-on-dark};
+  --color-info: #{t.$color-blue-info-on-dark};
+  --color-accent: #{t.$color-purple-400};
+  --color-on-brand: #{t.$color-white};
+  --color-on-success: #{t.$color-white};
+  --color-on-error: #{t.$color-white};
+  --color-on-warning: #{t.$color-gray-900};
+  --color-overlay: #{rgba(t.$color-black, 0.65)};
+}

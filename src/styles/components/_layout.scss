@@ -1,0 +1,209 @@
+@use '../mixins' as m;
+
+.page-center {
+  @include m.flex-center;
+  min-height: 100vh;
+  padding: var(--comp-padding-page);
+}
+
+.page-home {
+  @include m.flex-col(var(--comp-gap-lg));
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--comp-padding-page);
+}
+
+.page-home__title {
+  @include m.type-display;
+  color: var(--comp-shell-text);
+}
+
+.page-home__subtitle {
+  @include m.type-caption;
+  color: var(--comp-shell-text-muted);
+}
+
+.page-home__links {
+  display: flex;
+  gap: var(--comp-gap-md);
+}
+
+.page-home__link {
+  @include m.type-body;
+  color: var(--comp-shell-link);
+  text-decoration: underline;
+}
+
+.shell {
+  @include m.flex-col;
+  min-height: 100vh;
+}
+
+.shell__body {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.shell__main {
+  flex: 1;
+  padding: var(--comp-shell-main-padding);
+  min-width: 0;
+}
+
+.shell--dashboard {
+  min-height: 100vh;
+  background: var(--color-bg);
+
+  .shell__body {
+    min-height: 100vh;
+  }
+
+  .shell__sidebar {
+    display: flex;
+    flex-shrink: 0;
+    min-height: 100vh;
+  }
+
+  .shell__main--dashboard {
+    @include m.respond-below(md) {
+      padding-bottom: calc(var(--touch-target-min) + var(--space-6));
+    }
+  }
+}
+
+.shell-header {
+  border-bottom: var(--comp-shell-border-width) solid var(--comp-shell-border);
+  padding: var(--comp-shell-header-padding);
+}
+
+.shell-header__inner {
+  @include m.flex-between;
+}
+
+.shell-header__brand {
+  font-size: var(--comp-shell-brand-size);
+  font-weight: var(--comp-shell-brand-weight);
+  color: var(--comp-shell-text);
+  text-decoration: none;
+}
+
+.shell-header__nav {
+  display: flex;
+  gap: var(--comp-shell-nav-gap);
+  font-size: var(--comp-shell-nav-size);
+}
+
+.shell-sidebar {
+  display: none;
+  border-right: var(--comp-shell-border-width) solid var(--comp-shell-border);
+  padding: var(--comp-shell-sidebar-padding);
+
+  @include m.respond-to(md) {
+    display: block;
+    width: var(--layout-sidebar-width);
+  }
+
+  @include m.respond-to(lg) {
+    width: var(--grid-sidebar-width);
+  }
+}
+
+.shell-sidebar__label {
+  @include m.respond-to(md) {
+    display: none;
+  }
+
+  @include m.respond-to(lg) {
+    display: inline;
+  }
+}
+
+.shell-sidebar__nav {
+  @include m.flex-col(var(--comp-shell-link-gap));
+}
+
+.shell-sidebar__link {
+  @include m.type-body;
+  padding: var(--comp-shell-link-padding);
+  border-radius: var(--comp-shell-link-radius);
+  color: var(--comp-shell-text);
+  text-decoration: none;
+
+  &:hover {
+    background: var(--comp-shell-nav-hover);
+  }
+}
+
+// Top-nav shell — replaces sidebar shell for dashboard
+.shell--top-nav {
+  @include m.flex-col;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.shell__main--top-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--space-6);
+  // room for fixed footer on desktop, fixed tab-bar on mobile
+  padding-bottom: calc(44px + var(--space-6));
+
+  @include m.respond-below(md) {
+    padding: var(--space-4);
+    padding-bottom: calc(58px + env(safe-area-inset-bottom) + var(--space-4));
+  }
+}
+
+.shell-footer {
+  border-top: var(--comp-shell-border-width) solid var(--comp-shell-border);
+  padding: var(--comp-shell-footer-padding);
+  text-align: center;
+  font-size: var(--comp-shell-footer-size);
+  color: var(--comp-shell-text-muted);
+}
+
+.auth-form {
+  @include m.flex-col(var(--comp-form-gap));
+  width: 100%;
+  max-width: var(--comp-form-max-width);
+}
+
+.auth-form__title {
+  font-size: var(--comp-form-title-size);
+  font-weight: var(--comp-form-title-weight);
+  color: var(--comp-shell-text);
+}
+
+.auth-form__error {
+  font-size: var(--comp-form-error-size);
+  color: var(--comp-form-error);
+}
+
+.auth-form__oauth {
+  display: flex;
+  flex-direction: column;
+  gap: var(--comp-form-oauth-gap);
+  margin-top: var(--comp-shell-link-gap);
+}
+
+.page-heading {
+  margin-bottom: var(--comp-page-heading-margin);
+  font-size: var(--comp-page-title-size);
+  font-weight: var(--comp-page-title-weight);
+  color: var(--comp-shell-text);
+}
+
+.page-text {
+  @include m.type-caption;
+  color: var(--comp-shell-text-muted);
+}
+
+.text-heading {
+  font-size: var(--comp-section-title-size);
+  font-weight: var(--comp-section-title-weight);
+  color: var(--comp-shell-text);
+}

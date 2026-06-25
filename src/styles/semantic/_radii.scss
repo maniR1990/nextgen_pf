@@ -1,0 +1,14 @@
+@use '../tokens' as t;
+
+// Tier 2 — Semantic radius tokens
+
+:root {
+  --radius-xs: #{t.$radius-xs};
+  --radius-sm: #{t.$radius-sm};
+  --radius-md: #{t.$radius-md};
+  --radius-lg: #{t.$radius-lg};
+  --radius-xl: #{t.$radius-xl};
+  --radius-2xl: #{t.$radius-2xl};
+  --radius-full: #{t.$radius-full};
+  --radius-default: var(--radius-md);
+}

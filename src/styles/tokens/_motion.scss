@@ -1,0 +1,17 @@
+// Tier 1 — Motion primitives
+// Never use directly in components — map through semantic → component tokens only.
+
+$duration-instant: 0ms;
+$duration-fast: 100ms;
+$duration-base: 200ms;
+$duration-slow: 300ms;
+$duration-slower: 500ms;
+
+$ease-default: ease;
+$ease-in: ease-in;
+$ease-out: ease-out;
+$ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+$ring-width: 2px;
+$ring-offset: 2px;
+$border-width: 1px;

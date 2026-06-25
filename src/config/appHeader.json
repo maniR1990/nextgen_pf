@@ -1,0 +1,92 @@
+{
+  "brand": {
+    "appName": "PersonalFi",
+    "logoAbbr": "PF",
+    "homeHref": "/dashboard"
+  },
+  "nav": [
+    { "id": "dashboard", "label": "Dashboard", "href": "/dashboard" },
+    { "id": "budget",      "label": "Budget",       "href": "/dashboard/budget" },
+    { "id": "transactions","label": "Transactions",  "href": "/dashboard/transactions" },
+    { "id": "goals",       "label": "Goals",         "href": "/dashboard/goals" },
+    { "id": "reports",     "label": "Reports",       "href": "/dashboard/reports" },
+    { "id": "settings",    "label": "Settings",      "href": "/dashboard/settings" }
+  ],
+  "pulseStrip": {
+    "collapseAfterScrollPx": 40,
+    "metrics": [
+      {
+        "id": "netWorth",
+        "label": "NET WORTH",
+        "dataKey": "netWorth",
+        "changeKey": "netWorthChangePct",
+        "format": "currency-inr-compact"
+      },
+      {
+        "id": "readyToAssign",
+        "label": "READY TO ASSIGN",
+        "dataKey": "readyToAssign",
+        "metaKey": "budgetPeriodLabel",
+        "format": "currency-inr",
+        "alertWhenZero": true
+      },
+      {
+        "id": "monthSpend",
+        "label": "MONTH SPEND",
+        "dataKey": "monthSpend",
+        "metaKey": "spendPaceLabel",
+        "format": "currency-inr"
+      },
+      {
+        "id": "monthCloses",
+        "label": "CLOSES IN",
+        "dataKey": "daysUntilClose",
+        "metaKey": "closeDateLabel",
+        "format": "days"
+      }
+    ],
+    "marketTicker": {
+      "symbols": ["NIFTY_50", "SENSEX", "GOLD", "USD_INR"],
+      "labels": {
+        "NIFTY_50": "NIFTY 50",
+        "SENSEX": "SENSEX",
+        "GOLD": "GOLD",
+        "USD_INR": "USD/INR"
+      }
+    }
+  },
+  "contextSubBar": {
+    "screens": {
+      "/dashboard": [
+        { "id": "pending",       "label": "PENDING",        "dataKey": "pendingCount",      "unit": "transactions", "href": "/dashboard/transactions?status=pending" },
+        { "id": "spendPace",     "label": "SPEND PACE",     "dataKey": "spendPaceLabel",    "changeKey": "spendPaceChangePct" },
+        { "id": "unallocated",   "label": "UNALLOCATED",    "dataKey": "unallocated",       "badge": "ready", "format": "currency-inr" },
+        { "id": "nextRecurring", "label": "NEXT RECURRING", "dataKey": "nextRecurringLabel" },
+        { "id": "monthCloses",   "label": "MONTH CLOSES",   "dataKey": "monthClosesLabel" }
+      ],
+      "/dashboard/budget": [
+        { "id": "assigned",  "label": "ASSIGNED",  "dataKey": "assigned",  "format": "currency-inr" },
+        { "id": "remaining", "label": "REMAINING", "dataKey": "remaining", "format": "currency-inr" }
+      ]
+    }
+  },
+  "mobile": {
+    "tabBar": [
+      { "id": "home",    "label": "Home",   "icon": "home",      "href": "/dashboard" },
+      { "id": "budget",  "label": "Budget", "icon": "bar-chart", "href": "/dashboard/budget" },
+      { "id": "fab",     "label": "",       "icon": "plus",      "isFab": true },
+      { "id": "goals",   "label": "Goals",  "icon": "target",    "href": "/dashboard/goals" },
+      { "id": "profile", "label": "Profile","icon": "user",      "href": "/dashboard/profile" }
+    ],
+    "fabRadial": {
+      "radiusPx": 80,
+      "animationMs": 200,
+      "actions": [
+        { "id": "expense",    "label": "Expense",    "subtitle": "Most used",  "icon": "arrow-down-left",  "color": "error",   "transactionType": "EXPENSE" },
+        { "id": "income",     "label": "Income",     "subtitle": "Inflow",     "icon": "arrow-up-right",   "color": "success", "transactionType": "INCOME" },
+        { "id": "transfer",   "label": "Transfer",   "subtitle": "Move funds", "icon": "arrow-left-right", "color": "info",    "transactionType": "TRANSFER" },
+        { "id": "investment", "label": "Investment", "subtitle": "Invest",     "icon": "trending-up",      "color": "purple",  "transactionType": "INVESTMENT" }
+      ]
+    }
+  }
+}

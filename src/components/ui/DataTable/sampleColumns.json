@@ -1,0 +1,50 @@
+[
+  {
+    "key": "transaction",
+    "header": "Transaction",
+    "type": "transaction",
+    "sortable": true,
+    "frozen": true,
+    "iconKey": "transactionIcon",
+    "width": 220,
+    "minWidth": 180
+  },
+  {
+    "key": "category",
+    "header": "Category",
+    "type": "badge",
+    "sortable": true,
+    "filterable": true,
+    "filterOptions": [
+      { "label": "Food", "value": "Food" },
+      { "label": "Income", "value": "Income" },
+      { "label": "Subscription", "value": "Subscription" },
+      { "label": "Utilities", "value": "Utilities" }
+    ]
+  },
+  {
+    "key": "date",
+    "header": "Date",
+    "type": "date",
+    "sortable": true
+  },
+  {
+    "key": "amount",
+    "header": "Amount",
+    "type": "amount",
+    "sortable": true,
+    "align": "right"
+  },
+  {
+    "key": "status",
+    "header": "Status",
+    "type": "badge",
+    "sortable": true,
+    "filterable": true,
+    "filterOptions": [
+      { "label": "Completed", "value": "Completed" },
+      { "label": "Pending", "value": "Pending" },
+      { "label": "Failed", "value": "Failed" }
+    ]
+  }
+]

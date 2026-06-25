@@ -1,0 +1,101 @@
+@use '../mixins' as m;
+
+.input-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--comp-input-gap);
+
+  &--full {
+    width: 100%;
+
+    .input-field__control {
+      width: 100%;
+    }
+  }
+}
+
+.input-field__label {
+  font-size: var(--comp-input-label-size);
+  font-weight: var(--comp-input-label-weight);
+  color: var(--comp-input-label);
+}
+
+.input-field__control {
+  --input-border: var(--comp-input-border);
+  --input-bg: var(--comp-input-bg);
+  --input-text: var(--comp-input-text);
+
+  min-height: var(--comp-input-min-height);
+  border: var(--comp-input-border-width) solid var(--input-border);
+  border-radius: var(--comp-input-radius);
+  padding: var(--comp-input-padding);
+  font-size: var(--comp-input-font-size);
+  font-family: var(--comp-input-font-family);
+  color: var(--input-text);
+  background: var(--input-bg);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
+    background var(--transition-fast);
+
+  @include m.respond-to(md) {
+    min-height: auto;
+  }
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  &:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--comp-input-border) 70%, var(--color-brand));
+  }
+
+  &:focus-visible,
+  &[data-state='focus'] {
+    border-color: var(--comp-input-border-focus);
+    outline: none;
+    box-shadow: var(--comp-input-focus-shadow);
+  }
+
+  &--error {
+    --input-border: var(--comp-input-border-error);
+    --input-bg: var(--comp-input-bg-error);
+  }
+
+  &--success {
+    --input-border: var(--comp-input-border-success);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: var(--comp-btn-disabled-opacity);
+    background: var(--color-bg-subtle);
+    color: var(--color-text-muted);
+  }
+}
+
+.field-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--comp-input-error-size);
+  line-height: var(--line-height-base);
+
+  &--hint {
+    color: var(--comp-input-hint-text);
+  }
+
+  &--error {
+    color: var(--comp-input-error-text);
+  }
+
+  &--success {
+    color: var(--comp-input-success-text);
+  }
+}
+
+.field-msg__icon {
+  flex-shrink: 0;
+  width: var(--space-3);
+  height: var(--space-3);
+  margin-top: 1px;
+}

@@ -1,0 +1,84 @@
+{
+  "cards": [
+    {
+      "type": "cash-runway",
+      "data": {
+        "title": "CASH RUNWAY",
+        "value": 2.4,
+        "unit": "mo",
+        "progress": {
+          "current": 2.4,
+          "target": 6,
+          "currentLabel": "2.4 mo",
+          "targetLabel": "6 mo"
+        },
+        "insight": "Need ₹87K more — build ₹7.2K/mo to reach target in 12 mo",
+        "variant": "warning"
+      }
+    },
+    {
+      "type": "bank-cash",
+      "data": {
+        "title": "BANK CASH",
+        "amount": { "amountMinor": 34200000, "currency": "INR" },
+        "sparkline": [42, 55, 48, 62, 58, 71, 68],
+        "trend": {
+          "direction": "up",
+          "amountMinor": 1400000,
+          "periodLabel": "May"
+        }
+      }
+    },
+    {
+      "type": "monthly-surplus",
+      "data": {
+        "title": "MONTHLY SURPLUS",
+        "amount": { "amountMinor": 2840000, "currency": "INR" },
+        "actions": [
+          { "label": "Invest", "variant": "brand" },
+          { "label": "Sinking", "variant": "success" },
+          { "label": "Save", "variant": "neutral" }
+        ]
+      }
+    },
+    {
+      "type": "savings-rate",
+      "data": {
+        "title": "SAVINGS RATE",
+        "ratePercent": 28,
+        "targetPercent": 35,
+        "benchmark": {
+          "label": "Above avg",
+          "status": "above"
+        }
+      }
+    },
+    {
+      "type": "month-burn-rate",
+      "data": {
+        "title": "MONTH BURN RATE",
+        "amount": { "amountMinor": 8920000, "currency": "INR" },
+        "spentLabel": "spent so far",
+        "progress": {
+          "current": 89200,
+          "target": 120000,
+          "currentLabel": "₹89,200",
+          "targetLabel": "₹1,20,000"
+        },
+        "dayLabel": "Day 11 of 30",
+        "budgetStatus": {
+          "label": "On track",
+          "variant": "success"
+        }
+      }
+    },
+    {
+      "type": "cc-debt",
+      "data": {
+        "title": "CC DEBT",
+        "amount": { "amountMinor": 0, "currency": "INR" },
+        "paidOff": true
+      }
+    }
+  ]
+}

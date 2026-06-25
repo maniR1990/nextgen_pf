@@ -1,0 +1,57 @@
+@use '../tokens/breakpoints' as bp;
+@use '../mixins/responsive' as *;
+
+// Tier 2 — Responsive semantic tokens (mobile-first)
+
+:root {
+  // Breakpoints as CSS custom properties (for JS / container queries)
+  --bp-xs: #{bp.$bp-xs};
+  --bp-sm: #{bp.$bp-sm};
+  --bp-md: #{bp.$bp-md};
+  --bp-lg: #{bp.$bp-lg};
+  --bp-xl: #{bp.$bp-xl};
+  --bp-2xl: #{bp.$bp-2xl};
+  --bp-mobile-design: #{bp.$bp-mobile-design};
+
+  // 12-column grid
+  --grid-columns: 12;
+  --grid-gap: var(--space-4);
+  --grid-sidebar-width: calc(55 * var(--space-1)); // 220px
+
+  // Touch targets (WCAG 2.1 AA on mobile)
+  --touch-target-min: calc(11 * var(--space-1)); // 44px
+
+  // Typography scale — mobile first (h1 = 24px)
+  --type-h1-size: var(--font-size-3xl);
+
+  // Modal widths + compact padding (mobile-first)
+  --layout-modal-max-width: 100%;
+  --layout-modal-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  --comp-modal-padding: var(--space-4);
+
+  // Shell navigation mode tokens
+  --layout-nav-mode: bottom-tabs;
+  --layout-sidebar-width: 0px;
+
+  @include respond-to(md) {
+    --touch-target-min: calc(9 * var(--space-1)); // 36px
+    --type-h1-size: 1.75rem; // 28px
+    --layout-modal-max-width: 480px;
+    --layout-modal-radius: var(--radius-xl);
+    --comp-modal-padding: var(--space-5);
+    --layout-nav-mode: sidebar-collapsed;
+    --layout-sidebar-width: var(--space-16); // 64px icon rail
+  }
+
+  @include respond-to(lg) {
+    --touch-target-min: var(--space-8); // 32px
+    --layout-modal-max-width: 560px;
+    --layout-nav-mode: sidebar-full;
+    --layout-sidebar-width: var(--grid-sidebar-width);
+    --grid-gap: var(--space-6);
+  }
+
+  @include respond-to(xl) {
+    --type-h1-size: var(--font-size-5xl); // 36px full scale
+  }
+}

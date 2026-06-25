@@ -1,0 +1,87 @@
+@use '../mixins' as m;
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--comp-toggle-gap);
+  min-height: var(--comp-input-min-height);
+  cursor: pointer;
+  user-select: none;
+
+  @include m.respond-to(md) {
+    min-height: auto;
+  }
+
+  &--disabled {
+    cursor: not-allowed;
+    opacity: var(--comp-btn-disabled-opacity);
+  }
+}
+
+.toggle__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+}
+
+.toggle__label {
+  @include m.type-body;
+  color: var(--color-text);
+}
+
+.toggle__description {
+  @include m.type-caption;
+  color: var(--color-text-muted);
+}
+
+.toggle__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+
+  &:focus-visible + .toggle__track {
+    @include m.focus-ring;
+  }
+
+  &:checked + .toggle__track {
+    background: var(--color-brand);
+
+    .toggle__thumb {
+      transform: translateX(calc(var(--comp-toggle-width) - var(--comp-toggle-thumb) - var(--space-1)));
+    }
+  }
+
+  &:disabled + .toggle__track {
+    background: var(--color-border);
+  }
+}
+
+.toggle__track {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--comp-toggle-width);
+  height: var(--comp-toggle-height);
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  transition: background var(--transition-fast);
+}
+
+.toggle__thumb {
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-1);
+  width: var(--comp-toggle-thumb);
+  height: var(--comp-toggle-thumb);
+  border-radius: var(--radius-full);
+  background: var(--color-on-brand);
+  transition: transform var(--transition-fast);
+}

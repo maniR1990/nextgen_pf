@@ -1,0 +1,43 @@
+@use '../mixins' as m;
+
+.casc-cat {
+  @include m.flex-col;
+  gap: var(--space-1);
+
+  &__label {
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--comp-input-label, var(--color-text-muted));
+  }
+
+  &__cols {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-2);
+  }
+
+  &__col {
+    @include m.flex-col;
+    gap: var(--space-1);
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__col-heading {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  &__sep {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    line-height: 44px;
+    padding-bottom: 0;
+  }
+}

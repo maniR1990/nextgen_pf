@@ -1,0 +1,46 @@
+{
+  "variant": "transaction",
+  "ariaLabel": "Transaction timeline",
+  "items": [
+    {
+      "id": "tx-1",
+      "timestampLabel": "Today • 2:14 PM",
+      "title": "Direct Deposit",
+      "description": "ACME Corp • Payroll",
+      "tone": "success",
+      "amount": { "label": "+$3,200.00", "tone": "success" }
+    },
+    {
+      "id": "tx-2",
+      "timestampLabel": "Today • 9:02 AM",
+      "title": "Rent Payment",
+      "description": "Chase Checking • Auto-pay",
+      "tone": "error",
+      "amount": { "label": "-$1,850.00", "tone": "error" }
+    },
+    {
+      "id": "tx-3",
+      "timestampLabel": "Yesterday • 6:45 PM",
+      "title": "Transfer Pending",
+      "description": "To Savings • NEFT",
+      "tone": "warning",
+      "amount": { "label": "$500.00", "tone": "warning" }
+    },
+    {
+      "id": "tx-4",
+      "timestampLabel": "Jun 9 • 11:00 AM",
+      "title": "Dividend Received",
+      "description": "HDFC Liquid Fund",
+      "tone": "accent",
+      "amount": { "label": "+$142.30", "tone": "accent" }
+    },
+    {
+      "id": "tx-5",
+      "timestampLabel": "Jun 8 • 8:00 AM",
+      "title": "Statement Ready",
+      "description": "May 2026 statement generated",
+      "tone": "info",
+      "link": { "label": "PDF available", "href": "#statement-pdf" }
+    }
+  ]
+}

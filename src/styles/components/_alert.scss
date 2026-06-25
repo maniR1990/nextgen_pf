@@ -1,0 +1,60 @@
+@use '../mixins' as m;
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--comp-alert-gap);
+  width: 100%;
+  padding: var(--comp-alert-padding);
+  border: var(--comp-alert-border-width) solid var(--alert-border);
+  border-radius: var(--comp-alert-radius);
+  background: var(--alert-bg);
+}
+
+.alert--success {
+  --alert-bg: var(--comp-alert-success-bg);
+  --alert-border: var(--comp-alert-success-border);
+}
+
+.alert--error {
+  --alert-bg: var(--comp-alert-error-bg);
+  --alert-border: var(--comp-alert-error-border);
+}
+
+.alert--warning {
+  --alert-bg: var(--comp-alert-warning-bg);
+  --alert-border: var(--comp-alert-warning-border);
+}
+
+.alert--info {
+  --alert-bg: var(--comp-alert-info-bg);
+  --alert-border: var(--comp-alert-info-border);
+}
+
+.alert__icon {
+  flex-shrink: 0;
+  margin-top: calc(var(--space-1) / 2);
+}
+
+.alert__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.alert__title {
+  margin: 0;
+  color: var(--comp-alert-title-color);
+  font-size: var(--comp-alert-title-size);
+  font-weight: var(--comp-alert-title-weight);
+  line-height: var(--line-height-tight);
+}
+
+.alert__message {
+  margin: 0;
+  color: var(--comp-alert-message-color);
+  font-size: var(--comp-alert-message-size);
+  line-height: var(--line-height-base);
+}

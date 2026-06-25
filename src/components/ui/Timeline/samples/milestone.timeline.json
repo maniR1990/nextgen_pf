@@ -1,0 +1,36 @@
+{
+  "variant": "milestone",
+  "ariaLabel": "Goal milestone timeline",
+  "items": [
+    {
+      "id": "ms-1",
+      "timestampLabel": "Jan 2026",
+      "title": "Started",
+      "description": "Emergency Fund goal created",
+      "tone": "info"
+    },
+    {
+      "id": "ms-2",
+      "timestampLabel": "Mar 2026",
+      "title": "25% Milestone Reached",
+      "description": "$2,500 of $10,000",
+      "tone": "success",
+      "emoji": "📈"
+    },
+    {
+      "id": "ms-3",
+      "timestampLabel": "May 2026",
+      "title": "Contribution Paused",
+      "description": "Manual pause for 1 month",
+      "tone": "warning"
+    },
+    {
+      "id": "ms-4",
+      "timestampLabel": "Oct 2026",
+      "title": "Goal Complete",
+      "description": "Projected",
+      "tone": "muted",
+      "projected": true
+    }
+  ]
+}

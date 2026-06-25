@@ -1,0 +1,179 @@
+@use '../mixins' as m;
+
+// ─── Bottom Tab Bar (mobile only) ─────────────────────────────────────────────
+
+.bottom-tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  // safe area for home indicator
+  padding-bottom: env(safe-area-inset-bottom);
+  background: color-mix(in srgb, var(--color-bg-surface) 90%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--color-border);
+  height: calc(58px + env(safe-area-inset-bottom));
+
+  @include m.respond-to(md) { display: none; }
+}
+
+.bottom-tab-bar__tabs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+  height: 58px;
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--space-2);
+}
+
+.bottom-tab-bar__tab {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &--fab {
+    // FAB needs extra height budget so it can float 14px above the bar
+    align-items: flex-start;
+    padding-top: 0;
+    position: relative;
+    overflow: visible;
+  }
+}
+
+.bottom-tab-bar__link {
+  @include m.flex-col;
+  align-items: center;
+  gap: 3px;
+  padding: var(--space-2) var(--space-3);
+  text-decoration: none;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-md);
+  transition: color var(--transition-fast);
+  min-height: 44px;
+  justify-content: center;
+
+  &:focus-visible { @include m.focus-ring; }
+
+  &--active {
+    color: var(--color-brand);
+    .bottom-tab-bar__icon { opacity: 1; }
+  }
+}
+
+.bottom-tab-bar__icon {
+  display: flex;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
+
+  .bottom-tab-bar__link--active & { opacity: 1; }
+}
+
+.bottom-tab-bar__label {
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+// ─── FAB ─────────────────────────────────────────────────────────────────────
+
+.bottom-tab-bar__fab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  border: none;
+  border-radius: var(--radius-full);
+  // 14px above the bar baseline
+  margin-top: calc(-14px);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-brand) 40%, transparent);
+  cursor: pointer;
+  transition:
+    transform 200ms ease,
+    background 200ms ease,
+    box-shadow 200ms ease;
+
+  &:focus-visible { @include m.focus-ring; }
+
+  &--open {
+    transform: rotate(45deg);
+    background: var(--color-error);
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--color-error) 40%, transparent);
+  }
+}
+
+// ─── FAB Scrim ───────────────────────────────────────────────────────────────
+
+.fab-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: fab-scrim-in 200ms ease forwards;
+}
+
+@keyframes fab-scrim-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// ─── FAB Radial ──────────────────────────────────────────────────────────────
+
+.fab-radial {
+  position: fixed;
+  // Anchor to where the FAB sits: bottom of screen + offset
+  bottom: calc(58px + env(safe-area-inset-bottom) + 14px + 26px);
+  left: 50%;
+  z-index: 50;
+  // The radial positions are transform-based relative to this point
+}
+
+.fab-action {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  min-height: 64px;
+  padding: var(--space-2);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  text-align: center;
+  gap: 2px;
+  animation: fab-action-in 200ms ease forwards;
+  transform: translate(-50%, -50%) scale(0.6);
+
+  &:focus-visible { @include m.focus-ring; }
+
+  // Color accents on border
+  &--error   { border-color: color-mix(in srgb, var(--color-error)   30%, var(--color-border)); background: color-mix(in srgb, var(--color-error)   6%, var(--color-bg-surface)); }
+  &--success { border-color: color-mix(in srgb, var(--color-success) 30%, var(--color-border)); background: color-mix(in srgb, var(--color-success) 6%, var(--color-bg-surface)); }
+  &--info    { border-color: color-mix(in srgb, var(--color-info)    30%, var(--color-border)); background: color-mix(in srgb, var(--color-info)    6%, var(--color-bg-surface)); }
+  &--purple  { border-color: color-mix(in srgb, var(--color-accent)  30%, var(--color-border)); background: color-mix(in srgb, var(--color-accent)  6%, var(--color-bg-surface)); }
+}
+
+@keyframes fab-action-in {
+  to { transform: translate(calc(var(--fab-x, 0) * 1px - 50%), calc(var(--fab-y, 0) * -1px - 50%)) scale(1); }
+}
+
+.fab-action__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.fab-action__subtitle {
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+}

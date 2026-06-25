@@ -1,0 +1,141 @@
+@use '../mixins' as m;
+
+// ─── Report Filter Bar ────────────────────────────────────────────────────────
+// Sits in the AppHeader third slot for /dashboard/reports routes.
+// Left: icon + page title + separator + view label
+// Right: MonthNavControl + action buttons
+
+.report-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--color-border);
+
+  @include m.respond-below(md) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+}
+
+// ─── Left: title section ──────────────────────────────────────────────────────
+
+.report-filter-bar__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+
+  @include m.respond-below(md) {
+    gap: var(--space-1-5);
+  }
+}
+
+.report-filter-bar__title-icon {
+  flex-shrink: 0;
+  color: var(--color-brand);
+}
+
+.report-filter-bar__page-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-variation-semibold);
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.report-filter-bar__sep {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+
+  @include m.respond-below(sm) {
+    display: none;
+  }
+}
+
+.report-filter-bar__view-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @include m.respond-below(sm) {
+    display: none;
+  }
+}
+
+// ─── Right: controls section ──────────────────────────────────────────────────
+
+.report-filter-bar__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+
+  @include m.respond-below(md) {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+// ─── Action buttons ───────────────────────────────────────────────────────────
+
+.report-filter-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+
+.report-filter-bar__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-3);
+  min-height: 32px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-variation-medium);
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast);
+
+  &:hover {
+    background: var(--color-bg-subtle);
+    border-color: color-mix(in srgb, var(--color-brand) 40%, var(--color-border));
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+
+  // icon-only variant (gear / settings)
+  &--icon {
+    padding: var(--space-1-5);
+    width: 32px;
+    justify-content: center;
+    color: var(--color-text-muted);
+
+    &:hover {
+      color: var(--color-text);
+    }
+  }
+
+  // hide button labels on very small screens, keep icons
+  span {
+    @include m.respond-below(sm) {
+      display: none;
+    }
+  }
+}

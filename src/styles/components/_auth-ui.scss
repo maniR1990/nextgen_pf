@@ -1,0 +1,108 @@
+@use '../mixins' as m;
+
+.auth-shell {
+  width: 100%;
+  max-width: var(--comp-auth-shell-max-width);
+}
+
+.auth-form {
+  @include m.flex-col(var(--comp-form-gap));
+  width: 100%;
+
+  .btn {
+    width: 100%;
+  }
+}
+
+.auth-form-header {
+  @include m.flex-col(var(--space-2));
+  align-items: center;
+  text-align: center;
+}
+
+.auth-form-header__icon-wrap {
+  @include m.flex-center;
+  width: var(--comp-auth-icon-size);
+  height: var(--comp-auth-icon-size);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-subtle);
+}
+
+.auth-form-header__title {
+  margin: 0;
+  font-size: var(--comp-auth-title-size);
+  font-weight: var(--comp-auth-title-weight);
+  color: var(--color-text);
+  line-height: var(--line-height-tight);
+}
+
+.auth-form-header__subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+.auth-form-footer {
+  margin: 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-base);
+}
+
+.auth-form__row-link {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.auth-divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.auth-divider__line {
+  height: var(--border-width);
+  background: var(--color-border);
+}
+
+.auth-divider__label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.oauth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--comp-form-oauth-gap);
+}
+
+.text-link {
+  color: var(--color-brand);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.auth-status-body {
+  @include m.flex-col(var(--space-3));
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
+}
+
+.auth-status-body strong {
+  color: var(--color-text);
+}
+
+.auth-status-meta {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
