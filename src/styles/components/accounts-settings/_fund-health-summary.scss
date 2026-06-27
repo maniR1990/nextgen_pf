@@ -1,0 +1,47 @@
+@use '../../mixins' as m;
+
+.fund-health-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border);
+  background: var(--color-bg-base);
+
+  @include m.respond-to(sm) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  @include m.respond-to(md) {
+    padding: var(--space-3) var(--space-6);
+    gap: var(--space-4);
+  }
+
+  &__stat {
+    @include m.flex-col;
+    gap: 2px;
+  }
+
+  &__value {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    line-height: var(--line-height-tight);
+
+    .fund-health-summary__stat--warn & {
+      color: var(--color-warning);
+    }
+    .fund-health-summary__stat--good & {
+      color: var(--color-success);
+    }
+  }
+
+  &__label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    line-height: var(--line-height-tight);
+  }
+}

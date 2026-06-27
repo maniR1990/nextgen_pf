@@ -1,0 +1,197 @@
+@use '../../mixins' as m;
+
+.account-wizard {
+  &__header {
+    @include m.flex-between;
+    gap: var(--space-2);
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__step-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  &__steps {
+    display: flex;
+    align-items: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 0;
+    padding-top: var(--space-3);
+    margin-top: var(--space-2);
+    border-top: var(--border-width) solid var(--color-border);
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    gap: var(--space-1);
+
+    &:not(:first-child)::before {
+      content: '';
+      position: absolute;
+      top: calc(var(--space-3) - 1px);
+      left: calc(-50% + var(--space-3));
+      right: calc(50% + var(--space-3));
+      height: 1px;
+      background: var(--color-border);
+      transition: background var(--transition-fast);
+    }
+
+    &--done::before {
+      background: var(--color-brand) !important;
+    }
+    &--active::before {
+      background: var(--color-brand) !important;
+    }
+  }
+
+  &__step-num {
+    @include m.flex-center;
+    width: var(--space-6);
+    height: var(--space-6);
+    border-radius: var(--radius-full);
+    border: var(--border-width) solid var(--color-border);
+    background: var(--color-bg-surface);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    transition: background var(--transition-fast), border-color var(--transition-fast),
+      color var(--transition-fast);
+    position: relative;
+    z-index: 1;
+
+    .account-wizard__step--done & {
+      background: var(--color-brand);
+      border-color: var(--color-brand);
+      color: var(--color-on-brand);
+    }
+
+    .account-wizard__step--active & {
+      border-color: var(--color-brand);
+      color: var(--color-brand);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 16%, transparent);
+    }
+  }
+
+  &__step-name {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-align: center;
+    display: none;
+    white-space: nowrap;
+
+    @include m.respond-to(sm) {
+      display: block;
+    }
+
+    .account-wizard__step--active & {
+      color: var(--color-brand);
+      font-weight: var(--font-weight-semibold);
+    }
+
+    .account-wizard__step--done & {
+      color: var(--color-text);
+    }
+  }
+
+  &__step-body {
+    @include m.flex-col;
+    gap: var(--space-4);
+  }
+
+  &__step-body--info {
+    padding: var(--space-8) var(--space-4);
+    align-items: center;
+    text-align: center;
+  }
+
+  &__info-text {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    line-height: var(--line-height-relaxed);
+    max-width: 28rem;
+  }
+
+  &__type-hint {
+    padding: var(--space-3) var(--space-4);
+    background: color-mix(in srgb, var(--color-brand) 6%, var(--color-bg-surface));
+    border: var(--border-width) solid
+      color-mix(in srgb, var(--color-brand) 20%, transparent);
+    border-radius: var(--radius-lg);
+
+    strong {
+      display: block;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text);
+      margin-bottom: var(--space-1);
+    }
+
+    p {
+      margin: var(--space-1) 0 0;
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      line-height: var(--line-height-base);
+    }
+  }
+
+  &__strategy {
+    opacity: 0.75;
+    font-style: italic;
+  }
+
+  &__review-list {
+    @include m.flex-col;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  &__review-row {
+    @include m.flex-between;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--border-width) solid var(--color-border);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    dt {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+      font-weight: var(--font-weight-medium);
+    }
+
+    dd {
+      margin: 0;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+  }
+
+  &__nav-btns {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+}

@@ -2,7 +2,7 @@
 
 import type { AppHeaderConfig, AppHeaderData, ContextSubBarItem } from '@/lib/schemas/appHeader';
 import { usePathname } from 'next/navigation';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ContextSubBar } from './ContextSubBar';
 import { MainNav } from './MainNav';
 import { PulseStrip } from './PulseStrip';
@@ -33,13 +33,31 @@ export function AppHeader({ config, data, onLogTransaction, onSearch }: AppHeade
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const prevScrollY = useRef(0);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Set --app-header-height only when expanded so padding-top never shrinks on scroll.
+  // pathname dependency ensures it re-measures when subbars change between pages.
+  useLayoutEffect(() => {
+    if (collapsed) return;
+    const el = headerRef.current;
+    if (!el) return;
+    document.documentElement.style.setProperty(
+      '--app-header-height',
+      `${el.offsetHeight}px`,
+    );
+  }, [collapsed, pathname]);
 
   useEffect(() => {
     const threshold = config.pulseStrip.collapseAfterScrollPx;
 
     function onScroll() {
       const y = window.scrollY;
-      setCollapsed(y > threshold);
+      const scrollingDown = y > prevScrollY.current;
+      if (scrollingDown && y > threshold) {
+        setCollapsed(true);
+      } else if (!scrollingDown) {
+        setCollapsed(false);
+      }
       prevScrollY.current = y;
     }
 
@@ -54,7 +72,7 @@ export function AppHeader({ config, data, onLogTransaction, onSearch }: AppHeade
   const { pulseStrip } = config;
 
   return (
-    <header className="app-header" role="banner">
+    <header ref={headerRef} className="app-header" role="banner">
       <PulseStrip
         metrics={pulseStrip.metrics}
         marketSymbols={pulseStrip.marketTicker.symbols}

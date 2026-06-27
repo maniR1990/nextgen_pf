@@ -1,0 +1,240 @@
+@use '../../mixins' as m;
+
+.fund-bucket-board {
+  flex: 1;
+  padding: var(--space-4);
+
+  @include m.respond-to(md) {
+    padding: var(--space-5) var(--space-6);
+  }
+
+  // ── Page header ──────────────────────────────────────────────────────────
+
+  &__page-header {
+    margin-bottom: var(--space-5);
+    padding-bottom: var(--space-4);
+    border-bottom: var(--border-width) solid var(--color-border);
+  }
+
+  &__breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-bottom: var(--space-2);
+  }
+
+  &__breadcrumb-item {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+
+    &--active {
+      color: var(--color-text);
+      font-weight: var(--font-weight-medium);
+    }
+  }
+
+  &__breadcrumb-sep {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__heading-row {
+    @include m.flex-between;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+
+  &__heading {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    line-height: var(--line-height-tight);
+    margin: 0 0 var(--space-1);
+
+    @include m.respond-to(md) {
+      font-size: var(--font-size-2xl);
+    }
+  }
+
+  &__heading-sub {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+    line-height: var(--line-height-base);
+  }
+
+  &__header-actions {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  // ── Fund card grid ────────────────────────────────────────────────────────
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+
+    @include m.respond-to(sm) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @include m.respond-to(lg) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @include m.respond-to(xl) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  // ── Group section (header + fund grid) ────────────────────────────────────
+
+  &__group-section {
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: var(--border-width) solid var(--color-border);
+
+    &:first-of-type {
+      margin-top: var(--space-4);
+    }
+
+    // ungrouped funds section — subtler divider
+    &--ungrouped {
+      border-top-style: dashed;
+    }
+  }
+
+  &__ungrouped-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  &__ungrouped-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  // ── Archived groups section ───────────────────────────────────────────────
+
+  &__archived-section {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: var(--border-width) solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  &__archived-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 var(--space-1);
+  }
+
+  // ── Empty state card ──────────────────────────────────────────────────────
+
+  &__empty-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    background: none;
+    transition: border-color var(--transition-fast), background var(--transition-fast),
+      color var(--transition-fast);
+    width: 100%;
+    grid-column: 1 / -1;
+
+    &:hover {
+      border-color: var(--color-brand);
+      background: color-mix(in srgb, var(--color-brand) 4%, var(--color-bg-surface));
+      color: var(--color-brand);
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  // ── Legacy / kept for backwards compat ───────────────────────────────────
+
+  &__group-menu {
+    position: relative;
+    display: inline-flex;
+  }
+
+  &__group-menu-trigger {
+    @include m.flex-center;
+    width: var(--space-5);
+    height: var(--space-5);
+    border: none;
+    background: none;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
+    transition: color var(--transition-fast);
+
+    &:hover {
+      color: var(--color-text);
+    }
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  &__group-menu-panel {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    right: 0;
+    z-index: 20;
+    min-width: 8rem;
+    padding: var(--space-1);
+    background: var(--color-bg-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+
+  &__group-menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    background: none;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    cursor: pointer;
+    text-align: left;
+    transition: background var(--transition-fast);
+
+    &:hover {
+      background: var(--color-bg-subtle);
+    }
+    &--danger {
+      color: var(--color-error);
+    }
+    &--danger:hover {
+      background: color-mix(in srgb, var(--color-error) 8%, var(--color-bg-surface));
+    }
+    &--disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  }
+}

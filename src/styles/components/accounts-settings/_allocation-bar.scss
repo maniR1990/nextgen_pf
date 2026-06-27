@@ -1,0 +1,55 @@
+@use '../../mixins' as m;
+
+.allocation-bar {
+  @include m.flex-col;
+  gap: var(--space-2);
+
+  &__track {
+    display: flex;
+    height: var(--space-2);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    background: var(--color-bg-subtle);
+  }
+
+  &__segment {
+    height: 100%;
+    transition: flex var(--transition-default);
+  }
+
+  &__legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+  }
+
+  &__legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5);
+  }
+
+  &__legend-dot {
+    width: var(--space-2);
+    height: var(--space-2);
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+  }
+
+  &__legend-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  &__legend-value {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+}

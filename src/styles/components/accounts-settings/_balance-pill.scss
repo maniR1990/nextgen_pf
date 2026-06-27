@@ -1,0 +1,45 @@
+.balance-pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--letter-spacing-tight);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  white-space: nowrap;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+
+  &--positive {
+    color: var(--color-success);
+  }
+  &--negative {
+    color: var(--color-error);
+  }
+
+  &--sm {
+    font-size: var(--font-size-sm);
+  }
+  &--md {
+    font-size: var(--font-size-base);
+  }
+
+  &--lg {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: -0.5px;
+  }
+
+  &__symbol {
+    font-size: 0.8em;
+    opacity: 0.65;
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__sign {
+    font-size: 0.85em;
+  }
+
+  &__amount {
+  }
+}

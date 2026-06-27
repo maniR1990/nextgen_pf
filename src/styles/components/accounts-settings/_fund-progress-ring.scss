@@ -1,0 +1,38 @@
+@use '../../mixins' as m;
+
+.fund-progress-ring {
+  position: relative;
+  flex-shrink: 0;
+
+  &__svg {
+    display: block;
+  }
+
+  &__track {
+    fill: none;
+    stroke: var(--color-bg-subtle);
+    stroke-width: 4;
+  }
+
+  &__bar {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dashoffset var(--duration-slow) var(--ease-spring);
+  }
+
+  &__label {
+    position: absolute;
+    inset: 0;
+    @include m.flex-center;
+    pointer-events: none;
+  }
+
+  &__percent {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+}

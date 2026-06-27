@@ -1,0 +1,27 @@
+@use '../../mixins' as m;
+
+.unallocated-cash-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2-5) var(--space-4);
+  background: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-surface));
+  border-bottom: var(--border-width) solid
+    color-mix(in srgb, var(--color-warning) 35%, transparent);
+
+  @include m.respond-to(md) {
+    padding-inline: var(--space-6);
+  }
+
+  &__icon {
+    color: var(--color-warning);
+    flex-shrink: 0;
+  }
+
+  &__message {
+    flex: 1;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    line-height: var(--line-height-base);
+  }
+}

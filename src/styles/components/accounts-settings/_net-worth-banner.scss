@@ -1,0 +1,45 @@
+@use '../../mixins' as m;
+
+.net-worth-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border);
+  background: var(--color-bg-surface);
+
+  @include m.respond-to(md) {
+    padding: var(--space-3) var(--space-6);
+    gap: var(--space-4);
+  }
+
+  &__stat {
+    @include m.flex-col;
+    gap: 2px;
+    flex-shrink: 0;
+
+    &--net {
+      padding-left: var(--space-3);
+      border-left: 2px solid color-mix(in srgb, var(--color-brand) 50%, transparent);
+    }
+  }
+
+  &__label {
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  &__divider {
+    font-size: var(--font-size-lg);
+    color: var(--color-text-muted);
+    opacity: 0.4;
+    flex-shrink: 0;
+    line-height: 1;
+    user-select: none;
+  }
+}

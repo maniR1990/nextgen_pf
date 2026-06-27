@@ -1,0 +1,60 @@
+@use '../../mixins' as m;
+
+.institution-selector {
+  position: relative;
+
+  &__dropdown {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    left: 0;
+    right: 0;
+    z-index: 30;
+    max-height: 15rem;
+    overflow-y: auto;
+    background: var(--color-bg-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-2-5) var(--space-3);
+    background: none;
+    border: none;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    cursor: pointer;
+    text-align: left;
+    transition: background var(--transition-fast);
+
+    &:hover {
+      background: var(--color-bg-subtle);
+    }
+    &--active {
+      background: var(--color-bg-subtle);
+    }
+  }
+
+  &__option-abbr {
+    @include m.flex-center;
+    width: var(--space-6);
+    height: var(--space-6);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-subtle);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    font-family: var(--font-family-mono);
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  &__option-custom {
+    font-style: italic;
+    color: var(--color-text-muted);
+  }
+}

@@ -43,6 +43,18 @@ export function FundBucketBoard({
   onRouting,
 }: FundBucketBoardProps) {
   const activeFunds = funds.filter((f) => !f.archivedAt);
+  const activeGroups = groups.filter((g) => !g.archivedAt);
+  const archivedGroups = groups.filter((g) => !!g.archivedAt);
+
+  // Map groupId → funds that belong to it
+  const fundsByGroupId = activeFunds.reduce<Record<string, FundSummary[]>>((acc, fund) => {
+    const key = fund.groupId ?? '__none__';
+    (acc[key] ??= []).push(fund);
+    return acc;
+  }, {});
+
+  const ungroupedFunds = fundsByGroupId['__none__'] ?? [];
+  const hasContent = activeGroups.length > 0 || ungroupedFunds.length > 0;
 
   return (
     <div className="fund-bucket-board">
@@ -70,6 +82,11 @@ export function FundBucketBoard({
                 <Zap size={13} aria-hidden /> Routing
               </Button>
             )}
+            {onCreateGroup && (
+              <Button size="sm" variant="secondary" onClick={onCreateGroup}>
+                <Plus size={13} aria-hidden /> New Group
+              </Button>
+            )}
             <Button size="sm" onClick={() => onCreateFund()} aria-label="New fund">
               <Plus size={14} aria-hidden /> New Fund
             </Button>
@@ -83,19 +100,9 @@ export function FundBucketBoard({
         <UnallocatedCashAlert amount={summary.totalUnallocated} onAllocate={onAllocateIdle} />
       )}
 
-      {/* Fund card grid — always flat grid; groups shown in chip strip below */}
-      <div className="fund-bucket-board__grid">
-        {activeFunds.map((fund) => (
-          <FundCard
-            key={fund.id}
-            fund={fund}
-            onEdit={onEditFund}
-            onAllocate={onAllocateFund}
-            onArchive={onArchiveFund}
-            onDelete={onDeleteFund}
-          />
-        ))}
-        {activeFunds.length === 0 && (
+      {/* Empty state — no groups and no funds yet */}
+      {!hasContent && (
+        <div className="fund-bucket-board__grid">
           <button
             type="button"
             className="fund-bucket-board__empty-card"
@@ -105,37 +112,84 @@ export function FundBucketBoard({
             <Plus size={18} aria-hidden />
             <span>Add your first fund</span>
           </button>
-        )}
-      </div>
-
-      {/* Fund group cards */}
-      {(groups.length > 0 || onCreateGroup) && (
-        <div className="fund-bucket-board__groups-section">
-          <div className="fund-bucket-board__groups-header">
-            <h2 className="fund-bucket-board__groups-title">Fund Groups</h2>
-            {onCreateGroup && (
-              <Button size="sm" variant="secondary" onClick={onCreateGroup}>
-                <Plus size={13} aria-hidden /> New Group
-              </Button>
-            )}
-          </div>
-          <div className="fund-bucket-board__groups-grid">
-            {groups.map((group) => {
-              const count = activeFunds.filter((f) => f.groupId === group.id).length;
-              return (
-                <FundGroupCard
-                  key={group.id}
-                  group={group}
-                  fundCount={count}
-                  onAddFund={group.archivedAt ? undefined : onCreateFund}
-                  onEdit={group.archivedAt ? undefined : onEditGroup}
-                  onDelete={group.archivedAt ? undefined : onDeleteGroup}
-                  onRestore={group.archivedAt ? onRestoreGroup : undefined}
-                />
-              );
-            })}
-          </div>
         </div>
+      )}
+
+      {/* Active groups — each rendered as a section with its fund cards below */}
+      {activeGroups.map((group) => {
+        const groupFunds = fundsByGroupId[group.id] ?? [];
+        return (
+          <section key={group.id} className="fund-bucket-board__group-section">
+            <FundGroupCard
+              asSection
+              group={group}
+              fundCount={groupFunds.length}
+              onAddFund={onCreateFund}
+              onEdit={onEditGroup}
+              onDelete={onDeleteGroup}
+            />
+            <div className="fund-bucket-board__grid">
+              {groupFunds.map((fund) => (
+                <FundCard
+                  key={fund.id}
+                  fund={fund}
+                  onEdit={onEditFund}
+                  onAllocate={onAllocateFund}
+                  onArchive={onArchiveFund}
+                  onDelete={onDeleteFund}
+                />
+              ))}
+              {groupFunds.length === 0 && (
+                <button
+                  type="button"
+                  className="fund-bucket-board__empty-card"
+                  onClick={() => onCreateFund(group.id)}
+                  aria-label={`Add first fund to ${group.name}`}
+                >
+                  <Plus size={16} aria-hidden />
+                  <span>Add first fund</span>
+                </button>
+              )}
+            </div>
+          </section>
+        );
+      })}
+
+      {/* Ungrouped funds */}
+      {ungroupedFunds.length > 0 && (
+        <section className="fund-bucket-board__group-section fund-bucket-board__group-section--ungrouped">
+          <div className="fund-bucket-board__ungrouped-header">
+            <span className="fund-bucket-board__ungrouped-label">Ungrouped</span>
+          </div>
+          <div className="fund-bucket-board__grid">
+            {ungroupedFunds.map((fund) => (
+              <FundCard
+                key={fund.id}
+                fund={fund}
+                onEdit={onEditFund}
+                onAllocate={onAllocateFund}
+                onArchive={onArchiveFund}
+                onDelete={onDeleteFund}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Archived groups */}
+      {archivedGroups.length > 0 && (
+        <section className="fund-bucket-board__archived-section">
+          <p className="fund-bucket-board__archived-label">Archived groups</p>
+          {archivedGroups.map((group) => (
+            <FundGroupCard
+              key={group.id}
+              asSection
+              group={group}
+              fundCount={0}
+              onRestore={onRestoreGroup}
+            />
+          ))}
+        </section>
       )}
     </div>
   );

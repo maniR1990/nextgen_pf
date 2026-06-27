@@ -1,0 +1,57 @@
+@use '../../mixins' as m;
+
+.account-health-ring {
+  position: relative;
+  flex-shrink: 0;
+
+  &__svg {
+    display: block;
+  }
+
+  &__track {
+    fill: none;
+    stroke: var(--color-bg-subtle);
+    stroke-width: 5;
+  }
+
+  &__bar {
+    fill: none;
+    stroke-width: 5;
+    stroke-linecap: round;
+    transition: stroke-dashoffset var(--duration-slow) var(--ease-spring),
+      stroke var(--transition-default);
+
+    .account-health-ring--healthy & {
+      stroke: var(--color-success);
+    }
+    .account-health-ring--ok & {
+      stroke: var(--color-warning);
+    }
+    .account-health-ring--low & {
+      stroke: var(--color-error);
+    }
+  }
+
+  &__label {
+    position: absolute;
+    inset: 0;
+    @include m.flex-center;
+    flex-direction: column;
+    gap: 1px;
+    pointer-events: none;
+  }
+
+  &__score {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__unit {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    line-height: 1;
+  }
+}

@@ -1,0 +1,223 @@
+@use '../../mixins' as m;
+
+.fund-group-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-bg-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-left: 4px solid var(--group-color, var(--color-border));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+
+  // ── Section-header mode ────────────────────────────────────────────────────
+  // Used in FundBucketBoard as a group section header (asSection prop)
+
+  &--section {
+    border: none;
+    border-left: 4px solid var(--group-color, var(--color-border));
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    padding: 0 0 var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  &__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &__title-wrap {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  &__name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    // In card mode (no title-wrap) name spans flex:1 itself
+    .fund-group-card:not(.fund-group-card--section) > &__header > & {
+      flex: 1;
+    }
+  }
+
+  &__desc-inline {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__desc {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+    line-height: var(--line-height-base);
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: var(--space-2);
+  }
+
+  &__count {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__add-fund {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-brand);
+    background: none;
+    border: var(--border-width) solid var(--color-brand);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-brand) 8%, var(--color-bg-surface));
+    }
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  &__menu-wrap {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
+  &__menu-trigger {
+    @include m.flex-center;
+    width: var(--space-5);
+    height: var(--space-5);
+    border: none;
+    background: none;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
+    transition: color var(--transition-fast);
+
+    &:hover {
+      color: var(--color-text);
+    }
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  &__menu {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    right: 0;
+    z-index: 20;
+    min-width: 8rem;
+    padding: var(--space-1);
+    background: var(--color-bg-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+
+  &__menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    background: none;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    cursor: pointer;
+    text-align: left;
+    transition: background var(--transition-fast);
+
+    &:hover {
+      background: var(--color-bg-subtle);
+    }
+    &--danger {
+      color: var(--color-error);
+    }
+    &--danger:hover {
+      background: color-mix(in srgb, var(--color-error) 8%, var(--color-bg-surface));
+    }
+    &--disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  }
+
+  &--archived {
+    opacity: 0.6;
+    border-left-color: var(--color-border);
+    background: var(--color-bg-subtle);
+
+    &.fund-group-card--section {
+      background: transparent;
+    }
+  }
+
+  &__archived-badge {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+    background: var(--color-bg-subtle);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-full);
+    padding: 1px var(--space-2);
+    flex-shrink: 0;
+  }
+
+  &__restore {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+    background: none;
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+
+    &:hover {
+      color: var(--color-brand);
+      border-color: var(--color-brand);
+    }
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+}
