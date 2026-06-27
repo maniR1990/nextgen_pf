@@ -1,7 +1,8 @@
 'use client';
 
+import { formatINRCompact } from '@/lib/utils/format';
 import type { FundGroupSummary } from '@/modules/fund-groups/fund-groups.types';
-import { MoreHorizontal, Plus } from 'lucide-react';
+import { ChevronDown, MoreHorizontal, Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export interface FundGroupCardProps {
@@ -13,6 +14,12 @@ export interface FundGroupCardProps {
   onRestore?: (group: FundGroupSummary) => void;
   /** Renders as a full-width section header bar instead of a standalone card */
   asSection?: boolean;
+  /** Controlled expand/collapse state (only used when asSection=true) */
+  isExpanded?: boolean;
+  /** Called when the toggle chevron is clicked */
+  onToggle?: () => void;
+  /** Sum of currentAmount for all funds in this group — shown in header meta */
+  totalAmount?: number;
 }
 
 export function FundGroupCard({
@@ -23,6 +30,9 @@ export function FundGroupCard({
   onDelete,
   onRestore,
   asSection = false,
+  isExpanded = true,
+  onToggle,
+  totalAmount,
 }: FundGroupCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -41,6 +51,7 @@ export function FundGroupCard({
   const rootClass = [
     'fund-group-card',
     asSection && 'fund-group-card--section',
+    asSection && !isExpanded && 'fund-group-card--collapsed',
     isArchived && 'fund-group-card--archived',
   ]
     .filter(Boolean)
@@ -112,56 +123,86 @@ export function FundGroupCard({
       className={rootClass}
       style={group.color ? ({ '--group-color': group.color } as React.CSSProperties) : undefined}
     >
-      <div className="fund-group-card__header">
-        <span
-          className="fund-group-card__dot"
-          style={{ backgroundColor: group.color ?? '#94a3b8' }}
-        />
-
-        {asSection ? (
-          <div className="fund-group-card__title-wrap">
-            <span className="fund-group-card__name">{group.name}</span>
-            {group.description && (
-              <span className="fund-group-card__desc-inline">{group.description}</span>
-            )}
-          </div>
-        ) : (
-          <span className="fund-group-card__name">{group.name}</span>
-        )}
-
-        {isArchived && <span className="fund-group-card__archived-badge">Archived</span>}
-
-        {/* Section-mode: Add Fund button sits in the header row */}
-        {asSection && !isArchived && onAddFund && (
+      {asSection ? (
+        // ── Section header mode ────────────────────────────────────────────
+        <div className="fund-group-card__header">
+          {/* Toggle button: chevron + dot + title */}
           <button
             type="button"
-            className="fund-group-card__add-fund"
-            aria-label={`Add fund to ${group.name}`}
-            onClick={() => onAddFund(group.id)}
+            className="fund-group-card__toggle-btn"
+            aria-expanded={isExpanded}
+            aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${group.name}`}
+            onClick={onToggle}
+            disabled={!onToggle}
           >
-            <Plus size={13} aria-hidden />
-            Add fund
+            <ChevronDown
+              size={15}
+              className={`fund-group-card__chevron${!isExpanded ? ' fund-group-card__chevron--collapsed' : ''}`}
+              aria-hidden
+            />
+            <span
+              className="fund-group-card__dot"
+              style={{ backgroundColor: group.color ?? '#94a3b8' }}
+            />
+            <span className="fund-group-card__title-wrap">
+              <span className="fund-group-card__name">{group.name}</span>
+              {group.description && (
+                <span className="fund-group-card__desc-inline">{group.description}</span>
+              )}
+            </span>
           </button>
-        )}
 
-        {/* Restore always visible in header (both modes for archived) */}
-        {isArchived && onRestore && asSection && (
-          <button
-            type="button"
-            className="fund-group-card__restore"
-            onClick={() => onRestore(group)}
-          >
-            Restore
-          </button>
-        )}
+          {/* Meta: fund count + total amount */}
+          {!isArchived && (
+            <span className="fund-group-card__section-meta">
+              {fundCount} {fundCount === 1 ? 'fund' : 'funds'}
+              {totalAmount != null && totalAmount > 0 && (
+                <> · {formatINRCompact(totalAmount)}</>
+              )}
+            </span>
+          )}
 
-        {kebabMenu}
-      </div>
+          {isArchived && <span className="fund-group-card__archived-badge">Archived</span>}
 
-      {/* Card-mode only: description paragraph + footer row */}
-      {!asSection && (
+          {!isArchived && onAddFund && (
+            <button
+              type="button"
+              className="fund-group-card__add-fund"
+              aria-label={`Add fund to ${group.name}`}
+              onClick={() => onAddFund(group.id)}
+            >
+              <Plus size={13} aria-hidden />
+              Add fund
+            </button>
+          )}
+
+          {isArchived && onRestore && (
+            <button
+              type="button"
+              className="fund-group-card__restore"
+              onClick={() => onRestore(group)}
+            >
+              Restore
+            </button>
+          )}
+
+          {kebabMenu}
+        </div>
+      ) : (
+        // ── Standalone card mode ───────────────────────────────────────────
         <>
+          <div className="fund-group-card__header">
+            <span
+              className="fund-group-card__dot"
+              style={{ backgroundColor: group.color ?? '#94a3b8' }}
+            />
+            <span className="fund-group-card__name">{group.name}</span>
+            {isArchived && <span className="fund-group-card__archived-badge">Archived</span>}
+            {kebabMenu}
+          </div>
+
           {group.description && <p className="fund-group-card__desc">{group.description}</p>}
+
           <div className="fund-group-card__footer">
             {!isArchived && (
               <span className="fund-group-card__count">

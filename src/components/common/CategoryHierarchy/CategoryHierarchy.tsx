@@ -1,5 +1,6 @@
 'use client';
 
+import { Search } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import {
   type CategoryHierarchyCrudHandlers,
@@ -23,6 +24,31 @@ function toExpandedSet(ids: string[] | undefined): Set<string> {
   return new Set(ids ?? []);
 }
 
+function filterNodes(
+  nodes: CategoryHierarchyNodeJson[],
+  query: string,
+): CategoryHierarchyNodeJson[] {
+  const q = query.toLowerCase();
+  return nodes.flatMap((node) => {
+    const filteredChildren = filterNodes(node.children ?? [], q);
+    if (node.name.toLowerCase().includes(q)) {
+      return [{ ...node, children: node.children }];
+    }
+    if (filteredChildren.length > 0) {
+      return [{ ...node, children: filteredChildren }];
+    }
+    return [];
+  });
+}
+
+function collectIds(nodes: CategoryHierarchyNodeJson[]): string[] {
+  return nodes.flatMap((n) => [n.id, ...collectIds(n.children ?? [])]);
+}
+
+function toExpandedSetFromNodes(nodes: CategoryHierarchyNodeJson[]): Set<string> {
+  return new Set(collectIds(nodes));
+}
+
 export function CategoryHierarchy({
   config,
   defaultExpandedIds,
@@ -36,6 +62,8 @@ export function CategoryHierarchy({
   onDelete,
   className = '',
 }: CategoryHierarchyProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+
   const initialExpanded = useMemo(
     () => toExpandedSet(defaultExpandedIds ?? config.defaultExpandedIds),
     [defaultExpandedIds, config.defaultExpandedIds],
@@ -65,6 +93,20 @@ export function CategoryHierarchy({
     [controlledExpandedIds, expandedSet, onExpandedChange],
   );
 
+  const displayNodes = useMemo(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return config.nodes;
+    return filterNodes(config.nodes, trimmed);
+  }, [config.nodes, searchQuery]);
+
+  // When searching, expand every visible node so matches are always visible
+  const activeExpandedIds = useMemo(() => {
+    if (!searchQuery.trim()) return expandedSet;
+    return toExpandedSetFromNodes(displayNodes);
+  }, [searchQuery, displayNodes, expandedSet]);
+
+  const isEmpty = displayNodes.length === 0;
+
   return (
     <section
       className={[
@@ -90,6 +132,18 @@ export function CategoryHierarchy({
       )}
 
       <div className="cat-hierarchy__card">
+        <div className="cat-hierarchy__search-wrap">
+          <Search className="cat-hierarchy__search-icon" aria-hidden />
+          <input
+            type="search"
+            className="cat-hierarchy__search"
+            placeholder="Find category..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search categories"
+          />
+        </div>
+
         {config.nodes.length === 0 && onCreate ? (
           <div className="cat-hierarchy__empty">
             <p className="cat-hierarchy__empty-title">No categories yet</p>
@@ -116,9 +170,16 @@ export function CategoryHierarchy({
               ))}
             </div>
           </div>
+        ) : isEmpty ? (
+          <div className="cat-hierarchy__empty">
+            <p className="cat-hierarchy__empty-title">No results</p>
+            <p className="cat-hierarchy__empty-description">
+              No categories match &ldquo;{searchQuery}&rdquo;
+            </p>
+          </div>
         ) : (
           <ul className="cat-hierarchy__tree" role="tree" aria-label={config.ariaLabel}>
-            {config.nodes.map((node) => {
+            {displayNodes.map((node) => {
               const variant = config.variant ?? 'category';
               const groupType = node.type ?? getDefaultRootType(variant);
 
@@ -131,7 +192,7 @@ export function CategoryHierarchy({
                   density={config.density}
                   crudMode={config.crudMode}
                   showBudget={config.showBudget}
-                  expandedIds={expandedSet}
+                  expandedIds={activeExpandedIds}
                   onToggleExpand={handleToggleExpand}
                   readOnly={readOnly}
                   canEdit={canEdit}

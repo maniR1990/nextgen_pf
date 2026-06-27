@@ -33,6 +33,40 @@
     overflow: hidden;
   }
 
+  &__search-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  &__search-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  &__search {
+    flex: 1;
+    border: none;
+    background: none;
+    outline: none;
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    line-height: 1.4;
+
+    &::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    &::-webkit-search-cancel-button {
+      cursor: pointer;
+    }
+  }
+
   &__tree {
     list-style: none;
     margin: 0;
@@ -364,19 +398,28 @@
     box-shadow: none;
   }
 
+  .cat-hierarchy__search-wrap {
+    padding: var(--space-1-5) var(--space-3);
+  }
+
+  .cat-hierarchy__search {
+    font-size: var(--font-size-xs);
+  }
+
   .cat-hierarchy__tree {
     padding: var(--space-1) 0;
   }
 
   .cat-hierarchy__children {
-    padding-left: calc(var(--space-4) + var(--space-0-5));
-    margin-left: calc(var(--space-3) + var(--space-1));
+    padding-left: var(--space-4);
+    margin-left: var(--space-4);
+    border-left: 1px solid var(--color-border);
   }
 
   .cat-hierarchy__row {
     gap: var(--space-2);
-    padding: var(--space-1) var(--space-2);
-    min-height: 32px;
+    padding: var(--space-1) var(--space-3);
+    min-height: 30px;
   }
 
   .cat-hierarchy__toggle,
@@ -386,8 +429,8 @@
   }
 
   .cat-hierarchy__icon-box {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: var(--radius-sm);
     font-size: var(--font-size-sm);
   }
@@ -398,6 +441,10 @@
 
   .cat-hierarchy__label {
     font-size: var(--font-size-xs);
+
+    &--group {
+      font-size: var(--font-size-sm);
+    }
   }
 
   .cat-hierarchy__badge {
@@ -412,7 +459,7 @@
   }
 
   .cat-hierarchy__add-row {
-    padding: var(--space-0-5) var(--space-2) var(--space-1);
+    padding: var(--space-0-5) var(--space-3) var(--space-1);
   }
 
   .cat-hierarchy__add-btn {
