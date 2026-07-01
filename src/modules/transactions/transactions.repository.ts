@@ -2,7 +2,7 @@ import type { TxType } from '@/constants/finance';
 import { prisma } from '@/lib/db/prisma';
 import type { FinanceTransactionStatus, Prisma } from '@prisma/client';
 
-const TX_INCLUDE = {
+export const TX_INCLUDE = {
   category: { select: { id: true, name: true, path: true } },
   account: { select: { id: true, name: true, type: true } },
   toAccount: { select: { id: true, name: true } },

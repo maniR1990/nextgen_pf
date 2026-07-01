@@ -4,7 +4,7 @@ export const CATEGORY_FLOW_TYPE_SLUGS = ['income', 'expense', 'investment', 'tra
 
 export type CategoryFlowTypeSlug = (typeof CATEGORY_FLOW_TYPE_SLUGS)[number];
 
-export const CATEGORY_MAX_LEVEL = 2;
+export const CATEGORY_MAX_LEVEL = 3;
 
 export const MATCH_RULE_FIELDS = ['PAYEE', 'DESCRIPTION', 'AMOUNT'] as const;
 

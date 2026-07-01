@@ -1,11 +1,6 @@
+import { v1FromApiError } from '@/lib/api/v1/envelope';
 import { ApiError } from '../errors';
-import { error } from '../response';
 import type { Middleware } from './types';
-
-interface RateLimitOptions {
-  max: number;
-  windowMs: number;
-}
 
 const store = new Map<string, { count: number; resetAt: number }>();
 
@@ -13,7 +8,11 @@ export function withRateLimit({ max, window }: { max: number; window: string }):
   const windowMs = parseWindow(window);
 
   return (handler) => async (req, ctx) => {
-    const ip = req.headers.get('x-forwarded-for') ?? 'unknown';
+    // Use rightmost trusted IP to prevent X-Forwarded-For spoofing.
+    // Attackers can prepend arbitrary IPs; the rightmost value is written
+    // by the last trusted proxy and cannot be spoofed by clients.
+    const forwarded = req.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',').at(-1)!.trim() : 'unknown';
     const now = Date.now();
     const entry = store.get(ip);
 
@@ -23,7 +22,7 @@ export function withRateLimit({ max, window }: { max: number; window: string }):
     }
 
     if (entry.count >= max) {
-      return error(new ApiError('Too many requests', 429, 'RATE_LIMITED'));
+      return v1FromApiError(new ApiError('Too many requests', 429, 'RATE_LIMITED'));
     }
 
     entry.count += 1;

@@ -15,7 +15,7 @@ function mapCategoryNode(node: CategoryTreeNode): CategoryHierarchyNodeJson {
     emoji,
     icon,
     color: node.color ?? undefined,
-    readOnly: node.isSystem,
+    readOnly: node.level === 0,
     children: node.children.map(mapCategoryNode),
   };
 }

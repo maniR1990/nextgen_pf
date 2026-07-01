@@ -8,6 +8,8 @@ export const AUTH = {
   LOCKOUT_DURATION_MS: 15 * 60 * 1000,
   COOKIE_ACCESS: 'access_token',
   COOKIE_REFRESH: 'refresh_token',
+  COOKIE_LAST_ACTIVE: 'last_active',
+  INACTIVITY_TIMEOUT_SEC: 30 * 60, // 30 minutes
 } as const;
 
 export const AUTH_MESSAGES = {

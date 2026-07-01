@@ -67,6 +67,29 @@
     }
   }
 
+  &__collapse-btn {
+    flex-shrink: 0;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-semibold);
+    color: var(--color-brand);
+    white-space: nowrap;
+    transition: opacity var(--transition-fast);
+
+    &:hover {
+      opacity: 0.75;
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
+      border-radius: var(--radius-sm);
+    }
+  }
+
   &__tree {
     list-style: none;
     margin: 0;

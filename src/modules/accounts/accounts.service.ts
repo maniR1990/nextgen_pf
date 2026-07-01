@@ -10,6 +10,10 @@ import {
   NotFoundError,
 } from '@/lib/api/errors';
 import { buildMeta } from '@/lib/api/pagination';
+import { applyDeltas, getBalanceDeltas, reconcileAccount } from '@/lib/balance-engine';
+import { prisma } from '@/lib/db/prisma';
+import { getLogger } from '@/lib/logger';
+import { TX_INCLUDE } from '@/modules/transactions/transactions.repository';
 import { AccountsRepository } from './accounts.repository';
 import type {
   AccountDetail,
@@ -220,7 +224,7 @@ export const AccountsService = {
       icon: dto.icon,
       note: dto.note,
       tags: dto.tags ?? [],
-      openedOn: dto.openedOn ? new Date(dto.openedOn) : new Date(),
+      openedOn: dto.openedOn ? new Date(`${dto.openedOn}T00:00:00`) : new Date(),
     });
 
     if (dto.fundAllocations?.length) {
@@ -270,7 +274,14 @@ export const AccountsService = {
       ...(dto.groupId !== undefined && { groupId: dto.groupId }),
       ...(dto.institutionId !== undefined && { institutionId: dto.institutionId ?? null }),
       ...(dto.subtype !== undefined && { subtype: dto.subtype }),
-      ...(dto.balance !== undefined && { balance: dto.balance, balanceAsOf: new Date() }),
+      ...(dto.balance !== undefined && {
+        balance: dto.balance,
+        balanceAsOf: dto.balanceAsOf ? new Date(dto.balanceAsOf) : new Date(),
+      }),
+      ...(dto.balanceAsOf !== undefined &&
+        dto.balance === undefined && {
+          balanceAsOf: new Date(dto.balanceAsOf),
+        }),
       ...(dto.openingBalance !== undefined && { openingBalance: dto.openingBalance }),
       ...(dto.currency !== undefined && { currency: dto.currency }),
       ...(dto.accountNumber !== undefined && { accountNumber: dto.accountNumber }),
@@ -310,7 +321,7 @@ export const AccountsService = {
       ...(dto.icon !== undefined && { icon: dto.icon }),
       ...(dto.note !== undefined && { note: dto.note }),
       ...(dto.tags !== undefined && { tags: dto.tags }),
-      ...(dto.openedOn !== undefined && { openedOn: new Date(dto.openedOn) }),
+      ...(dto.openedOn !== undefined && { openedOn: new Date(`${dto.openedOn}T00:00:00`) }),
     });
 
     const linkedAccounts =
@@ -330,24 +341,29 @@ export const AccountsService = {
     const account = await AccountsRepository.findById(id);
     assertOwned(account, userId);
 
-    const delta = balance - account.balance;
-    if (delta === 0) {
-      return enrichDetail(account, [], []);
-    }
+    const diff = balance - account.balance;
+    if (diff === 0) return enrichDetail(account, [], []);
 
     const txDate = options?.date ? new Date(options.date) : new Date();
     const { year, month } = budgetPeriodFromDate(txDate);
+    const type = diff > 0 ? ('INCOME' as const) : ('EXPENSE' as const);
+    const amount = Math.abs(diff);
 
-    const result = await AccountsRepository.runTransaction(async (tx) => {
+    // The journal entry records WHY the balance changed. We then set balance
+    // directly to the user's target (not via increment) so that the stored
+    // balance equals exactly what the user asked for even if there was prior
+    // drift. reconcileAccount will count this entry when recomputing, so the
+    // ledger and stored balance stay consistent going forward.
+    await prisma.$transaction(async (tx) => {
       await tx.financeTransaction.create({
         data: {
           user: { connect: { id: userId } },
           account: { connect: { id } },
-          type: delta > 0 ? 'INCOME' : 'EXPENSE',
+          type,
           date: txDate,
           budgetPeriodYear: year,
           budgetPeriodMonth: month,
-          amount: Math.abs(delta),
+          amount,
           paymentMethod: 'AUTO_DEBIT',
           isPlanned: false,
           isRecurring: false,
@@ -355,8 +371,10 @@ export const AccountsService = {
           merchant: BALANCE_ADJUSTMENT_MERCHANT,
           notes: options?.note ?? `Balance adjusted from ₹${account.balance} to ₹${balance}`,
         },
+        include: TX_INCLUDE,
       });
 
+      // Set exact target, not increment — guards against compounding on drifted accounts.
       await tx.account.update({
         where: { id },
         data: { balance, balanceAsOf: txDate },
@@ -419,7 +437,14 @@ export const AccountsService = {
     const txDate = input.date ? new Date(input.date) : new Date();
     const { year, month } = budgetPeriodFromDate(txDate);
 
-    const result = await AccountsRepository.runTransaction(async (tx) => {
+    const delta = getBalanceDeltas({
+      type: 'TRANSFER',
+      amount: input.amount,
+      accountId: fromAccountId,
+      toAccountId: input.toAccountId,
+    });
+
+    return prisma.$transaction(async (tx) => {
       await tx.financeTransaction.create({
         data: {
           user: { connect: { id: userId } },
@@ -436,31 +461,22 @@ export const AccountsService = {
           status: 'CLEARED',
           notes: input.note,
         },
+        include: TX_INCLUDE,
       });
 
-      const [updatedFrom, updatedTo] = await Promise.all([
-        tx.account.update({
+      await applyDeltas(tx, delta);
+
+      return Promise.all([
+        tx.account.findUniqueOrThrow({
           where: { id: fromAccountId },
-          data: {
-            balance: fromAccount.balance - input.amount,
-            balanceAsOf: txDate,
-          },
           select: { id: true, balance: true },
         }),
-        tx.account.update({
+        tx.account.findUniqueOrThrow({
           where: { id: input.toAccountId },
-          data: {
-            balance: toAccount.balance + input.amount,
-            balanceAsOf: txDate,
-          },
           select: { id: true, balance: true },
         }),
-      ]);
-
-      return { updatedFrom, updatedTo };
+      ]).then(([updatedFrom, updatedTo]) => ({ updatedFrom, updatedTo }));
     });
-
-    return result;
   },
 
   async getHealth(id: string, userId: string): Promise<AccountHealth> {
@@ -477,10 +493,23 @@ export const AccountsService = {
     const now = new Date();
     const horizon = new Date(now.getTime() + UPCOMING_EVENTS_DAYS * 86_400_000);
 
-    const upcomingEvents =
+    const [upcomingEvents, reconciliation] = await Promise.all([
       fundIds.length > 0
-        ? await AccountsRepository.findUpcomingEventsForAccount(userId, fundIds, now, horizon)
-        : [];
+        ? AccountsRepository.findUpcomingEventsForAccount(userId, fundIds, now, horizon)
+        : Promise.resolve([]),
+      reconcileAccount(id),
+    ]);
+
+    // Log drift server-side so it is detectable without user action.
+    // Does NOT auto-heal — a human or explicit reconcile endpoint must approve that.
+    if (reconciliation.isDrifted) {
+      getLogger('AccountsService').warn('balance-drift', {
+        accountId: id,
+        stored: reconciliation.storedBalance,
+        computed: reconciliation.computedBalance,
+        drift: reconciliation.drift,
+      });
+    }
 
     return computeAccountHealth({
       balance: account.balance,
@@ -489,6 +518,7 @@ export const AccountsService = {
       archivedAt: account.archivedAt,
       fundFillPercent,
       upcomingEvents,
+      reconciliation,
     });
   },
 };

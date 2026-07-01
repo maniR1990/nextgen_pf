@@ -1058,6 +1058,16 @@ model Budget {
 
   notes            String?
 
+  isRecurring      Boolean      @default(false)
+
+  isUnplanned      Boolean      @default(false)
+
+  dueDay           Int?
+
+  createdAt        DateTime     @default(now())
+
+  updatedAt        DateTime     @updatedAt
+
 
 
   @@unique([userId, period, year, month, categoryId])
@@ -1467,6 +1477,8 @@ enum AccountType {
   CHIT_FUND
 
   ESOP
+
+  PHYSICAL_ASSET
 
 
 

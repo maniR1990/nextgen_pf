@@ -1,7 +1,9 @@
 'use client';
 
+import { apiPostV1 } from '@/lib/query/fetcher';
 import type { BudgetImpact, CategoryOption } from '@/types/finance';
-import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
 interface Props {
   categoryId: string;
@@ -9,92 +11,88 @@ interface Props {
   categories: CategoryOption[];
 }
 
+interface ImpactResponse {
+  planned?: number;
+  spent: number;
+}
+
+/**
+ * Real-time budget impact for the transaction form.
+ *
+ * Uses a debounced query key so the server isn't hit on every keystroke.
+ * React Query caches results per (categoryId, amount, month) — if the user
+ * types the same amount twice, the second render is instant.
+ */
 export function useBudgetImpact({ categoryId, amount, categories }: Props): BudgetImpact | null {
-  const [impact, setImpact] = useState<BudgetImpact | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const amountNum = Number.parseFloat(amount) || 0;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
 
+  // Debounce the key: only update after the user stops typing for 500 ms
+  const [debouncedKey, setDebouncedKey] = useState({ categoryId, amountNum });
   useEffect(() => {
-    if (!categoryId) {
-      setImpact(null);
-      return;
-    }
+    const t = setTimeout(() => setDebouncedKey({ categoryId, amountNum }), 500);
+    return () => clearTimeout(t);
+  }, [categoryId, amountNum]);
 
-    const amountNum = Number.parseFloat(amount) || 0;
-    const category = categories.find((c) => c.id === categoryId);
-    if (!category) {
-      setImpact(null);
-      return;
-    }
+  const category = categories.find((c) => c.id === debouncedKey.categoryId);
+  const enabled = !!debouncedKey.categoryId && debouncedKey.amountNum > 0 && !!category;
 
-    if (timerRef.current) clearTimeout(timerRef.current);
+  const { data } = useQuery<ImpactResponse | null>({
+    queryKey: ['budget-impact', debouncedKey.categoryId, debouncedKey.amountNum, year, month],
+    queryFn: async () => {
+      const res = await apiPostV1<ImpactResponse>('/api/v1/budget/impact', {
+        categoryId: debouncedKey.categoryId,
+        amount: debouncedKey.amountNum,
+        year,
+        month,
+      });
+      return res;
+    },
+    enabled,
+    staleTime: 60_000, // same category+amount combo reused for 1 min
+    gcTime: 2 * 60_000,
+    // On network error, fall back silently — component shows nothing
+    retry: false,
+  });
 
-    timerRef.current = setTimeout(async () => {
-      try {
-        const now = new Date();
-        const res = await fetch('/api/v1/budget/impact', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            categoryId,
-            amount: amountNum,
-            year: now.getFullYear(),
-            month: now.getMonth() + 1,
-          }),
-        });
+  if (!category || !debouncedKey.categoryId) return null;
 
-        if (!res.ok) throw new Error('impact fetch failed');
-
-        const json = await res.json();
-        const d = json.data;
-        if (!d) return;
-
-        const planned = d.planned ?? category.plannedAmount ?? 0;
-        if (planned === 0) {
-          setImpact(null);
-          return;
-        }
-
-        const newSpent = d.spent + amountNum;
-        const remaining = planned - newSpent;
-        const percentUsed = Math.min(Math.round((newSpent / planned) * 100), 100);
-        let state: BudgetImpact['state'] = 'ok';
-        if (remaining < 0) state = 'over';
-        else if (percentUsed >= 80) state = 'warning';
-
-        setImpact({
-          categoryId,
-          categoryLabel: category.label,
-          planned,
-          spent: d.spent,
-          thisTx: amountNum,
-          remaining,
-          percentUsed,
-          state,
-        });
-      } catch {
-        // Fallback to local calculation from category data
-        const planned = category.plannedAmount ?? 0;
-        if (!planned) {
-          setImpact(null);
-          return;
-        }
-        setImpact({
-          categoryId,
-          categoryLabel: category.label,
-          planned,
-          spent: 0,
-          thisTx: amountNum,
-          remaining: planned - amountNum,
-          percentUsed: Math.min(Math.round((amountNum / planned) * 100), 100),
-          state: amountNum > planned ? 'over' : amountNum / planned >= 0.8 ? 'warning' : 'ok',
-        });
-      }
-    }, 500);
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+  // Server returned data
+  if (data) {
+    const planned = data.planned ?? category.plannedAmount ?? 0;
+    if (!planned) return null;
+    const newSpent = data.spent + debouncedKey.amountNum;
+    const remaining = planned - newSpent;
+    const percentUsed = Math.min(Math.round((newSpent / planned) * 100), 100);
+    const state: BudgetImpact['state'] =
+      remaining < 0 ? 'over' : percentUsed >= 80 ? 'warning' : 'ok';
+    return {
+      categoryId: debouncedKey.categoryId,
+      categoryLabel: category.label,
+      planned,
+      spent: data.spent,
+      thisTx: debouncedKey.amountNum,
+      remaining,
+      percentUsed,
+      state,
     };
-  }, [categoryId, amount, categories]);
+  }
 
-  return impact;
+  // Fallback: compute locally from cached category planned amount while query loads
+  const planned = category.plannedAmount ?? 0;
+  if (!planned || !enabled) return null;
+  const remaining = planned - debouncedKey.amountNum;
+  const percentUsed = Math.min(Math.round((debouncedKey.amountNum / planned) * 100), 100);
+  return {
+    categoryId: debouncedKey.categoryId,
+    categoryLabel: category.label,
+    planned,
+    spent: 0,
+    thisTx: debouncedKey.amountNum,
+    remaining,
+    percentUsed,
+    state: remaining < 0 ? 'over' : percentUsed >= 80 ? 'warning' : 'ok',
+  };
 }

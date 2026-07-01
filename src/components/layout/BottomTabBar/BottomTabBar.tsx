@@ -44,7 +44,7 @@ export function BottomTabBar({ config, onFabAction }: BottomTabBarProps) {
         onClose={() => setRadialOpen(false)}
       />
 
-      <ul className="bottom-tab-bar__tabs" role="list">
+      <ul className="bottom-tab-bar__tabs">
         {config.tabBar.map((item) => {
           if (item.isFab) {
             return (

@@ -99,8 +99,8 @@ export function FundDetailClient() {
             <div className="fund-detail__detail-pane">
               {accountLoading && (
                 <div
-                  className="fund-detail__detail-loading"
                   role="status"
+                  className="fund-detail__detail-loading"
                   aria-label="Loading account"
                 >
                   <Skeleton variant="rect" height={100} />

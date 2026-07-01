@@ -1,7 +1,9 @@
-import { DashboardSectionPage } from '../_components/DashboardSectionPage';
+import { BudgetView } from '@/components/features/budget/BudgetView/BudgetView';
 
 export default function BudgetPage() {
   return (
-    <DashboardSectionPage title="Budget" description="Track planned vs spent across categories." />
+    <div className="budget-page">
+      <BudgetView />
+    </div>
   );
 }

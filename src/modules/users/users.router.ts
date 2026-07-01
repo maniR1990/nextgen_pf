@@ -1,10 +1,13 @@
 import { isApiError } from '@/lib/api/errors';
 import { compose, withAuth, withRateLimit, withRole, withValidation } from '@/lib/api/middleware';
 import { parsePagination } from '@/lib/api/pagination';
-import { created, error, ok, paginated } from '@/lib/api/response';
+import { v1Created, v1FromApiError, v1Ok, v1OkMeta } from '@/lib/api/v1/envelope';
+import { getLogger } from '@/lib/logger';
 import { Role } from '@prisma/client';
 import { CreateUserSchema, UpdateUserSchema } from './users.schema';
 import { UserService } from './users.service';
+
+const log = getLogger('UsersRouter');
 
 export const handleGetUsers = compose(
   withAuth(),
@@ -15,9 +18,10 @@ export const handleGetUsers = compose(
     const url = new URL(req.url);
     const pagination = parsePagination(url);
     const { data, meta } = await UserService.getUsers(pagination);
-    return paginated(data, meta);
+    return v1OkMeta(data, meta);
   } catch (err) {
-    if (isApiError(err)) return error(err);
+    log.error('getUsers', { err });
+    if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }
 });
@@ -30,9 +34,10 @@ export const handleCreateUser = compose(
   try {
     const body = await req.json();
     const user = await UserService.createUser(body);
-    return created(user);
+    return v1Created(user);
   } catch (err) {
-    if (isApiError(err)) return error(err);
+    log.error('createUser', { err });
+    if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }
 });
@@ -40,9 +45,10 @@ export const handleCreateUser = compose(
 export const handleGetUser = compose(withAuth())(async (_req, ctx) => {
   try {
     const user = await UserService.getUserById(ctx.params!.id);
-    return ok(user);
+    return v1Ok(user);
   } catch (err) {
-    if (isApiError(err)) return error(err);
+    log.error('getUser', { err });
+    if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }
 });
@@ -55,9 +61,10 @@ export const handleUpdateUser = compose(
   try {
     const body = await req.json();
     const user = await UserService.updateUser(ctx.params!.id, body);
-    return ok(user);
+    return v1Ok(user);
   } catch (err) {
-    if (isApiError(err)) return error(err);
+    log.error('updateUser', { err });
+    if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }
 });
@@ -68,9 +75,10 @@ export const handleDeleteUser = compose(
 )(async (_req, ctx) => {
   try {
     await UserService.deleteUser(ctx.params!.id);
-    return ok({ deleted: true });
+    return v1Ok({ deleted: true });
   } catch (err) {
-    if (isApiError(err)) return error(err);
+    log.error('deleteUser', { err });
+    if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }
 });

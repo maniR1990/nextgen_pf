@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 import type { AppEvents } from './events.types';
 
 declare global {
@@ -16,4 +16,7 @@ class TypedEventBus extends EventEmitter {
   }
 }
 
-export const eventBus = global.__eventBus ?? (global.__eventBus = new TypedEventBus());
+if (!global.__eventBus) {
+  global.__eventBus = new TypedEventBus();
+}
+export const eventBus = global.__eventBus;

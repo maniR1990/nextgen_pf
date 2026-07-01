@@ -8,11 +8,13 @@ import { Modal } from '@/components/ui/Modal';
 import {
   ACCOUNT_TYPE_META,
   type AccountTypeMeta,
+  isGoalLinkableAccountType,
   isLiabilityAccountType,
 } from '@/constants/accounts';
-import type { AccountGroupWithAccounts } from '@/modules/accounts/accounts.types';
+import type { AccountGroupWithAccounts, AccountSummary } from '@/modules/accounts/accounts.types';
 import type { CreateAccountDto } from '@/modules/accounts/accounts.types';
 import type { AccountType } from '@prisma/client';
+import { Target } from 'lucide-react';
 import { useState } from 'react';
 import { AccountTypeGrid } from '../AccountTypeGrid';
 import { InstitutionSelector } from '../InstitutionSelector';
@@ -21,7 +23,9 @@ export interface AccountFormWizardProps {
   open: boolean;
   onClose: () => void;
   accountGroups: AccountGroupWithAccounts[];
-  onSubmit: (dto: CreateAccountDto) => Promise<void>;
+  /** Lightweight fund list for the goal-link step */
+  funds?: { id: string; name: string; color?: string | null }[];
+  onSubmit: (dto: CreateAccountDto, goalFundId?: string) => Promise<AccountSummary | undefined>;
 }
 
 interface WizardState {
@@ -38,9 +42,10 @@ interface WizardState {
   emi: string;
   remainingEmis: string;
   note: string;
+  goalFundId: string;
 }
 
-const STEPS = ['Select Type', 'Institution', 'Details & Balance', 'Fund Links', 'Review & Save'];
+const STEPS = ['Select Type', 'Institution', 'Details & Balance', 'Goal Link', 'Review & Save'];
 const TITLE_ID = 'account-wizard-title';
 
 function initialState(): WizardState {
@@ -58,6 +63,7 @@ function initialState(): WizardState {
     emi: '',
     remainingEmis: '',
     note: '',
+    goalFundId: '',
   };
 }
 
@@ -65,6 +71,7 @@ export function AccountFormWizard({
   open,
   onClose,
   accountGroups,
+  funds = [],
   onSubmit,
 }: AccountFormWizardProps) {
   const [step, setStep] = useState(1);
@@ -76,9 +83,12 @@ export function AccountFormWizard({
 
   const groupOptions = accountGroups.map((g) => ({ value: g.id, label: g.name }));
   const isLiability = state.type ? isLiabilityAccountType(state.type) : false;
+  const isGoalLinkable = state.type ? isGoalLinkableAccountType(state.type) : false;
   const typeMeta: AccountTypeMeta | null = state.type
     ? (ACCOUNT_TYPE_META[state.type] as AccountTypeMeta)
     : null;
+
+  const fundOptions = funds.map((f) => ({ value: f.id, label: f.name }));
 
   function validate(): string {
     if (step === 1 && !state.type) return 'Please select an account type';
@@ -94,7 +104,7 @@ export function AccountFormWizard({
       return;
     }
     setError('');
-    setStep((s) => Math.min(s + 1, 5));
+    setStep((s) => Math.min(s + 1, STEPS.length));
   }
 
   function handleBack() {
@@ -115,7 +125,8 @@ export function AccountFormWizard({
         type: state.type,
         groupId: state.groupId,
         balance: Number.parseFloat(state.balance) || 0,
-        openingBalance: Number.parseFloat(state.openingBalance) || 0,
+        openingBalance:
+          Number.parseFloat(state.openingBalance) || Number.parseFloat(state.balance) || 0,
         accountNumber: state.accountNumber || undefined,
         ifscCode: state.ifscCode || undefined,
         creditLimit: state.creditLimit ? Number.parseFloat(state.creditLimit) : undefined,
@@ -124,7 +135,7 @@ export function AccountFormWizard({
         remainingEmis: state.remainingEmis ? Number.parseInt(state.remainingEmis) : undefined,
         note: state.note || undefined,
       };
-      await onSubmit(dto);
+      await onSubmit(dto, state.goalFundId || undefined);
       setState(initialState());
       setStep(1);
       onClose();
@@ -142,6 +153,8 @@ export function AccountFormWizard({
     onClose();
   }
 
+  const selectedGoal = funds.find((f) => f.id === state.goalFundId);
+
   return (
     <Modal open={open} onClose={handleClose} titleId={TITLE_ID} size="lg">
       <Modal.Header>
@@ -154,7 +167,6 @@ export function AccountFormWizard({
           </span>
         </div>
 
-        {/* Step progress bar */}
         <nav className="account-wizard__steps" aria-label="Wizard steps">
           {STEPS.map((label, i) => (
             <div
@@ -232,10 +244,10 @@ export function AccountFormWizard({
             <AmountInput
               value={state.balance}
               onChange={(v) => set({ balance: v })}
-              label="Current Balance (₹)"
+              label={isGoalLinkable ? 'Current Value (₹)' : 'Current Balance (₹)'}
               showChips={false}
             />
-            {!isLiability && (
+            {!isLiability && !isGoalLinkable && (
               <AmountInput
                 value={state.openingBalance}
                 onChange={(v) => set({ openingBalance: v })}
@@ -331,14 +343,53 @@ export function AccountFormWizard({
           </div>
         )}
 
-        {/* Step 4: Fund Links (informational — full allocation requires account to exist) */}
+        {/* Step 4: Goal Link */}
         {step === 4 && (
-          <div className="account-wizard__step-body account-wizard__step-body--info">
-            <p className="account-wizard__info-text">
-              Fund links can be configured after the account is created. You'll be able to allocate
-              percentages or fixed amounts from this account to your fund buckets (Emergency, Ops,
-              Goals, etc.).
-            </p>
+          <div className="account-wizard__step-body">
+            {isGoalLinkable && funds.length > 0 ? (
+              <>
+                <div className="account-wizard__goal-intro">
+                  <Target size={20} className="account-wizard__goal-icon" aria-hidden />
+                  <div>
+                    <p className="account-wizard__goal-heading">Link to a goal</p>
+                    <p className="account-wizard__goal-subtext">
+                      The entire balance of this{' '}
+                      <strong>{typeMeta?.name ?? 'investment account'}</strong> will count toward
+                      the selected goal. You can check the live value on your{' '}
+                      {typeMeta?.name ?? 'provider'} platform and update it here anytime.
+                    </p>
+                  </div>
+                </div>
+                <SelectField
+                  label="Goal (optional)"
+                  options={fundOptions}
+                  placeholder="— No goal link —"
+                  value={state.goalFundId}
+                  onChange={(e) => set({ goalFundId: e.target.value })}
+                />
+                {selectedGoal && (
+                  <p className="account-wizard__goal-confirm">
+                    ✓ <strong>{state.name || 'This account'}</strong> will be added as a dedicated
+                    source for <strong>{selectedGoal.name}</strong>.
+                  </p>
+                )}
+              </>
+            ) : isGoalLinkable && funds.length === 0 ? (
+              <div className="account-wizard__step-body--info">
+                <p className="account-wizard__info-text">
+                  Create a fund goal first (in the Funds tab), then you can link this investment
+                  account to it. You can also link it later from the fund's allocation settings.
+                </p>
+              </div>
+            ) : (
+              <div className="account-wizard__step-body--info">
+                <p className="account-wizard__info-text">
+                  Fund allocations — where a percentage or fixed amount of this account is reserved
+                  for a specific goal — can be configured after the account is created via the Funds
+                  tab.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -363,9 +414,15 @@ export function AccountFormWizard({
                 <dd>{accountGroups.find((g) => g.id === state.groupId)?.name ?? '—'}</dd>
               </div>
               <div className="account-wizard__review-row">
-                <dt>Current Balance</dt>
+                <dt>{isGoalLinkable ? 'Current Value' : 'Current Balance'}</dt>
                 <dd>₹{Number.parseFloat(state.balance || '0').toLocaleString('en-IN')}</dd>
               </div>
+              {selectedGoal && (
+                <div className="account-wizard__review-row">
+                  <dt>Linked Goal</dt>
+                  <dd>{selectedGoal.name}</dd>
+                </div>
+              )}
               {state.accountNumber && (
                 <div className="account-wizard__review-row">
                   <dt>Account Number</dt>

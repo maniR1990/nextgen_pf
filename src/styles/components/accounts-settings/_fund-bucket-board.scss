@@ -1,107 +1,190 @@
 @use '../../mixins' as m;
 
 .fund-bucket-board {
+  display: flex;
+  flex-direction: column;
   flex: 1;
-  padding: var(--space-4);
+  min-height: 0;
+  max-width: 50%;
 
-  @include m.respond-to(md) {
-    padding: var(--space-5) var(--space-6);
+  @media (max-width: 1024px) {
+    max-width: 100%;
   }
 
-  // ── Page header ──────────────────────────────────────────────────────────
+  // ── Compact toolbar ───────────────────────────────────────────────────────
 
-  &__page-header {
-    margin-bottom: var(--space-5);
-    padding-bottom: var(--space-4);
-    border-bottom: var(--border-width) solid var(--color-border);
-  }
-
-  &__breadcrumb {
+  &__toolbar {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
-    margin-bottom: var(--space-2);
-  }
-
-  &__breadcrumb-item {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-muted);
-
-    &--active {
-      color: var(--color-text);
-      font-weight: var(--font-weight-medium);
-    }
-  }
-
-  &__breadcrumb-sep {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-muted);
-  }
-
-  &__heading-row {
-    @include m.flex-between;
     gap: var(--space-3);
-    align-items: flex-start;
+    padding: var(--space-3) var(--space-5);
+    border-bottom: var(--border-width) solid var(--color-border);
+    flex-wrap: wrap;
+    flex-shrink: 0;
   }
 
-  &__heading {
-    font-size: var(--font-size-xl);
+  &__title {
+    font-size: var(--font-size-base);
     font-weight: var(--font-weight-bold);
     color: var(--color-text);
-    line-height: var(--line-height-tight);
-    margin: 0 0 var(--space-1);
+    margin: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 
-    @include m.respond-to(md) {
-      font-size: var(--font-size-2xl);
+  &__search-wrap {
+    flex: 1;
+    min-width: 140px;
+    max-width: 320px;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  &__search-icon {
+    position: absolute;
+    left: var(--space-2);
+    display: flex;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  &__search-input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 32px;
+    padding: 0 var(--space-7) 0 calc(var(--space-2) + 14px + var(--space-2));
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: var(--color-bg-subtle);
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+
+    &::placeholder {
+      color: var(--color-text-muted);
+    }
+    &:focus {
+      outline: none;
+      border-color: var(--color-brand);
+      background: var(--color-bg-surface);
     }
   }
 
-  &__heading-sub {
-    font-size: var(--font-size-xs);
+  &__search-clear {
+    position: absolute;
+    right: var(--space-2);
+    @include m.flex-center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: none;
+    border-radius: var(--radius-full);
     color: var(--color-text-muted);
-    margin: 0;
-    line-height: var(--line-height-base);
+    cursor: pointer;
+    padding: 0;
+
+    &:hover { color: var(--color-text); }
+    &:focus-visible { @include m.focus-ring; }
   }
 
-  &__header-actions {
+  &__toolbar-end {
     display: flex;
     gap: var(--space-2);
     align-items: center;
     flex-shrink: 0;
+    margin-left: auto;
   }
 
-  // ── Fund card grid ────────────────────────────────────────────────────────
+  // ── Stats strip ───────────────────────────────────────────────────────────
 
-  &__grid {
-    display: grid;
-    grid-template-columns: 1fr;
+  &__stats {
+    display: flex;
+    align-items: center;
     gap: var(--space-3);
-
-    @include m.respond-to(sm) {
-      grid-template-columns: repeat(2, 1fr);
-    }
-    @include m.respond-to(lg) {
-      grid-template-columns: repeat(3, 1fr);
-    }
-    @include m.respond-to(xl) {
-      grid-template-columns: repeat(4, 1fr);
-    }
+    padding: var(--space-2) var(--space-5);
+    border-bottom: var(--border-width) solid var(--color-border);
+    background: var(--color-bg-subtle);
+    flex-shrink: 0;
+    flex-wrap: wrap;
   }
 
-  // ── Group section (header + fund grid) ────────────────────────────────────
+  &__stat {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-1);
+    color: var(--color-text);
+
+    &--warn { color: var(--color-warning); }
+    &--good { color: var(--color-success); }
+  }
+
+  &__stat-alert-icon {
+    align-self: center;
+    flex-shrink: 0;
+  }
+
+  &__stat-val {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    color: inherit;
+  }
+
+  &__stat-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+
+    .fund-bucket-board__stat--warn & { color: var(--color-warning); }
+    .fund-bucket-board__stat--good & { color: var(--color-success); }
+  }
+
+  &__stat-sep {
+    display: inline-block;
+    width: 1px;
+    height: 12px;
+    background: var(--color-border);
+    flex-shrink: 0;
+  }
+
+  &__allocate-link {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-brand);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+
+    &:hover { text-decoration: underline; }
+    &:focus-visible { @include m.focus-ring; }
+  }
+
+  // ── Scrollable body ───────────────────────────────────────────────────────
+
+  &__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  // ── Group sections ────────────────────────────────────────────────────────
 
   &__group-section {
-    margin-top: var(--space-6);
-    padding-top: var(--space-5);
-    border-top: var(--border-width) solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
 
-    &:first-of-type {
-      margin-top: var(--space-4);
-    }
-
-    // ungrouped funds section — subtler divider
-    &--ungrouped {
-      border-top-style: dashed;
+    &--ungrouped .fund-bucket-board__ungrouped-header {
+      padding-top: var(--space-2);
+      border-top: 1px dashed var(--color-border);
     }
   }
 
@@ -109,7 +192,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-1);
   }
 
   &__ungrouped-label {
@@ -120,15 +203,30 @@
     letter-spacing: 0.06em;
   }
 
-  // ── Archived groups section ───────────────────────────────────────────────
+  // ── Collapsible group body ────────────────────────────────────────────────
+
+  &__group-body {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 220ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    &--collapsed { grid-template-rows: 0fr; }
+  }
+
+  &__group-body-inner {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  // ── Archived section ──────────────────────────────────────────────────────
 
   &__archived-section {
-    margin-top: var(--space-6);
-    padding-top: var(--space-4);
-    border-top: var(--border-width) solid var(--color-border);
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
+    padding-top: var(--space-3);
+    border-top: var(--border-width) solid var(--color-border);
+    margin-top: var(--space-2);
   }
 
   &__archived-label {
@@ -137,91 +235,36 @@
     color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    margin: 0 0 var(--space-1);
+    margin: 0;
   }
 
-  // ── Collapsible group body ────────────────────────────────────────────────
-
-  &__group-body {
-    display: grid;
-    grid-template-rows: 1fr;
-    transition: grid-template-rows 240ms cubic-bezier(0.4, 0, 0.2, 1);
-
-    &--collapsed {
-      grid-template-rows: 0fr;
-    }
-  }
-
-  &__group-body-inner {
-    min-height: 0;
-    overflow: hidden;
-    padding-bottom: var(--space-1); // breathing room for last row's box-shadow
-  }
+  // ── Empty / no-results ────────────────────────────────────────────────────
 
   &__empty-state {
     padding-block: var(--space-2);
   }
 
-  // Search bar ──────────────────────────────────────────────────────────────
-
-  &__search-wrap {
-    position: relative;
-    margin-bottom: var(--space-4);
-  }
-
-  &__search-icon {
-    position: absolute;
-    inset-inline-start: var(--space-3);
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--color-text-muted);
-    pointer-events: none;
+  &__empty-card {
     display: flex;
-  }
-
-  &__search-input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: var(--space-2-5) var(--space-3) var(--space-2-5) calc(var(--space-3) + 1.25rem + var(--space-2));
-    border: var(--border-width) solid var(--color-border);
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border: 1px dashed var(--color-border);
     border-radius: var(--radius-lg);
-    background: var(--color-bg-surface);
-    color: var(--color-text);
     font-size: var(--font-size-sm);
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-
-    &::placeholder {
-      color: var(--color-text-muted);
-    }
-
-    &:focus {
-      outline: none;
-      border-color: var(--color-brand);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 16%, transparent);
-    }
-  }
-
-  &__search-clear {
-    position: absolute;
-    inset-inline-end: var(--space-2);
-    top: 50%;
-    transform: translateY(-50%);
-    @include m.flex-center;
-    width: var(--space-6);
-    height: var(--space-6);
-    border: none;
-    background: none;
-    border-radius: var(--radius-md);
     color: var(--color-text-muted);
     cursor: pointer;
-    transition: color var(--transition-fast);
+    background: none;
+    width: 100%;
+    transition: border-color var(--transition-fast), background var(--transition-fast),
+      color var(--transition-fast);
 
     &:hover {
-      color: var(--color-text);
+      border-color: var(--color-brand);
+      background: color-mix(in srgb, var(--color-brand) 4%, var(--color-bg-surface));
+      color: var(--color-brand);
     }
-    &:focus-visible {
-      @include m.focus-ring;
-    }
+    &:focus-visible { @include m.focus-ring; }
   }
 
   &__no-results {
@@ -236,103 +279,5 @@
   &__no-results-label {
     font-weight: var(--font-weight-semibold);
     color: var(--color-text);
-  }
-
-  // ── Empty state card ──────────────────────────────────────────────────────
-
-  &__empty-card {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-3) var(--space-4);
-    border: 1px dashed var(--color-border);
-    border-radius: var(--radius-lg);
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-    cursor: pointer;
-    background: none;
-    transition: border-color var(--transition-fast), background var(--transition-fast),
-      color var(--transition-fast);
-    width: 100%;
-    grid-column: 1 / -1;
-
-    &:hover {
-      border-color: var(--color-brand);
-      background: color-mix(in srgb, var(--color-brand) 4%, var(--color-bg-surface));
-      color: var(--color-brand);
-    }
-
-    &:focus-visible {
-      @include m.focus-ring;
-    }
-  }
-
-  // ── Legacy / kept for backwards compat ───────────────────────────────────
-
-  &__group-menu {
-    position: relative;
-    display: inline-flex;
-  }
-
-  &__group-menu-trigger {
-    @include m.flex-center;
-    width: var(--space-5);
-    height: var(--space-5);
-    border: none;
-    background: none;
-    border-radius: var(--radius-sm);
-    color: var(--color-text-muted);
-    cursor: pointer;
-    padding: 0;
-    transition: color var(--transition-fast);
-
-    &:hover {
-      color: var(--color-text);
-    }
-    &:focus-visible {
-      @include m.focus-ring;
-    }
-  }
-
-  &__group-menu-panel {
-    position: absolute;
-    top: calc(100% + var(--space-1));
-    right: 0;
-    z-index: 20;
-    min-width: 8rem;
-    padding: var(--space-1);
-    background: var(--color-bg-surface);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
-  }
-
-  &__group-menu-item {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding: var(--space-2) var(--space-3);
-    background: none;
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    color: var(--color-text);
-    cursor: pointer;
-    text-align: left;
-    transition: background var(--transition-fast);
-
-    &:hover {
-      background: var(--color-bg-subtle);
-    }
-    &--danger {
-      color: var(--color-error);
-    }
-    &--danger:hover {
-      background: color-mix(in srgb, var(--color-error) 8%, var(--color-bg-surface));
-    }
-    &--disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
   }
 }

@@ -18,6 +18,7 @@ export const queryKeys = {
     lists: () => [...queryKeys.transactions.all, 'list'] as const,
     list: (filters: TransactionListFilters) =>
       [...queryKeys.transactions.lists(), filters] as const,
+    detail: (id: string) => [TRANSACTIONS_ROOT, 'detail', id] as const,
   },
   paymentSources: {
     all: ['payment-sources'] as const,
@@ -53,6 +54,10 @@ export const queryKeys = {
   reports: {
     all: ['reports'] as const,
     kpi: (year: number, month: number) => [...queryKeys.reports.all, 'kpi', year, month] as const,
+  },
+  budget: {
+    all: ['budget'] as const,
+    summary: (year: number, month: number) => ['budget', 'summary', year, month] as const,
   },
 };
 

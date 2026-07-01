@@ -81,6 +81,28 @@
     margin-top: var(--space-1);
   }
 
+  &__transfer-btn {
+    @include m.flex-center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border);
+    background: none;
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    cursor: pointer;
+    margin-left: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background var(--transition-fast), color var(--transition-fast);
+
+    &:hover {
+      background: var(--color-surface-raised);
+      color: var(--color-text-primary);
+    }
+  }
+
   &__close {
     @include m.flex-center;
     width: var(--space-8);
@@ -92,7 +114,7 @@
     cursor: pointer;
     flex-shrink: 0;
     transition: background var(--transition-fast), color var(--transition-fast);
-    margin-left: auto;
+    margin-left: unset;
 
     &:hover {
       background: var(--color-bg-subtle);
@@ -155,6 +177,55 @@
     font-weight: var(--font-weight-semibold);
     color: var(--color-text);
     font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5);
+
+    &--positive {
+      color: var(--color-success);
+    }
+    &--negative {
+      color: var(--color-error);
+    }
+    &--note {
+      font-weight: var(--font-weight-normal);
+      color: var(--color-text-muted);
+      font-size: var(--font-size-xs);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  }
+
+  &__kpi-badge {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: inherit;
+    opacity: 0.75;
+  }
+
+  &__kpi--full {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+
+    .account-detail-drawer__kpi-value {
+      flex-wrap: wrap;
+    }
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  &__tag {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-brand);
+    background: color-mix(in srgb, var(--color-brand) 10%, transparent);
+    border-radius: var(--radius-full);
+    padding: 1px var(--space-2);
   }
 
   &__activity {
@@ -183,8 +254,7 @@
   }
 
   &__activity-item {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
+    display: flex;
     gap: var(--space-3);
     align-items: center;
     padding: var(--space-2) var(--space-3);
@@ -195,9 +265,24 @@
     }
   }
 
+  &__activity-info {
+    @include m.flex-col;
+    gap: 1px;
+    min-width: 0;
+    flex: 1;
+  }
+
   &__activity-merchant {
     font-size: var(--font-size-sm);
     color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__activity-notes {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -209,11 +294,32 @@
     color: var(--color-text);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+
+    &--credit { color: var(--color-success); }
+    &--debit  { color: var(--color-danger);  }
+  }
+
+  &__activity-meta {
+    @include m.flex-col;
+    align-items: flex-end;
+    gap: 2px;
   }
 
   &__activity-date {
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  &__activity-status {
+    font-size: 9px;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--color-warning, #d97706);
+    background: color-mix(in srgb, var(--color-warning, #d97706) 12%, transparent);
+    border-radius: var(--radius-full);
+    padding: 1px var(--space-1-5);
     white-space: nowrap;
   }
 
@@ -382,9 +488,24 @@
     text-overflow: ellipsis;
   }
 
+  &__tx-sub {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
   &__tx-date {
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
+  }
+
+  &__tx-notes {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__tx-amount {

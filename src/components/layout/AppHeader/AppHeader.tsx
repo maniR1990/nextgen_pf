@@ -37,14 +37,12 @@ export function AppHeader({ config, data, onLogTransaction, onSearch }: AppHeade
 
   // Set --app-header-height only when expanded so padding-top never shrinks on scroll.
   // pathname dependency ensures it re-measures when subbars change between pages.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: headerRef is stable; pathname triggers re-measure on page change
   useLayoutEffect(() => {
     if (collapsed) return;
     const el = headerRef.current;
     if (!el) return;
-    document.documentElement.style.setProperty(
-      '--app-header-height',
-      `${el.offsetHeight}px`,
-    );
+    document.documentElement.style.setProperty('--app-header-height', `${el.offsetHeight}px`);
   }, [collapsed, pathname]);
 
   useEffect(() => {
@@ -72,7 +70,7 @@ export function AppHeader({ config, data, onLogTransaction, onSearch }: AppHeade
   const { pulseStrip } = config;
 
   return (
-    <header ref={headerRef} className="app-header" role="banner">
+    <header ref={headerRef} className="app-header">
       <PulseStrip
         metrics={pulseStrip.metrics}
         marketSymbols={pulseStrip.marketTicker.symbols}
@@ -85,7 +83,6 @@ export function AppHeader({ config, data, onLogTransaction, onSearch }: AppHeade
         brand={config.brand}
         items={config.nav}
         userInitials={data.userInitials}
-        notificationCount={data.notificationCount}
         onSearch={onSearch}
         onLogTransaction={onLogTransaction}
       />

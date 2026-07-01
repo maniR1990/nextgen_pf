@@ -138,14 +138,6 @@ export const CreateTransactionSchema = z
       });
     }
 
-    if (data.type === 'INVESTMENT' && !data.assetClass) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Asset class is required',
-        path: ['assetClass'],
-      });
-    }
-
     if (data.type === 'SINKING_DEPOSIT' && !data.sfId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

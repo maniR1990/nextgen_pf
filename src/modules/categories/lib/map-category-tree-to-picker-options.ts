@@ -11,11 +11,20 @@ export interface CategoryPickerFlatOption {
   color?: string;
 }
 
+export interface PickerL3Item {
+  id: string;
+  name: string;
+  icon?: string;
+  color?: string;
+}
+
 export interface PickerL2Item {
   id: string;
   name: string;
   icon?: string;
   color?: string;
+  isLeaf: boolean;
+  children: PickerL3Item[];
 }
 
 export interface PickerL1Item {
@@ -100,6 +109,13 @@ export function buildPickerGroups(nodes: CategoryTreeNode[]): PickerGroup[] {
           name: l2.name,
           icon: l2.icon ?? undefined,
           color: l2.color ?? undefined,
+          isLeaf: l2.children.length === 0,
+          children: l2.children.map((l3) => ({
+            id: l3.id,
+            name: l3.name,
+            icon: l3.icon ?? undefined,
+            color: l3.color ?? undefined,
+          })),
         })),
       })),
     }));

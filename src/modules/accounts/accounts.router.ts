@@ -2,6 +2,7 @@ import { isApiError } from '@/lib/api/errors';
 import { compose, withAuth, withValidation } from '@/lib/api/middleware';
 import { v1Created, v1FromApiError, v1Ok, v1OkMeta } from '@/lib/api/v1/envelope';
 import { getLogger } from '@/lib/logger';
+import { AccountsRepository } from './accounts.repository';
 import {
   CreateAccountSchema,
   ListAccountsQuerySchema,
@@ -143,6 +144,29 @@ export const v1GetAccountHealth = compose(withAuth())(async (_req, ctx) => {
     return v1Ok(result);
   } catch (err) {
     log.error('v1GetAccountHealth', { err });
+    if (isApiError(err)) return v1FromApiError(err);
+    throw err;
+  }
+});
+
+export const v1GetAccountTransactions = compose(withAuth())(async (req, ctx) => {
+  try {
+    const id = ctx.params?.id;
+    if (!id) return missingId();
+
+    const url = new URL(req.url);
+    const page = Math.max(1, Number(url.searchParams.get('page') ?? '1'));
+    const limit = Math.min(50, Math.max(1, Number(url.searchParams.get('limit') ?? '20')));
+    const skip = (page - 1) * limit;
+
+    const [all, total] = await Promise.all([
+      AccountsRepository.findRecentTransactions(id, limit + skip),
+      AccountsRepository.countTransactions(id),
+    ]);
+
+    return v1Ok({ items: all.slice(skip, skip + limit), total, page, limit });
+  } catch (err) {
+    log.error('v1GetAccountTransactions', { err });
     if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }

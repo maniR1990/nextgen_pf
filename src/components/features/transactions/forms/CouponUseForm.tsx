@@ -18,7 +18,8 @@ interface CouponUseFormProps {
 export function CouponUseForm({ values, errors, onChange, paymentSources }: CouponUseFormProps) {
   const origNum = Number.parseFloat(values.origPrice);
   const discountNum = Number.parseFloat(values.amount);
-  const finalPrice = !isNaN(origNum) && !isNaN(discountNum) ? origNum - discountNum : null;
+  const finalPrice =
+    !Number.isNaN(origNum) && !Number.isNaN(discountNum) ? origNum - discountNum : null;
 
   return (
     <div className="tx-form tx-form--coupon">

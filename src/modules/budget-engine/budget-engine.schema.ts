@@ -7,6 +7,18 @@ export const BudgetImpactSchema = z.object({
   budgetPeriodMonth: z.number().int().min(1).max(12),
 });
 
-export const UpdateCategoryPlannedSchema = z.object({
-  planned: z.number().nonnegative('Planned amount must be ≥ 0'),
-});
+export const UpdateCategoryPlannedSchema = z
+  .object({
+    planned: z.number().nonnegative('Planned amount must be ≥ 0').optional(),
+    isRecurring: z.boolean().optional(),
+    isUnplanned: z.boolean().optional(),
+    dueDay: z.number().int().min(1).max(31).nullable().optional(),
+  })
+  .refine(
+    (d) =>
+      d.planned !== undefined ||
+      d.isRecurring !== undefined ||
+      d.isUnplanned !== undefined ||
+      d.dueDay !== undefined,
+    { message: 'At least one field must be provided' },
+  );

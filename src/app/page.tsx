@@ -13,9 +13,6 @@ export default function HomePage() {
         <Link href={ROUTES.REGISTER} className="page-home__link">
           Register
         </Link>
-        <Link href={ROUTES.DASHBOARD} className="page-home__link">
-          Dashboard
-        </Link>
       </div>
     </main>
   );

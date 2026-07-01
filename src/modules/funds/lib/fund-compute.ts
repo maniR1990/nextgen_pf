@@ -1,4 +1,5 @@
-import type { FundAllocation } from '@prisma/client';
+import { isLiquidAccountType } from '@/constants/accounts';
+import type { AccountType, FundAllocation } from '@prisma/client';
 import type { SourceBreakdown } from '../funds.types';
 
 export function computeAllocationAmount(
@@ -33,7 +34,7 @@ export function computePercentFilled(currentAmount: number, targetAmount: number
 
 export function buildSourceBreakdown(
   sources: FundAllocation[],
-  accounts: Map<string, { name: string; code: string; balance: number }>,
+  accounts: Map<string, { name: string; code: string; type: AccountType; balance: number }>,
 ): SourceBreakdown[] {
   return sources.map((src) => {
     const account = accounts.get(src.accountId);
@@ -42,6 +43,7 @@ export function buildSourceBreakdown(
       accountId: src.accountId,
       accountName: account?.name ?? 'Unknown',
       accountCode: account?.code ?? '',
+      accountType: account?.type ?? 'BANK_SAVINGS',
       type: src.type,
       value: src.value,
       priority: src.priority,
@@ -52,7 +54,7 @@ export function buildSourceBreakdown(
 }
 
 export function computeIdleCash(
-  accounts: Array<{ id: string; balance: number }>,
+  accounts: Array<{ id: string; type: AccountType; balance: number }>,
   allSources: FundAllocation[],
   accountBalances: Map<string, number>,
 ): number {
@@ -66,6 +68,8 @@ export function computeIdleCash(
 
   let idle = 0;
   for (const account of accounts) {
+    // Only liquid accounts (banking, cash, wallets) count as assignable cash
+    if (!isLiquidAccountType(account.type)) continue;
     const balance = accountBalances.get(account.id) ?? account.balance;
     const allocated = allocatedByAccount.get(account.id) ?? 0;
     idle += Math.max(0, balance - allocated);

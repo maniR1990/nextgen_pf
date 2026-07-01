@@ -35,18 +35,6 @@ export const v1GetBudgetImpact = compose(
   }
 });
 
-export const v1GetCategoryBudgets = compose(withAuth())(async (req, ctx) => {
-  try {
-    const year = Number(ctx.params?.year);
-    const month = Number(ctx.params?.month);
-    const result = await BudgetEngineService.getCategoryBudgets(ctx.session!.id, year, month);
-    return v1Ok(result);
-  } catch (err) {
-    if (isApiError(err)) return v1FromApiError(err);
-    throw err;
-  }
-});
-
 export const v1UpdateCategoryPlanned = compose(
   withAuth(),
   withValidation(UpdateCategoryPlannedSchema),
@@ -58,13 +46,14 @@ export const v1UpdateCategoryPlanned = compose(
     if (!catId)
       return v1FromApiError({ message: 'Missing catId', status: 400, code: 'VALIDATION_ERROR' });
 
-    const { planned } = await req.json();
+    const body = await req.json();
+    const parsed = UpdateCategoryPlannedSchema.parse(body);
     const result = await BudgetEngineService.updateCategoryPlanned(
       ctx.session!.id,
       year,
       month,
       catId,
-      planned,
+      parsed,
     );
     return v1Ok(result);
   } catch (err) {

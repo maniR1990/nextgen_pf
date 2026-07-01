@@ -298,6 +298,15 @@ export const ACCOUNT_TYPE_META = {
     wealthRole: 'Vested value tracking',
     codePrefix: 'ESO',
   },
+  PHYSICAL_ASSET: {
+    slug: 'physical_asset',
+    name: 'Physical Asset',
+    side: 'asset',
+    group: 'alternate',
+    groupLabel: 'Alternate',
+    wealthRole: 'Jewellery, vehicle, collectibles — manually valued',
+    codePrefix: 'PHY',
+  },
 
   // ── ASSETS: Rewards ─────────────────────────────────────────────────────────
   REWARDS_POINTS: {
@@ -464,6 +473,26 @@ export const ACCOUNT_LIABILITY_TYPES = ACCOUNT_TYPES.filter(
 export const ACCOUNT_TAX_BENEFIT_TYPES = ACCOUNT_TYPES.filter(
   (type) => ACCOUNT_TYPE_META[type].taxBenefit === true,
 );
+
+/** Account types that represent deployed capital — their entire balance belongs to a goal. */
+export const GOAL_LINKABLE_ACCOUNT_TYPES = ACCOUNT_TYPES.filter((type) =>
+  ['investment', 'alternate'].includes(ACCOUNT_TYPE_META[type].group),
+);
+
+export function isGoalLinkableAccountType(type: AccountType): boolean {
+  return GOAL_LINKABLE_ACCOUNT_TYPES.includes(type);
+}
+
+/** Liquid = immediately spendable cash (banking, cash envelopes, wallets).
+ *  Investment, alternate, and rewards accounts are NOT liquid — they must not
+ *  inflate "Ready to Assign" / idle cash figures. */
+const LIQUID_TAXONOMY_GROUPS = new Set(['banking', 'cash', 'wallets']);
+
+export function isLiquidAccountType(type: AccountType): boolean {
+  return LIQUID_TAXONOMY_GROUPS.has(ACCOUNT_TYPE_META[type]?.group ?? '');
+}
+
+export const LIQUID_ACCOUNT_TYPES = ACCOUNT_TYPES.filter(isLiquidAccountType);
 
 export const ACCOUNT_TAXONOMY_GROUPS = [
   { slug: 'banking', label: 'Banking', side: 'asset' as const },

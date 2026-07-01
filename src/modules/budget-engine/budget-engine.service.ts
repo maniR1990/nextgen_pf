@@ -1,48 +1,175 @@
 import { BudgetPeriodInvalidError, CategoryNotFoundError } from '@/lib/api/errors';
 import { TransactionRepository } from '@/modules/transactions/transactions.repository';
 import { BudgetEngineRepository } from './budget-engine.repository';
+import type { BudgetCategoryNode, BudgetGroup, BudgetSummaryResponse } from './budget-engine.types';
 
-const NOW = () => new Date();
 const MAX_FUTURE_MONTHS = 24;
 
 function validatePeriod(year: number, month: number) {
-  const now = NOW();
+  const now = new Date();
   if (year < 2020 || month < 1 || month > 12) throw new BudgetPeriodInvalidError();
   const monthsAhead = (year - now.getFullYear()) * 12 + (month - now.getMonth() - 1);
   if (monthsAhead > MAX_FUTURE_MONTHS) throw new BudgetPeriodInvalidError();
 }
 
+type RawCategory = {
+  id: string;
+  name: string;
+  level: number;
+  parentId: string | null;
+  type: string;
+  color: string | null;
+  icon: string | null;
+  order: number;
+  isSystem: boolean;
+};
+
+type InternalNode = BudgetCategoryNode & {
+  parentId: string | null;
+  _type: string;
+  _order: number;
+  lastMonthActual: number; // rolled up same as actual
+};
+
+function computeMetrics(node: BudgetCategoryNode) {
+  const { planned, actual } = node;
+  node.variance = actual - planned;
+  node.variancePct = planned > 0 ? Math.round((node.variance / planned) * 100) : 0;
+  node.progressPct = planned > 0 ? Math.round((actual / planned) * 100) : actual > 0 ? 100 : 0;
+  for (const child of node.children) computeMetrics(child);
+}
+
+function rollupNode(node: InternalNode): {
+  planned: number;
+  actual: number;
+  lastMonthActual: number;
+} {
+  if (node.children.length === 0) {
+    return { planned: node.planned, actual: node.actual, lastMonthActual: node.lastMonthActual };
+  }
+  let childPlanned = 0;
+  let childActual = 0;
+  let childLastMonth = 0;
+  for (const child of node.children as InternalNode[]) {
+    const r = rollupNode(child);
+    child.planned = r.planned;
+    child.actual = r.actual;
+    child.lastMonthActual = r.lastMonthActual;
+    childPlanned += r.planned;
+    childActual += r.actual;
+    childLastMonth += r.lastMonthActual;
+  }
+  node.planned = childPlanned;
+  node.actual = node.actual + childActual;
+  node.lastMonthActual = node.lastMonthActual + childLastMonth;
+  return { planned: node.planned, actual: node.actual, lastMonthActual: node.lastMonthActual };
+}
+
+const GROUP_TYPE_ORDER: Record<string, number> = {
+  INCOME: 0,
+  EXPENSE: 1,
+  INVESTMENT: 2,
+  TRANSFER: 3,
+};
+
 export const BudgetEngineService = {
-  async getMonthlySummary(userId: string, year: number, month: number) {
+  async getMonthlySummary(
+    userId: string,
+    year: number,
+    month: number,
+  ): Promise<BudgetSummaryResponse> {
     validatePeriod(year, month);
 
-    const [categories, overrides] = await Promise.all([
+    const [rawCategories, budgetPlans] = await Promise.all([
       BudgetEngineRepository.findCategoriesForUser(userId),
-      BudgetEngineRepository.findOverrides(userId, year, month),
+      BudgetEngineRepository.findBudgetPlans(userId, year, month),
     ]);
 
-    const overrideMap = new Map(overrides.map((o) => [o.categoryId, o.planned]));
+    const categoryIds = rawCategories.map((c) => c.id);
+    const prevMonth = month === 1 ? 12 : month - 1;
+    const prevYear = month === 1 ? year - 1 : year;
 
-    const enriched = await Promise.all(
-      categories.map(async (cat) => {
-        const plannedAmount = overrideMap.get(cat.id) ?? cat.plannedAmount ?? 0;
-        const agg = await TransactionRepository.sumByPeriod(userId, year, month, cat.id);
-        const spentAmount = agg._sum.amount ?? 0;
-        const remainingAmount = plannedAmount - spentAmount;
-        const percentUsed = plannedAmount > 0 ? Math.round((spentAmount / plannedAmount) * 100) : 0;
-        return { ...cat, plannedAmount, spentAmount, remainingAmount, percentUsed };
-      }),
+    const [spendRows, lastMonthSpendRows] = await Promise.all([
+      BudgetEngineRepository.findSpendByCategory(userId, categoryIds, year, month),
+      BudgetEngineRepository.findSpendByCategory(userId, categoryIds, prevYear, prevMonth),
+    ]);
+
+    const planMap = new Map(budgetPlans.map((p) => [p.categoryId, p]));
+    const spendMap = new Map(spendRows.map((r) => [r.categoryId!, r._sum.amount ?? 0]));
+    const lastMonthSpendMap = new Map(
+      lastMonthSpendRows.map((r) => [r.categoryId!, r._sum.amount ?? 0]),
     );
 
-    const totalPlanned = enriched.reduce((s, c) => s + c.plannedAmount, 0);
-    const totalSpent = enriched.reduce((s, c) => s + c.spentAmount, 0);
+    // Build node map
+    const nodeMap = new Map<string, InternalNode>();
+    for (const cat of rawCategories as RawCategory[]) {
+      const plan = planMap.get(cat.id);
+      nodeMap.set(cat.id, {
+        id: cat.id,
+        name: cat.name,
+        level: cat.level,
+        icon: cat.icon,
+        color: cat.color,
+        isSystem: cat.isSystem,
+        isRecurring: plan?.isRecurring ?? false,
+        isUnplanned: plan?.isUnplanned ?? false,
+        dueDay: plan?.dueDay ?? null,
+        planned: plan?.plannedAmount ?? 0,
+        actual: spendMap.get(cat.id) ?? 0,
+        lastMonthActual: lastMonthSpendMap.get(cat.id) ?? 0,
+        variance: 0,
+        variancePct: 0,
+        progressPct: 0,
+        children: [],
+        parentId: cat.parentId,
+        _type: cat.type,
+        _order: cat.order,
+      });
+    }
 
-    return {
-      year,
-      month,
-      categories: enriched,
-      totals: { totalPlanned, totalSpent, totalRemaining: totalPlanned - totalSpent },
+    // Wire children to parents
+    const groups: InternalNode[] = [];
+    for (const node of nodeMap.values()) {
+      if (node.level === 0) {
+        groups.push(node);
+      } else if (node.parentId) {
+        const parent = nodeMap.get(node.parentId);
+        if (parent) {
+          (parent.children as InternalNode[]).push(node);
+        }
+      }
+    }
+
+    // Sort children by order
+    const sortChildren = (node: InternalNode) => {
+      (node.children as InternalNode[]).sort((a, b) => a._order - b._order);
+      for (const child of node.children as InternalNode[]) sortChildren(child);
     };
+    for (const group of groups) sortChildren(group);
+
+    // Rollup + compute metrics
+    for (const group of groups) {
+      rollupNode(group);
+      computeMetrics(group);
+    }
+
+    // Sort groups: INCOME → EXPENSE → INVESTMENT → TRANSFER
+    groups.sort((a, b) => (GROUP_TYPE_ORDER[a._type] ?? 9) - (GROUP_TYPE_ORDER[b._type] ?? 9));
+
+    const result: BudgetGroup[] = groups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      type: g._type,
+      planned: g.planned,
+      actual: g.actual,
+      lastMonthActual: g.lastMonthActual,
+      variance: g.variance,
+      variancePct: g.variancePct,
+      progressPct: g.progressPct,
+      categories: g.children as BudgetCategoryNode[],
+    }));
+
+    return { year, month, groups: result };
   },
 
   async getImpact(
@@ -59,13 +186,13 @@ export const BudgetEngineService = {
     const cat = await BudgetEngineRepository.findCategoryById(input.categoryId, userId);
     if (!cat) throw new CategoryNotFoundError();
 
-    const overrides = await BudgetEngineRepository.findOverrides(
+    const plan = await BudgetEngineRepository.findBudgetPlan(
       userId,
       input.budgetPeriodYear,
       input.budgetPeriodMonth,
+      input.categoryId,
     );
-    const plannedAmount =
-      overrides.find((o) => o.categoryId === input.categoryId)?.planned ?? cat.plannedAmount ?? 0;
+    const plannedAmount = plan?.plannedAmount ?? 0;
 
     const agg = await TransactionRepository.sumByPeriod(
       userId,
@@ -76,11 +203,11 @@ export const BudgetEngineService = {
     const currentSpend = agg._sum.amount ?? 0;
     const projectedSpend = currentSpend + input.amount;
     const remainingAfter = plannedAmount - projectedSpend;
-    const willExceed = projectedSpend > plannedAmount;
+    const willExceed = plannedAmount > 0 && projectedSpend > plannedAmount;
 
     return {
       categoryId: input.categoryId,
-      categoryLabel: cat.label,
+      categoryLabel: cat.name,
       plannedAmount,
       currentSpend,
       projectedSpend,
@@ -90,29 +217,55 @@ export const BudgetEngineService = {
     };
   },
 
-  async getCategoryBudgets(userId: string, year: number, month: number) {
-    validatePeriod(year, month);
-    const [categories, overrides] = await Promise.all([
-      BudgetEngineRepository.findCategoriesForUser(userId),
-      BudgetEngineRepository.findOverrides(userId, year, month),
-    ]);
-    const overrideMap = new Map(overrides.map((o) => [o.categoryId, o.planned]));
-    return categories.map((cat) => ({
-      ...cat,
-      plannedAmount: overrideMap.get(cat.id) ?? cat.plannedAmount ?? 0,
-    }));
-  },
-
   async updateCategoryPlanned(
     userId: string,
     year: number,
     month: number,
     categoryId: string,
-    planned: number,
+    data: {
+      planned?: number;
+      isRecurring?: boolean;
+      isUnplanned?: boolean;
+      dueDay?: number | null;
+    },
   ) {
     validatePeriod(year, month);
     const cat = await BudgetEngineRepository.findCategoryById(categoryId, userId);
     if (!cat) throw new CategoryNotFoundError();
-    return BudgetEngineRepository.upsertOverride(userId, year, month, categoryId, planned);
+    return BudgetEngineRepository.upsertBudgetPlan(userId, year, month, categoryId, {
+      ...(data.planned !== undefined && { plannedAmount: data.planned }),
+      ...(data.isRecurring !== undefined && { isRecurring: data.isRecurring }),
+      ...(data.isUnplanned !== undefined && { isUnplanned: data.isUnplanned }),
+      ...(data.dueDay !== undefined && { dueDay: data.dueDay }),
+    });
+  },
+
+  /** Copies recurring plans from the previous month into the target month (skips existing plans). */
+  async seedRecurring(userId: string, year: number, month: number) {
+    validatePeriod(year, month);
+
+    const prevMonth = month === 1 ? 12 : month - 1;
+    const prevYear = month === 1 ? year - 1 : year;
+
+    const [recurringPlans, existingIds] = await Promise.all([
+      BudgetEngineRepository.findRecurringPlans(userId, prevYear, prevMonth),
+      BudgetEngineRepository.existingPlanCategoryIds(userId, year, month),
+    ]);
+
+    const toSeed = recurringPlans.filter((p) => !existingIds.has(p.categoryId));
+
+    await Promise.all(
+      toSeed.map((p) =>
+        BudgetEngineRepository.upsertBudgetPlan(userId, year, month, p.categoryId, {
+          plannedAmount: p.plannedAmount,
+          isRecurring: true,
+          isUnplanned: p.isUnplanned,
+          dueDay: p.dueDay ?? undefined,
+          carryOverEnabled: p.carryOverEnabled,
+        }),
+      ),
+    );
+
+    return { seeded: toSeed.length };
   },
 };

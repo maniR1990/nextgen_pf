@@ -57,7 +57,8 @@ const accountFieldsSchema = z.object({
   icon: z.string().max(60).optional(),
   note: z.string().max(500).optional(),
   tags: z.array(z.string().max(40)).optional(),
-  openedOn: z.string().datetime().optional(),
+  openedOn: z.string().optional(),
+  balanceAsOf: z.string().optional(),
 });
 
 export const CreateAccountSchema = accountFieldsSchema;

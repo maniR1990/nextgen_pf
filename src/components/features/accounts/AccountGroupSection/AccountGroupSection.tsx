@@ -1,13 +1,15 @@
 'use client';
 
 import type { AccountGroupWithAccounts, AccountSummary } from '@/modules/accounts/accounts.types';
-import { ChevronDown, ChevronRight, MoreHorizontal, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Eye, EyeOff, MoreHorizontal, Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { AccountListRow } from '../AccountListRow';
 import { BalancePill } from '../BalancePill';
 
 export interface AccountGroupSectionProps {
   group: AccountGroupWithAccounts;
+  /** null = each group manages its own state; true/false = override from parent */
+  collapseOverride?: boolean | null;
   onAccountClick?: (account: AccountSummary) => void;
   onEdit?: (account: AccountSummary) => void;
   onTransfer?: (account: AccountSummary) => void;
@@ -22,6 +24,7 @@ export interface AccountGroupSectionProps {
 
 export function AccountGroupSection({
   group,
+  collapseOverride = null,
   onAccountClick,
   onEdit,
   onTransfer,
@@ -34,6 +37,12 @@ export function AccountGroupSection({
   onAccountHoverEnd,
 }: AccountGroupSectionProps) {
   const [collapsed, setCollapsed] = useState(group.isCollapsed);
+  const [totalVisible, setTotalVisible] = useState(false);
+
+  // Sync with parent collapse-all / expand-all override
+  useEffect(() => {
+    if (collapseOverride !== null) setCollapsed(collapseOverride);
+  }, [collapseOverride]);
   const [groupMenuOpen, setGroupMenuOpen] = useState(false);
   const [groupMenuPos, setGroupMenuPos] = useState<{ top: number; right: number } | null>(null);
   const groupMenuRef = useRef<HTMLDivElement>(null);
@@ -80,7 +89,22 @@ export function AccountGroupSection({
           </span>
         </button>
         <div className="account-group-section__actions">
-          <BalancePill amount={groupTotal} size="sm" />
+          {totalVisible ? (
+            <BalancePill amount={groupTotal} size="sm" />
+          ) : (
+            <span className="account-group-section__total-hidden">••••••</span>
+          )}
+          <button
+            type="button"
+            className="account-group-section__eye"
+            aria-label={totalVisible ? 'Hide group total' : 'Show group total'}
+            onClick={(e) => {
+              e.stopPropagation();
+              setTotalVisible((v) => !v);
+            }}
+          >
+            {totalVisible ? <EyeOff size={13} aria-hidden /> : <Eye size={13} aria-hidden />}
+          </button>
           {onAddAccount && (
             <button
               type="button"

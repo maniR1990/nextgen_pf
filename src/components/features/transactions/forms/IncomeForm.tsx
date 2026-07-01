@@ -18,7 +18,7 @@ interface IncomeFormProps {
   ) => void;
   paymentSources: PaymentSourceOption[];
   categoryGroups: PickerGroup[];
-  onCreateCategory?: (name: string, parentId: string | null) => Promise<string>;
+  onCreateCategory?: (name: string, parentId: string | null, flowType?: string) => Promise<string>;
 }
 
 export function IncomeForm({
@@ -35,12 +35,12 @@ export function IncomeForm({
   );
 
   const didInit = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once on mount to seed defaults; periodData captured via ref to avoid stale closure
   useEffect(() => {
     if (didInit.current || !periodData) return;
     didInit.current = true;
     onChange('budgetPeriodYear', periodData.defaultYear);
     onChange('budgetPeriodMonth', periodData.defaultMonth);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const selectedSuggestion =
@@ -61,6 +61,23 @@ export function IncomeForm({
 
   return (
     <div className="tx-form tx-form--income">
+      {/* Category */}
+      <CascadingCategoryPicker
+        label="Category"
+        groups={categoryGroups}
+        priorityGroupType="INCOME"
+        value={values.categoryId || null}
+        onChange={(id) => onChange('categoryId', id ?? '')}
+        error={errors.categoryId}
+        onCreateL1={onCreateCategory ? (name) => onCreateCategory(name, null, 'INCOME') : undefined}
+        onCreateL2={
+          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+        }
+        onCreateL3={
+          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+        }
+      />
+
       {/* Description */}
       <FormField label="Description" htmlFor="tx-merchant" error={errors.merchant} required>
         <input
@@ -136,18 +153,6 @@ export function IncomeForm({
           )}
         </div>
       )}
-
-      {/* Row 2: Category (full width) */}
-      <CascadingCategoryPicker
-        label="Category"
-        groups={categoryGroups}
-        value={values.categoryId || null}
-        onChange={(id) => onChange('categoryId', id ?? '')}
-        error={errors.categoryId}
-        onCreateL2={
-          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
-        }
-      />
 
       {/* TDS (optional) — 1/3 width */}
       <div className="tx-form__row">

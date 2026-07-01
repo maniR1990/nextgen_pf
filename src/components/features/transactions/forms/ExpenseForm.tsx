@@ -2,10 +2,8 @@
 
 import { CascadingCategoryPicker } from '@/components/common/CascadingCategoryPicker';
 import { FormField } from '@/components/common/FormField';
-import { SelectField } from '@/components/common/SelectField';
 import { BudgetImpactStrip } from '@/components/features/transactions/BudgetImpactStrip';
 import { DuplicateDetect } from '@/components/features/transactions/DuplicateDetect';
-import { TAX_SECTIONS } from '@/constants/finance';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { BudgetImpact, DuplicateMatch, PaymentSourceOption } from '@/types/finance';
@@ -22,7 +20,7 @@ interface ExpenseFormProps {
   budgetImpact: BudgetImpact | null;
   duplicate: DuplicateMatch | null;
   onDismissDuplicate: () => void;
-  onCreateCategory?: (name: string, parentId: string | null) => Promise<string>;
+  onCreateCategory?: (name: string, parentId: string | null, flowType?: string) => Promise<string>;
 }
 
 export function ExpenseForm({
@@ -36,10 +34,27 @@ export function ExpenseForm({
   onDismissDuplicate,
   onCreateCategory,
 }: ExpenseFormProps) {
-  const showConditionalRow = values.isTaxDed || values.isReimbursable;
-
   return (
     <div className="tx-form tx-form--expense">
+      {/* Category first — user may know the item but not the category */}
+      <CascadingCategoryPicker
+        label="Category"
+        groups={categoryGroups}
+        priorityGroupType="EXPENSE"
+        value={values.categoryId || null}
+        onChange={(id) => onChange('categoryId', id ?? '')}
+        error={errors.categoryId}
+        onCreateL1={
+          onCreateCategory ? (name) => onCreateCategory(name, null, 'EXPENSE') : undefined
+        }
+        onCreateL2={
+          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+        }
+        onCreateL3={
+          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+        }
+      />
+
       {/* Merchant */}
       <FormField
         label="Merchant / Description"
@@ -59,90 +74,11 @@ export function ExpenseForm({
         />
       </FormField>
 
-      {/* Row 2: Category (full width) */}
-      <CascadingCategoryPicker
-        label="Category"
-        groups={categoryGroups}
-        value={values.categoryId || null}
-        onChange={(id) => onChange('categoryId', id ?? '')}
-        error={errors.categoryId}
-        onCreateL2={
-          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
-        }
-      />
-
       {duplicate && <DuplicateDetect duplicate={duplicate} onDismiss={onDismissDuplicate} />}
       <BudgetImpactStrip impact={budgetImpact} />
 
-      {/* Tax Deductible */}
-      <div className="tx-form__toggle-group">
-        <div className="form-field__label-row">
-          <span className="form-field__label">TAX DEDUCTIBLE?</span>
-          <span className="form-field__badge">NEW</span>
-        </div>
-        <div className="tx-form__toggle-chips">
-          <button
-            type="button"
-            className={[
-              'tx-form__toggle-chip',
-              !values.isTaxDed ? 'tx-form__toggle-chip--active' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            onClick={() => onChange('isTaxDed', false)}
-          >
-            No
-          </button>
-          <button
-            type="button"
-            className={[
-              'tx-form__toggle-chip',
-              values.isTaxDed ? 'tx-form__toggle-chip--active' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            onClick={() => onChange('isTaxDed', true)}
-          >
-            Yes
-          </button>
-        </div>
-      </div>
-
-      {/* Reimbursable | Tags | Notes */}
+      {/* Tags | Notes */}
       <div className="tx-form__row">
-        <div className="tx-form__toggle-group">
-          <div className="form-field__label-row">
-            <span className="form-field__label">REIMBURSABLE?</span>
-            <span className="form-field__badge">NEW</span>
-          </div>
-          <div className="tx-form__toggle-chips">
-            <button
-              type="button"
-              className={[
-                'tx-form__toggle-chip',
-                !values.isReimbursable ? 'tx-form__toggle-chip--active' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => onChange('isReimbursable', false)}
-            >
-              No
-            </button>
-            <button
-              type="button"
-              className={[
-                'tx-form__toggle-chip',
-                values.isReimbursable ? 'tx-form__toggle-chip--active' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => onChange('isReimbursable', true)}
-            >
-              Yes
-            </button>
-          </div>
-        </div>
-
         <FormField label="Tags" htmlFor="tx-tags" hint="Comma-separated">
           <input
             id="tx-tags"
@@ -164,35 +100,6 @@ export function ExpenseForm({
           />
         </FormField>
       </div>
-
-      {/* Row 5 (conditional): Tax Section | Reimbursement Date */}
-      {showConditionalRow && (
-        <div className="tx-form__row tx-form__row--2">
-          {values.isTaxDed && (
-            <SelectField
-              label="Tax Section"
-              id="tx-tax-section"
-              value={values.taxSection}
-              options={TAX_SECTIONS.map((t) => ({ value: t.value, label: t.label }))}
-              placeholder="Pick section"
-              error={errors.taxSection}
-              onChange={(e) => onChange('taxSection', e.target.value)}
-            />
-          )}
-          {values.isReimbursable && (
-            <FormField label="Expected reimbursement by" htmlFor="tx-reimb-date">
-              <input
-                id="tx-reimb-date"
-                type="date"
-                className="form-input"
-                value={values.reimbDate}
-                min={values.date}
-                onChange={(e) => onChange('reimbDate', e.target.value)}
-              />
-            </FormField>
-          )}
-        </div>
-      )}
     </div>
   );
 }

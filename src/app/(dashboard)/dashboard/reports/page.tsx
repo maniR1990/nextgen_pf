@@ -9,8 +9,8 @@ interface ReportsPageProps {
 export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const params = await searchParams;
   const now = new Date();
-  const year = Number(params['year'] ?? now.getFullYear());
-  const month = Number(params['month'] ?? now.getMonth() + 1);
+  const year = Number(params.year ?? now.getFullYear());
+  const month = Number(params.month ?? now.getMonth() + 1);
 
   return (
     <div className="tx-page__content">

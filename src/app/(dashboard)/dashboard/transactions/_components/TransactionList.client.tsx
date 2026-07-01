@@ -1,14 +1,13 @@
 'use client';
 
-import { useToast } from '@/components/common/ToastProvider/useToast';
 import { TransactionDialog } from '@/components/common/TransactionDialog';
 import type { FormOptions } from '@/components/common/TransactionDialog';
 import { TransactionTimeline } from '@/components/common/TransactionTimeline';
 import { useTransactionFilters } from '@/hooks/useTransactionFilters';
+import { useDeleteTransaction, useTransactionDetail } from '@/hooks/useTransactions';
 import { groupTransactionsByDate } from '@/lib/utils/transactionTimeline';
 import { useTransactionsList } from '@/modules/transactions/hooks/useTransactionsList';
 import type { TransactionFormValues } from '@/store/transactionFormStore';
-import { useQueryClient } from '@tanstack/react-query';
 import { ReceiptText, RefreshCw } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -16,12 +15,7 @@ interface TransactionListProps {
   initialOptions?: FormOptions;
 }
 
-interface EditState {
-  id: string;
-  prefillValues: Partial<TransactionFormValues>;
-}
-
-// Map the API GET /transactions/:id response to form values
+// Map the API GET /transactions/:id response → form prefill values
 function mapTxToFormValues(tx: Record<string, unknown>): Partial<TransactionFormValues> {
   const dateStr = typeof tx.date === 'string' ? tx.date.split('T')[0] : '';
   const account = tx.account as { id?: string } | null | undefined;
@@ -43,41 +37,30 @@ function mapTxToFormValues(tx: Record<string, unknown>): Partial<TransactionForm
     tags: Array.isArray(tx.tags) ? (tx.tags as string[]).join(', ') : '',
     budgetPeriodYear: (tx.budgetPeriodYear as number) ?? new Date().getFullYear(),
     budgetPeriodMonth: (tx.budgetPeriodMonth as number) ?? new Date().getMonth() + 1,
-    // Investment
     assetClass: (tx.assetClass as string) ?? '',
     fundName: (tx.fundName as string) ?? '',
     units: tx.units != null ? String(tx.units) : '',
     nav: tx.nav != null ? String(tx.nav) : '',
     mfPlan: (tx.mfPlan as string) ?? '',
     taxSection: (tx.taxSection as string) ?? '',
-    // Income
     incomeType: (tx.incomeType as string) ?? '',
     tds: tx.tds != null ? String(tx.tds) : '',
-    // Gift
     giftFrom: (tx.giftFrom as string) ?? '',
     occasion: (tx.occasion as string) ?? '',
-    // Sinking
     sfId: (tx.sfId as string) ?? '',
-    // Expense extras
     isTaxDed: (tx.isTaxDed as boolean) ?? false,
     isReimbursable: (tx.isReimbursable as boolean) ?? false,
     reimbDate: (tx.reimbDate as string) ?? '',
-    // Reimbursement
     reimbFrom: (tx.reimbFrom as string) ?? '',
     origTxRef: (tx.origTxRef as string) ?? '',
-    // Transfer
     txPurpose: (tx.txPurpose as string) ?? '',
     txFee: tx.txFee != null ? String(tx.txFee) : '',
-    // ATM
     atmLocation: (tx.atmLocation as string) ?? '',
     atmPurpose: (tx.atmPurpose as string) ?? '',
-    // Refund
     refundReason: (tx.refundReason as string) ?? '',
-    // Coupon
     origPrice: tx.origPrice != null ? String(tx.origPrice) : '',
     couponCode: (tx.couponCode as string) ?? '',
     platform: (tx.platform as string) ?? '',
-    // Points
     ptsSpent: tx.ptsSpent != null ? String(tx.ptsSpent) : '',
     ptsRate: tx.ptsRate != null ? String(tx.ptsRate) : '',
   };
@@ -85,58 +68,37 @@ function mapTxToFormValues(tx: Record<string, unknown>): Partial<TransactionForm
 
 export function TransactionList({ initialOptions }: TransactionListProps = {}) {
   const { filters } = useTransactionFilters();
-  const queryClient = useQueryClient();
-  const toast = useToast();
 
-  const [editState, setEditState] = useState<EditState | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useTransactionsList(filters);
 
-  const rows = useMemo(() => data?.pages.flatMap((p) => p.rows) ?? [], [data]);
+  // Fetch the selected transaction for edit — cached by id, no raw fetch needed
+  const { data: editTxRaw, isLoading: isLoadingEdit } = useTransactionDetail(editId ?? '');
+  const prefillValues = editTxRaw ? mapTxToFormValues(editTxRaw) : undefined;
 
+  const deleteTx = useDeleteTransaction();
+
+  const rows = useMemo(() => data?.pages.flatMap((p) => p.rows) ?? [], [data]);
   const groups = useMemo(() => groupTransactionsByDate(rows), [rows]);
 
-  const handleEditClick = useCallback(
-    async (id: string) => {
-      try {
-        const res = await fetch(`/api/v1/transactions/${id}`, { credentials: 'include' });
-        if (!res.ok) throw new Error('Failed to load transaction');
-        const json = await res.json();
-        const tx = json.data as Record<string, unknown>;
-        setEditState({ id, prefillValues: mapTxToFormValues(tx) });
-      } catch {
-        toast.error('Could not load transaction for editing');
-      }
-    },
-    [toast],
-  );
+  const handleEditClick = useCallback((id: string) => {
+    setEditId(id);
+  }, []);
 
   const handleDeleteClick = useCallback(
-    async (id: string) => {
+    (id: string) => {
       if (!window.confirm('Delete this transaction? This cannot be undone.')) return;
-      try {
-        const res = await fetch(`/api/v1/transactions/${id}`, {
-          method: 'DELETE',
-          headers: { 'X-Confirm-Delete': 'true' },
-          credentials: 'include',
-        });
-        if (!res.ok) throw new Error('Failed to delete');
-        queryClient.invalidateQueries({ queryKey: ['transactions'] });
-        queryClient.invalidateQueries({ queryKey: ['budget'] });
-        toast.success('Transaction deleted');
-      } catch {
-        toast.error('Failed to delete transaction');
-      }
+      deleteTx.mutate(id);
     },
-    [queryClient, toast],
+    [deleteTx],
   );
 
+  // Close edit dialog — invalidation already done by patchTx mutation in the form hook
   const handleEditClose = useCallback(() => {
-    setEditState(null);
-    queryClient.invalidateQueries({ queryKey: ['transactions'] });
-    queryClient.invalidateQueries({ queryKey: ['budget'] });
-  }, [queryClient]);
+    setEditId(null);
+  }, []);
 
   return (
     <div className="tx-page__content">
@@ -174,13 +136,14 @@ export function TransactionList({ initialOptions }: TransactionListProps = {}) {
         />
       )}
 
-      {editState && (
+      {/* Edit dialog — wait for prefill data before opening so form is never blank */}
+      {editId && !isLoadingEdit && prefillValues && (
         <TransactionDialog
           open
           onClose={handleEditClose}
           initialOptions={initialOptions}
-          editId={editState.id}
-          prefillValues={editState.prefillValues}
+          editId={editId}
+          prefillValues={prefillValues}
         />
       )}
     </div>

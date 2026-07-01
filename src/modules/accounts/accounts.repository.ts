@@ -176,7 +176,9 @@ export const AccountsRepository = {
 
   findRecentTransactions: (accountId: string, take: number) =>
     prisma.financeTransaction.findMany({
-      where: { accountId, voidedAt: null },
+      where: {
+        OR: [{ accountId }, { toAccountId: accountId }],
+      },
       take,
       orderBy: { date: 'desc' },
       select: {
@@ -186,7 +188,17 @@ export const AccountsRepository = {
         amount: true,
         merchant: true,
         status: true,
+        accountId: true,
+        toAccount: { select: { id: true, name: true } },
+        account: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        notes: true,
       },
+    }),
+
+  countTransactions: (accountId: string) =>
+    prisma.financeTransaction.count({
+      where: { OR: [{ accountId }, { toAccountId: accountId }] },
     }),
 
   findUpcomingEventsForAccount: (userId: string, fundIds: string[], after: Date, before: Date) => {

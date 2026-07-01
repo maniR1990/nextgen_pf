@@ -59,7 +59,7 @@ export function AppFooter({ config, data, onLogTransaction, onCommandPalette }: 
       aria-label="Financial status bar"
     >
       <div className="app-footer__inner">
-        <ul className="app-footer__items" role="list">
+        <ul className="app-footer__items">
           {config.items.map((item) => {
             const value = resolveItemValue(item, data);
             const change = item.changeKey

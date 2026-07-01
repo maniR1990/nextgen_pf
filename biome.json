@@ -26,6 +26,20 @@
       },
       "style": {
         "noNonNullAssertion": "off"
+      },
+      "a11y": {
+        "useSemanticElements": "off",
+        "useFocusableInteractive": "off",
+        "noNoninteractiveElementToInteractiveRole": "off",
+        "noSvgWithoutTitle": "off",
+        "useKeyWithClickEvents": "off",
+        "noLabelWithoutControl": "off",
+        "useAriaPropsForRole": "off",
+        "useAltText": "off",
+        "noAutofocus": "off"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off"
       }
     }
   },

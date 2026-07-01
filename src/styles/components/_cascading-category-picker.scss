@@ -12,6 +12,104 @@
     color: var(--comp-input-label, var(--color-text-muted));
   }
 
+  // ── Universal search ────────────────────────────────────────────────────────
+
+  &__search-wrap {
+    position: relative;
+    width: 100%;
+  }
+
+  &__search-input-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-surface);
+    transition: border-color var(--transition-fast);
+
+    &:focus-within {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 15%, transparent);
+    }
+  }
+
+  &__search-icon {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  &__search-input {
+    flex: 1;
+    border: none;
+    background: none;
+    outline: none;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+
+    &::placeholder {
+      color: var(--color-text-muted);
+    }
+  }
+
+  &__search-clear {
+    @include m.flex-center;
+    border: none;
+    background: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+
+    &:hover { color: var(--color-text-primary); }
+  }
+
+  &__search-dropdown {
+    background: var(--color-bg-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    z-index: 9999;
+    list-style: none;
+    margin: 0;
+    padding: var(--space-1) 0;
+    overflow-y: auto;
+  }
+
+  &__search-item {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    gap: 2px;
+
+    &:hover,
+    &--active {
+      background: var(--color-bg-subtle);
+    }
+  }
+
+  &__search-item-label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  &__search-item-breadcrumb {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__search-empty {
+    padding: var(--space-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  // ── Cascading columns ───────────────────────────────────────────────────────
+
   &__cols {
     display: flex;
     align-items: flex-end;
@@ -31,6 +129,14 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--color-text-muted);
+  }
+
+  &__col-optional {
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--color-text-disabled, var(--color-text-muted));
+    opacity: 0.7;
   }
 
   &__sep {

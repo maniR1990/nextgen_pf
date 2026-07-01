@@ -16,7 +16,7 @@ interface RecurringConfigProps {
 
 function nextOccurrences(frequency: string, startDate: string, every: number, count = 3): string[] {
   const d = new Date(startDate);
-  if (isNaN(d.getTime())) return [];
+  if (Number.isNaN(d.getTime())) return [];
 
   const dates: string[] = [];
   let current = new Date(d);

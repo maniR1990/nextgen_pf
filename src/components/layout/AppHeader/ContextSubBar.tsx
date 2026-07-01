@@ -23,7 +23,7 @@ export function ContextSubBar({ items, data }: ContextSubBarProps) {
 
   return (
     <div className="context-sub-bar" role="complementary" aria-label="Screen context">
-      <ul className="context-sub-bar__list" role="list">
+      <ul className="context-sub-bar__list">
         {items.map((item, i) => {
           const value = resolveValue(item, data);
           const change = item.changeKey

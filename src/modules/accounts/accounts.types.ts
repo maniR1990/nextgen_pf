@@ -110,6 +110,11 @@ export interface RecentActivityItem {
   amount: number;
   merchant: string | null;
   status: string;
+  accountId?: string;
+  notes?: string | null;
+  account?: { id: string; name: string } | null;
+  toAccount?: { id: string; name: string } | null;
+  category?: { id: string; name: string } | null;
 }
 
 export interface TransactionPage {
@@ -119,11 +124,19 @@ export interface TransactionPage {
   limit: number;
 }
 
+export interface BalanceReconciliation {
+  storedBalance: number;
+  computedBalance: number;
+  drift: number;
+  isDrifted: boolean;
+}
+
 export interface AccountHealth {
   healthScore: number;
   utilisationPercent: number | null;
   fundFillPercent: number;
   upcomingEvents: UpcomingEventItem[];
+  reconciliation: BalanceReconciliation;
 }
 
 export interface UpcomingEventItem {
@@ -171,6 +184,7 @@ export interface CreateAccountDto {
   note?: string;
   tags?: string[];
   openedOn?: string;
+  balanceAsOf?: string;
 }
 
 export type UpdateAccountDto = Partial<CreateAccountDto> & {

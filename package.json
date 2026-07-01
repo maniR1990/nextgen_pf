@@ -8,7 +8,7 @@
     "start": "tsx scripts/ensure-db.ts && next start",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "format": "oxfmt --write .",
+    "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

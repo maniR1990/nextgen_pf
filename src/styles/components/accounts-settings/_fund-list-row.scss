@@ -4,7 +4,7 @@
 
 .fund-list-rows {
   list-style: none;
-  margin: 0 0 var(--space-1);
+  margin: 0;
   padding: 0;
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -16,23 +16,23 @@
 
 .fund-list-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   border-bottom: var(--border-width) solid var(--color-border);
+  // Health accent: inset left bar — not clipped by parent overflow:hidden
+  box-shadow: inset 3px 0 0 0 var(--fund-color, var(--fund-color-fallback, transparent));
+  transition: background var(--transition-fast);
 
   &:last-child {
     border-bottom: none;
   }
 
-  // Health-based color fallback (used when fund has no custom color)
-  &--healthy {
-    --fund-color-fallback: var(--color-success);
+  &:hover {
+    background: color-mix(in srgb, var(--color-bg-subtle) 60%, transparent);
   }
-  &--ok {
-    --fund-color-fallback: var(--color-warning);
-  }
-  &--low {
-    --fund-color-fallback: var(--color-error);
-  }
+
+  &--healthy { --fund-color-fallback: var(--color-success); }
+  &--ok      { --fund-color-fallback: var(--color-warning); }
+  &--low     { --fund-color-fallback: var(--color-error); }
 
   // ── Main clickable area ─────────────────────────────────────────────────
 
@@ -40,11 +40,10 @@
     flex: 1;
     min-width: 0;
     display: grid;
-    // mobile: icon | info | amounts
-    grid-template-columns: 2.25rem 1fr auto;
+    grid-template-columns: 2rem 1fr 7rem auto;
     gap: var(--space-3);
     align-items: center;
-    padding: var(--space-3);
+    padding: var(--space-2) var(--space-3);
     background: none;
     border: none;
     cursor: pointer;
@@ -53,14 +52,10 @@
     color: inherit;
     transition: background var(--transition-fast);
 
-    // desktop: icon | info | progress track | amounts
-    @include m.respond-to(sm) {
-      grid-template-columns: 2.25rem 1fr 9rem auto;
+    @include m.respond-below(sm) {
+      grid-template-columns: 2rem 1fr auto;
     }
 
-    &:hover {
-      background: var(--color-bg-subtle);
-    }
     &:focus-visible {
       @include m.focus-ring;
       border-radius: var(--radius-sm);
@@ -71,15 +66,15 @@
 
   &__icon {
     @include m.flex-center;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2rem;
+    height: 2rem;
     border-radius: var(--radius-md);
     background: color-mix(
       in srgb,
       var(--fund-color, var(--fund-color-fallback, var(--color-brand))) 12%,
       var(--color-bg-surface)
     );
-    font-size: 1.05rem;
+    font-size: 0.875rem;
     line-height: 1;
     flex-shrink: 0;
     color: var(--fund-color, var(--fund-color-fallback, var(--color-brand)));
@@ -107,26 +102,51 @@
   }
 
   &__badge {
-    font-size: var(--font-size-xs);
+    font-size: 10px;
     color: var(--color-text-muted);
     text-transform: uppercase;
-    letter-spacing: var(--letter-spacing-wide);
-    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.05em;
+    font-weight: var(--font-weight-semibold);
     line-height: 1;
   }
 
-  // ── Progress track (desktop only) ───────────────────────────────────────
+  // Dedicated investment account chips (shown below badge)
+  &__dedicated {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-top: 1px;
+  }
+
+  &__dedicated-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px var(--space-2);
+    font-size: 9px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-brand);
+    background: color-mix(in srgb, var(--color-brand) 8%, var(--color-bg-surface));
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+    line-height: 1.4;
+
+    &--more {
+      color: var(--color-text-muted);
+      background: var(--color-bg-subtle);
+    }
+  }
+
+  // ── Progress track ───────────────────────────────────────────────────────
 
   &__track {
-    display: none;
     height: 5px;
     background: var(--color-bg-subtle);
     border-radius: var(--radius-full);
     overflow: hidden;
     flex-shrink: 0;
 
-    @include m.respond-to(sm) {
-      display: block;
+    @include m.respond-below(sm) {
+      display: none;
     }
   }
 
@@ -166,13 +186,14 @@
   // ── Kebab menu ───────────────────────────────────────────────────────────
 
   &__menu-wrap {
+    display: flex;
+    align-items: center;
     padding: 0 var(--space-2) 0 0;
     position: relative;
     flex-shrink: 0;
     opacity: 0;
     transition: opacity var(--transition-fast);
 
-    // Show on row hover or keyboard focus inside the row
     .fund-list-row:hover &,
     .fund-list-row:focus-within & {
       opacity: 1;
@@ -181,8 +202,8 @@
 
   &__menu-trigger {
     @include m.flex-center;
-    width: var(--space-7);
-    height: var(--space-7);
+    width: var(--space-6);
+    height: var(--space-6);
     border: none;
     background: none;
     border-radius: var(--radius-md);
@@ -194,9 +215,7 @@
       background: var(--color-bg-subtle);
       color: var(--color-text);
     }
-    &:focus-visible {
-      @include m.focus-ring;
-    }
+    &:focus-visible { @include m.focus-ring; }
   }
 
   &__menu {
@@ -227,12 +246,9 @@
     text-align: left;
     transition: background var(--transition-fast);
 
-    &:hover {
-      background: var(--color-bg-subtle);
-    }
-    &--danger {
-      color: var(--color-error);
-    }
+    &:hover { background: var(--color-bg-subtle); }
+
+    &--danger { color: var(--color-error); }
     &--danger:hover {
       background: color-mix(in srgb, var(--color-error) 8%, var(--color-bg-surface));
     }

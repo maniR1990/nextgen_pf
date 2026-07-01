@@ -18,6 +18,7 @@ export const ToastContext = createContext<ToastContextValue | null>(null);
 function ToastEntry({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) => void }) {
   const handleDismiss = useCallback(() => onDismiss(item.id), [item.id, onDismiss]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: item.id/duration are primitives; handleDismiss wraps them; deps are correct
   useEffect(() => {
     if (item.duration <= 0) return;
     const timer = setTimeout(handleDismiss, item.duration);

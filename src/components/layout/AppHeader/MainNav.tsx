@@ -1,31 +1,23 @@
 'use client';
 
 import type { AppHeaderConfig, AppHeaderNavItem } from '@/lib/schemas/appHeader';
-import { Bell, LogOut, Plus, Search, User } from 'lucide-react';
+import { LogOut, Plus, Search, User } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 interface MainNavProps {
   brand: AppHeaderConfig['brand'];
   items: AppHeaderNavItem[];
   userInitials: string;
-  notificationCount: number;
   onSearch: () => void;
   onLogTransaction: () => void;
 }
 
-export function MainNav({
-  brand,
-  items,
-  userInitials,
-  notificationCount,
-  onSearch,
-  onLogTransaction,
-}: MainNavProps) {
+export function MainNav({ brand, items, userInitials, onSearch, onLogTransaction }: MainNavProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   function isActive(href: string) {
@@ -33,9 +25,16 @@ export function MainNav({
     return pathname.startsWith(href);
   }
 
-  async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
+  function handleLogout() {
+    setIsLoggingOut(true);
+    setMenuOpen(false);
+    // keepalive ensures the request completes even after page unloads.
+    // Cookies are cleared by the response Set-Cookie headers in the background.
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'include', keepalive: true }).catch(
+      () => {},
+    );
+    // Navigate immediately — don't wait for the DB write.
+    window.location.replace('/login');
   }
 
   useEffect(() => {
@@ -61,7 +60,7 @@ export function MainNav({
 
         {/* Primary navigation */}
         <nav aria-label="Primary navigation" className="main-nav__tabs-wrap">
-          <ul className="main-nav__tabs" role="list">
+          <ul className="main-nav__tabs">
             {items.map((item) => {
               const active = isActive(item.href);
               return (
@@ -92,19 +91,6 @@ export function MainNav({
             <Search size={15} aria-hidden />
             <span className="main-nav__search-label">Search</span>
             <kbd className="main-nav__kbd">⌘K</kbd>
-          </button>
-
-          <button
-            type="button"
-            className="main-nav__icon-btn"
-            aria-label={`Notifications${notificationCount > 0 ? `, ${notificationCount} unread` : ''}`}
-          >
-            <Bell size={17} aria-hidden />
-            {notificationCount > 0 && (
-              <span className="main-nav__badge" aria-hidden="true">
-                {notificationCount > 9 ? '9+' : notificationCount}
-              </span>
-            )}
           </button>
 
           <button
@@ -151,9 +137,11 @@ export function MainNav({
                   className="main-nav__user-menu-item main-nav__user-menu-item--danger"
                   role="menuitem"
                   onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  aria-busy={isLoggingOut}
                 >
                   <LogOut size={14} aria-hidden />
-                  Sign out
+                  {isLoggingOut ? 'Signing out…' : 'Sign out'}
                 </button>
               </div>
             )}

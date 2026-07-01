@@ -12,6 +12,7 @@ export function buildSessionCookies(accessToken: string, refreshToken: string) {
   return [
     `${AUTH.COOKIE_ACCESS}=${accessToken}; ${cookieOptions(AUTH.ACCESS_TOKEN_TTL_SEC)}`,
     `${AUTH.COOKIE_REFRESH}=${refreshToken}; ${cookieOptions(AUTH.REFRESH_TOKEN_TTL_SEC)}`,
+    buildLastActiveCookie(), // stamp activity on login/refresh
   ];
 }
 
@@ -19,7 +20,13 @@ export function buildClearSessionCookies() {
   return [
     `${AUTH.COOKIE_ACCESS}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`,
     `${AUTH.COOKIE_REFRESH}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`,
+    `${AUTH.COOKIE_LAST_ACTIVE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`,
   ];
+}
+
+/** Rolling activity cookie — expires after INACTIVITY_TIMEOUT_SEC of no API calls. */
+export function buildLastActiveCookie() {
+  return `${AUTH.COOKIE_LAST_ACTIVE}=1; ${cookieOptions(AUTH.INACTIVITY_TIMEOUT_SEC)}`;
 }
 
 export function getCookie(req: Request, name: string): string | undefined {

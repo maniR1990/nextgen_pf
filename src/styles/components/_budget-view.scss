@@ -1,0 +1,1251 @@
+@use '../mixins' as m;
+
+// ─── #1 Month summary bar ─────────────────────────────────────────────────────
+.budget-summary {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 10px 16px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 20px 0 0;
+
+    &--net { padding-left: 20px; border-left: 1px solid var(--color-border); }
+  }
+
+  &__label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  &__value {
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-primary);
+    line-height: 1.2;
+
+    &--income  { color: #16a34a; }
+    &--net--pos { color: #16a34a; }
+    &--net--neg { color: #dc2626; }
+  }
+
+  &__sub {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__divider {
+    width: 1px;
+    height: 40px;
+    background: var(--color-border);
+    margin: 0 20px 0 0;
+    flex-shrink: 0;
+  }
+
+  // #2 Day context — pushed to far right
+  &__day {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+  }
+
+  &__day-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+
+  &__day-bar {
+    width: 90px;
+    height: 4px;
+    background: var(--color-border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  &__day-fill {
+    height: 100%;
+    background: #3b82f6;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
+}
+
+// Summary area — relative container so the payment dropdown can anchor to it
+.budget-view__summary-area {
+  position: relative;
+}
+
+// Payment panel — normal flow, left-aligned, visually connects to the card above
+// NOT position:absolute — avoids "click here, opens there" confusion
+.budget-view__pay-dropdown {
+  display: flex;
+  justify-content: flex-start;
+  animation: pay-drop-in 0.18s ease;
+
+  > .psp--headless {
+    width: 440px;
+    min-width: 300px;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-top: 2px solid var(--color-primary, #3b82f6); // connects visually to the active card
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
+    // overflow:hidden removed — it clips native <select> dropdown popups
+  }
+
+  @media (max-width: 680px) {
+    > .psp--headless {
+      width: 100%;
+      border-radius: 0 0 8px 8px;
+    }
+  }
+}
+
+@keyframes pay-drop-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// 4th card styles inside budget-summary
+.budget-summary {
+  &__card--pay {
+    cursor: pointer;
+    border: none;
+    text-align: left;
+    background: none;
+    font-family: inherit;
+    padding: 0 20px 0 20px;
+    border-left: 1px solid var(--color-border);
+    transition: background 0.12s;
+    border-radius: 0;
+    gap: 2px;
+
+    &:hover { background: var(--color-bg-hover, rgba(0 0 0 / 0.025)); }
+
+    // Active state — bottom highlight shows the dropdown is open
+    &--pay-active {
+      background: color-mix(in srgb, var(--color-primary, #3b82f6) 4%, transparent);
+      box-shadow: inset 0 -2px 0 var(--color-primary, #3b82f6);
+    }
+  }
+
+  // Label row — inline with caret
+  &__pay-caret {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    vertical-align: middle;
+    color: var(--color-text-muted);
+  }
+
+  &__value--pay {
+    // colour is set inline from worstStatus
+  }
+
+  // Mini status chips row (dot + count)
+  &__pay-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__pay-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  &__pay-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Single source-of-truth grid — every row (header, group, category) uses this.
+// CATEGORY | PLANNED | ACTUAL | REMAINING | PACE | LAST MONTH | ACTIONS
+//
+// Category is capped at 280px so it never dominates the table.
+// Numeric columns are tight — a data table, not a dashboard card.
+// ─────────────────────────────────────────────────────────────────────────────
+$col-cat:     minmax(160px, 280px);
+$col-num:     100px;
+$col-rem:     110px;
+$col-pace:    130px;
+$col-lastmo:  110px;
+$col-actions: 80px;
+
+$row-grid: #{$col-cat} #{$col-num} #{$col-num} #{$col-rem} #{$col-pace} #{$col-lastmo} #{$col-actions};
+
+// ─── Design tokens ────────────────────────────────────────────────────────────
+$planned-color:  #3b82f6;
+$actual-ok:      #111827;
+$actual-near:    #d97706;
+$actual-over:    #dc2626;
+$rem-good:       #16a34a;
+$rem-warn:       #ca8a04;
+$rem-over:       #dc2626;
+
+// ─── BudgetView shell ─────────────────────────────────────────────────────────
+.budget-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  &__search {
+    position: relative;
+    flex: 0 0 200px;
+
+    &-icon {
+      position: absolute;
+      left: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-text-muted);
+      pointer-events: none;
+    }
+
+    &-input {
+      width: 100%;
+      padding: 6px 10px 6px 30px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      font-size: 13px;
+      background: var(--color-bg-surface);
+      color: var(--color-text-primary);
+      outline: none;
+      transition: border-color 0.15s;
+
+      &:focus { border-color: $planned-color; }
+    }
+  }
+
+  &__chips {
+    display: flex;
+    gap: 6px;
+  }
+
+  &__chip {
+    padding: 4px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--color-bg-surface);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &--active { background: $planned-color; border-color: $planned-color; color: #fff; }
+    &:hover:not(&--active) { border-color: $planned-color; color: $planned-color; }
+  }
+
+  // Month navigation
+  &__month-wrap {
+    position: relative;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-bg-surface);
+  }
+
+  &__month-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: color 0.15s;
+
+    &:hover { color: $planned-color; }
+    &:first-child { border-radius: 7px 0 0 7px; }
+    &:last-child  { border-radius: 0 7px 7px 0; }
+  }
+
+  &__month-label {
+    padding: 4px 10px;
+    border: none;
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.15s;
+
+    &:hover { color: $planned-color; }
+  }
+
+  &__month-caret { font-size: 10px; color: var(--color-text-muted); }
+
+  &__month-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.12);
+  }
+
+  &__actions { display: flex; gap: 8px; }
+
+  // ── Table header — identical grid ─────────────────────────────────────────────
+  &__table-head {
+    display: grid;
+    grid-template-columns: $row-grid;
+    align-items: center;
+    padding: 0 12px;
+    height: 30px;
+    border-bottom: 1.5px solid var(--color-border);
+  }
+
+  &__th {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+    // Must not clip the absolutely-positioned tooltip that escapes this cell.
+    overflow: visible;
+
+    &--num     { justify-content: flex-end; }
+    &--pace    { justify-content: flex-end; }
+    &--planned { color: $planned-color; }
+  }
+
+  // The table-head row itself must not clip the tooltip either.
+  &__table-head { overflow: visible; }
+
+  // Column ⓘ tooltip — pure CSS, flicker-free
+  &__col-info {
+    position: relative;
+    cursor: help;
+    display: inline-flex;
+    align-items: center;
+    // Extend the hover zone downward to bridge the gap to the tooltip.
+    // Without this, the 8px gap between icon and panel breaks :hover and causes flickering.
+    padding-bottom: 14px;
+    margin-bottom: -14px;
+
+    &-icon { font-size: 10px; opacity: 0.45; line-height: 1; }
+
+    &-tip {
+      display: none;
+      position: absolute;
+      // No extra gap — padding-top inside the tip provides the visual space.
+      top: 100%;
+      // Default: align right edge of tooltip with right edge of trigger.
+      // For rightmost columns this keeps the panel from going off-screen.
+      right: 0;
+      z-index: 300;
+      background: #18202f;
+      color: #e2e8f0;
+      border-radius: 10px;
+      // padding-top creates the visual gap without breaking hover continuity.
+      padding: 14px 14px 12px;
+      width: 230px;
+      max-width: calc(100vw - 32px);
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+      line-height: 1.6;
+      white-space: normal;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      box-shadow: 0 12px 40px rgba(0,0,0,.22);
+      pointer-events: none;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 6px;
+        right: 12px;
+        width: 8px;
+        height: 8px;
+        background: #18202f;
+        transform: rotate(45deg);
+        border-radius: 1px;
+      }
+    }
+
+    &-desc { display: block; margin-bottom: 7px; }
+
+    &-eg {
+      display: block;
+      font-size: 11px;
+      color: #94a3b8;
+      border-top: 1px solid rgba(255,255,255,.07);
+      padding-top: 6px;
+    }
+
+    &:hover &-tip { display: block; }
+  }
+
+  &__body { display: flex; flex-direction: column; gap: 4px; }
+
+  &__empty {
+    padding: 48px 0;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 14px;
+
+    &--error { color: $actual-over; }
+  }
+}
+
+// ─── Budget Group ─────────────────────────────────────────────────────────────
+.budget-group {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--color-bg-surface);
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+
+  // ── Group header: SAME 7-column grid as table-head and budget-row ─────────────
+  &__header {
+    display: grid;
+    grid-template-columns: $row-grid;
+    align-items: center;
+    padding: 0 12px;
+    height: 36px;
+    background: var(--color-bg-subtle, #f8f9fb);
+    border-left: 3px solid var(--group-color, #{$planned-color});
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background 0.12s;
+
+    &:hover { background: var(--color-bg-hover, #f0f2f5); }
+  }
+
+  // Col 1
+  &__name-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  &__chevron {
+    color: var(--color-text-muted);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+
+    &--open { transform: rotate(90deg); }
+  }
+
+  &__name {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-primary);
+  }
+
+  &__count {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--group-color, #{$planned-color}) 12%, transparent);
+    color: var(--group-color, #{$planned-color});
+    flex-shrink: 0;
+  }
+
+  // Cols 2–4: right-aligned number cells
+  &__num {
+    font-size: 12.5px;
+    font-weight: 600;
+    text-align: right;
+    padding-right: 12px;
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+
+    &--planned { color: $planned-color; }
+    &--good    { color: $rem-good; }
+    &--bad     { color: $rem-over; }
+    &--muted   { color: var(--color-text-muted); font-weight: 400; }
+  }
+
+  // Col 5: pace badge
+  &__pace-cell {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 12px;
+  }
+
+  &__pace {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+
+    &--good    { background: #dcfce7; color: #15803d; }
+    &--warn    { background: #fef3c7; color: #92400e; }
+    &--over    { background: #fee2e2; color: #b91c1c; }
+    &--neutral { background: #f3f4f6; color: #6b7280; }
+    &--past    { background: #f3f4f6; color: #6b7280; }
+  }
+
+  // Col 6: last month
+  &__lastmo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    padding-right: 12px;
+  }
+
+  &__lastmo-amount {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__lastmo-delta {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+
+    &--good { color: $rem-good; }
+    &--bad  { color: $actual-over; }
+  }
+
+  // Col 7: spacer
+  &__actions-spacer { /* intentionally empty */ }
+
+  // Body
+  &__body { display: flex; flex-direction: column; }
+
+  &__inline-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-top: 1px solid var(--color-border);
+
+    &-input {
+      flex: 1;
+      padding: 5px 10px;
+      border: 1.5px solid $planned-color;
+      border-radius: 6px;
+      font-size: 13px;
+      background: var(--color-bg-surface);
+      outline: none;
+    }
+  }
+
+  &__add-cat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    border-top: 1px dashed var(--color-border);
+    width: 100%;
+    text-align: left;
+    transition: color 0.15s;
+
+    &:hover { color: $planned-color; }
+  }
+}
+
+// ─── Budget Row (all category levels) ────────────────────────────────────────
+.budget-row {
+  display: grid;
+  grid-template-columns: $row-grid;
+  align-items: center;
+  padding: 0 12px;
+  min-height: 34px;
+  border-bottom: 1px solid rgba(0,0,0,.05);
+  transition: background 0.1s;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: color-mix(in srgb, #{$planned-color} 3%, transparent); }
+
+  &--depth-2 .budget-row__name-cell { padding-left: 22px; }
+  &--depth-3 .budget-row__name-cell { padding-left: 40px; }
+  &--saving  { opacity: 0.6; pointer-events: none; }
+  &--add {
+    background: #f8faff;
+    border-top: 1px solid var(--color-border);
+  }
+
+  // ── Three-tier visual hierarchy ───────────────────────────────────────────
+  // Tier 2 — Parent category (rollup row: has children, values are computed sums)
+  &--parent {
+    background: #f9fafb;                    // very subtle gray tint — "computed" feel
+    border-bottom-color: rgba(0,0,0,.07);
+
+    .budget-row__name {
+      font-weight: 550;                     // slightly bolder than leaf
+      color: var(--color-text-primary);
+    }
+
+    &:hover { background: #f3f4f6; }
+  }
+
+  // Tier 3 — Leaf item (directly user-set, editable)
+  &--leaf {
+    background: transparent;
+
+    .budget-row__name {
+      font-weight: 400;
+      color: var(--color-text-secondary);   // slightly softer — it's a detail row
+    }
+  }
+
+  // Rollup number style — computed sums shown in secondary, non-clickable
+  &__rollup-num {
+    font-size: 12.5px;
+    font-weight: 550;
+    color: var(--color-text-secondary);     // NOT blue — not user-set
+    font-variant-numeric: tabular-nums;
+    font-style: italic;                     // italic = "derived value"
+  }
+
+  // Rollup modifier on actual/remaining — slightly muted vs leaf coloured values
+  &__amount--rollup {
+    font-weight: 550;
+  }
+  &__rem--rollup {
+    font-weight: 550;
+  }
+
+  // Planned cell — no hover effect when it's a rollup (not editable)
+  &__planned-cell--rollup {
+    cursor: default;
+    &:hover { background: transparent; }
+  }
+
+  // Col 1
+  &__name-cell {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    padding-right: 6px;
+  }
+
+  &__chevron {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: var(--color-text-muted);
+    transition: transform 0.18s, color 0.1s;
+
+    &--open { transform: rotate(90deg); }
+    &:hover { color: $planned-color; }
+  }
+
+  &__leaf-indent { width: 12px; flex-shrink: 0; }
+  &__dot  { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  &__icon { font-size: 13px; flex-shrink: 0; line-height: 1; }
+
+  &__name {
+    font-size: 13px;
+    color: var(--color-text-primary);
+    font-weight: 450;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 999px;
+    line-height: 1.4;
+
+    &--rec       { background: #eff6ff; color: $planned-color; }
+    &--unplanned { background: #fffbeb; color: #b45309; }
+    &--due {
+      background: #f0fdf4; color: #15803d;
+      border: none; cursor: pointer; font-family: inherit;
+      &:hover { background: #dcfce7; }
+    }
+  }
+
+
+  &__rename-input {
+    flex: 1;
+    min-width: 0;
+    padding: 3px 8px;
+    border: 1.5px solid $planned-color;
+    border-radius: 6px;
+    font-size: 13.5px;
+    background: var(--color-bg-surface);
+    color: var(--color-text-primary);
+    outline: none;
+  }
+
+  // Col 2: Planned
+  &__planned-cell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 12px;
+    border-radius: 4px;
+    min-height: 26px;
+    transition: background 0.12s;
+
+    // #3 Discoverability — rollup: not clickable
+    &--rollup { cursor: default; }
+
+    // #3 Discoverability — editable leaf: always shows cursor hint + focus ring
+    &--editable {
+      cursor: text;
+      outline: none;
+
+      &:hover {
+        background: color-mix(in srgb, #{$planned-color} 8%, transparent);
+      }
+
+      // #3 Always-visible edit hint on the "Set budget" placeholder
+      .budget-row__amount--placeholder {
+        color: $planned-color;
+        opacity: 0.55;
+        font-style: normal;
+        font-size: 11.5px;
+        font-weight: 500;
+        border-bottom: 1px dashed rgba(59,130,246,.4);
+        padding-bottom: 1px;
+        transition: opacity 0.15s;
+      }
+
+      &:hover .budget-row__amount--placeholder { opacity: 1; }
+
+      // #4 Keyboard focus ring — shows when user tabs to the cell
+      &:focus-visible {
+        background: color-mix(in srgb, #{$planned-color} 8%, transparent);
+        box-shadow: 0 0 0 2px rgba(59,130,246,.35);
+      }
+    }
+  }
+
+  &__inline-input {
+    width: 80px;
+    text-align: right;
+    padding: 2px 5px;
+    border: 1.5px solid $planned-color;
+    border-radius: 4px;
+    font-size: 12.5px;
+    background: var(--color-bg-surface);
+    color: $planned-color;
+    font-weight: 600;
+    outline: none;
+    font-variant-numeric: tabular-nums;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button { -webkit-appearance: none; }
+    -moz-appearance: textfield;
+  }
+
+  &__amount {
+    font-size: 12.5px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+
+    &--planned      { color: $planned-color; font-weight: 600; }
+    &--actual-muted { color: var(--color-text-muted); font-weight: 400; }
+    &--actual-ok    { color: $actual-ok; }
+    &--actual-near  { color: $actual-near; font-weight: 600; }
+    &--actual-over  { color: $actual-over; font-weight: 700; }
+    &--placeholder  {
+      color: var(--color-text-muted);
+      font-weight: 400;
+      font-style: italic;
+      font-size: 11.5px;
+    }
+  }
+
+  // Col 3: Actual
+  &__actual-cell {
+    text-align: right;
+    padding-right: 12px;
+  }
+
+  // Col 4: Remaining
+  &__remaining-cell {
+    text-align: right;
+    padding-right: 12px;
+  }
+
+  &__rem {
+    font-size: 12.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+
+    &--good    { color: $rem-good; }
+    &--warn    { color: $rem-warn; }
+    &--over    { color: $rem-over; }
+    &--muted   { color: var(--color-text-muted); font-weight: 400; }
+    // #6 Investment: gap to goal — amber (still to invest)
+    &--invest  { color: #b45309; font-weight: 600; }
+  }
+
+  // Col 5: Pace
+  &__pace-cell {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 12px;
+  }
+
+  &__pace {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+
+    &--good    { background: #dcfce7; color: #15803d; }
+    &--warn    { background: #fef3c7; color: #92400e; }
+    &--over    { background: #fee2e2; color: #b91c1c; }
+    &--neutral { background: #f3f4f6; color: #6b7280; }
+    &--past    { background: #f3f4f6; color: #6b7280; font-style: italic; }
+  }
+
+  // Col 6: Last month
+  &__lastmo-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    padding-right: 12px;
+  }
+
+  &__lastmo-amount {
+    font-size: 12.5px;
+    color: var(--color-text-secondary);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__lastmo-delta {
+    font-size: 10px;
+    font-weight: 700;
+
+    &--good { color: $rem-good; }
+    &--bad  { color: $actual-over; }
+  }
+
+  // Col 7: Actions
+  &__actions-cell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+  }
+
+  &__icon-btn {
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    background: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.12s;
+    color: var(--color-text-muted);
+    padding: 0;
+
+    &:hover { background: var(--color-bg-subtle); border-color: var(--color-border); color: var(--color-text-primary); }
+
+    &--rec:hover    { color: $planned-color; border-color: rgba(59,130,246,.3); background: rgba(59,130,246,.07); }
+    &--unpl:hover   { color: #d97706; border-color: rgba(217,119,6,.3); background: rgba(217,119,6,.07); }
+    &--rename:hover { color: $planned-color; border-color: rgba(59,130,246,.3); background: rgba(59,130,246,.07); }
+    &--add:hover    { color: $rem-good; border-color: rgba(22,163,74,.3); background: rgba(22,163,74,.07); }
+    &--delete:hover { color: $actual-over; border-color: rgba(220,38,38,.3); background: rgba(220,38,38,.07); }
+    &--due:hover    { color: #15803d; border-color: rgba(22,163,74,.3); background: rgba(22,163,74,.07); }
+
+    &--active-due {
+      opacity: 1;
+      color: #15803d;
+      border-color: rgba(22,163,74,.25);
+      background: rgba(22,163,74,.08);
+    }
+    &--active-rec {
+      opacity: 1;
+      color: $planned-color;
+      border-color: rgba(59,130,246,.25);
+      background: rgba(59,130,246,.08);
+    }
+    &--active-unpl {
+      opacity: 1;
+      color: #d97706;
+      border-color: rgba(217,119,6,.25);
+      background: rgba(217,119,6,.08);
+    }
+  }
+
+  &:hover &__icon-btn { opacity: 1; }
+
+  // Add-sub form
+  &__add-name {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1.5px solid $planned-color;
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--color-bg-surface);
+    outline: none;
+  }
+
+  &__add-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  &__add-amount {
+    width: 80px;
+    text-align: right;
+    padding: 4px 6px;
+    border: 1.5px solid $planned-color;
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--color-bg-surface);
+    outline: none;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button { -webkit-appearance: none; }
+    -moz-appearance: textfield;
+  }
+
+  &__action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &--save {
+      background: $planned-color;
+      border: none;
+      color: #fff;
+
+      &:disabled { opacity: 0.5; cursor: not-allowed; }
+    }
+
+    &--cancel {
+      background: transparent;
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+
+      &:hover { border-color: $actual-over; color: $actual-over; }
+    }
+  }
+
+  &__currency { font-size: 11px; color: var(--color-text-muted); margin-right: 2px; }
+
+  // Mobile-stats: hidden on desktop, shown via mobile breakpoints below
+  &__mobile-stats { display: none; }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESPONSIVE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Group header mobile-stats: hidden on desktop
+.budget-group__mobile-stats { display: none; }
+
+// ── Tablet ≤ 900px: drop LAST MONTH column ────────────────────────────────────
+@media (max-width: 900px) {
+  $grid-md: minmax(140px, 1fr) 90px 90px 100px 120px 72px; // 6 cols (no lastmo)
+
+  .budget-view__table-head,
+  .budget-group__header,
+  .budget-row { grid-template-columns: $grid-md; }
+
+  .budget-view__th--lastmo,
+  .budget-row__lastmo-cell,
+  .budget-group__lastmo { display: none; }
+}
+
+// ── Small tablet ≤ 680px: drop PACE + LAST MONTH; reflow summary ──────────────
+@media (max-width: 680px) {
+  $grid-sm: minmax(120px, 1fr) 88px 88px 100px 64px; // 5 cols (no pace, no lastmo)
+
+  .budget-view__table-head,
+  .budget-group__header,
+  .budget-row { grid-template-columns: $grid-sm; }
+
+  .budget-view__th--pace,
+  .budget-row__pace-cell,
+  .budget-group__pace-cell { display: none; }
+
+  // Summary bar: 2×2 grid
+  .budget-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 12px 14px;
+
+    &__divider { display: none; }
+
+    &__card {
+      padding: 10px 12px;
+      background: var(--color-bg-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+
+      &--net { border-left: 1px solid var(--color-border); }
+    }
+
+    &__value { font-size: 17px; }
+
+    &__day {
+      margin-left: 0;
+      align-items: flex-start;
+      grid-column: 1 / -1;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
+
+    &__day-bar { width: 120px; }
+  }
+}
+
+// ── Mobile ≤ 520px: 2-column layout, show mobile-stats condensed row ──────────
+@media (max-width: 520px) {
+  $grid-xs: 1fr 100px; // CATEGORY | PLANNED
+
+  // ─ Grid: 2 columns + allow auto rows for mobile-stats ─
+  .budget-view__table-head,
+  .budget-group__header,
+  .budget-row {
+    grid-template-columns: $grid-xs;
+    grid-template-rows: auto auto;
+  }
+
+  // ─ Table header: hide everything except CATEGORY and PLANNED ─
+  .budget-view__th--num:not(.budget-view__th--planned),
+  .budget-view__th--pace,
+  .budget-view__th--lastmo,
+  .budget-view__th--actions { display: none; }
+
+  // ─ Row cells: hide data columns on mobile ─
+  .budget-row__actual-cell,
+  .budget-row__remaining-cell,
+  .budget-row__pace-cell,
+  .budget-row__lastmo-cell,
+  .budget-row__actions-cell { display: none; }
+
+  // ─ Group header: hide data columns ─
+  .budget-group__num:not(.budget-group__num--planned),
+  .budget-group__pace-cell,
+  .budget-group__lastmo,
+  .budget-group__actions-spacer { display: none; }
+
+  // ─ Mobile-stats: show as a full-width 2nd row ─
+  .budget-row__mobile-stats {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    grid-column: 1 / -1;
+    padding: 2px 12px 6px 36px; // indent matches name cell
+    font-size: 11.5px;
+    color: var(--color-text-secondary);
+  }
+
+  .budget-group__mobile-stats {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    grid-column: 1 / -1;
+    padding: 2px 12px 6px 32px;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+
+  // ─ Remaining color classes for mobile-stats ─
+  .budget-row__ms-rem {
+    &--good    { color: $rem-good; font-weight: 600; }
+    &--warn    { color: $rem-warn; font-weight: 600; }
+    &--over    { color: $rem-over; font-weight: 600; }
+    &--invest  { color: #b45309;   font-weight: 600; }
+    &--muted   { color: var(--color-text-muted); }
+  }
+
+  .budget-group__ms-rem {
+    &--good { color: $rem-good; }
+    &--bad  { color: $rem-over; }
+    &--muted { color: var(--color-text-muted); }
+  }
+
+  // Dot separator between items
+  .budget-row__ms-spent::after,
+  .budget-group__ms-spent::after { content: ' ·'; color: var(--color-text-muted); }
+
+  // ─ Toolbar: stack into two rows ─
+  .budget-view__toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+
+    // Search: full width on its own row
+    .budget-view__search {
+      width: 100%;
+      order: 0;
+    }
+
+    // Chips: compact
+    .budget-view__chips {
+      order: 2;
+      flex: 1;
+
+      .budget-view__chip {
+        padding: 3px 8px;
+        font-size: 11px;
+      }
+    }
+
+    // Month nav: stays together
+    .budget-view__month-wrap { order: 1; }
+
+    // Utility buttons: collapse all hidden, auto-fill compact
+    .budget-view__actions {
+      order: 3;
+      gap: 4px;
+
+      // Collapse all not useful on mobile (tap group to collapse)
+      .btn:last-child { display: none; }
+
+      .btn:first-child {
+        font-size: 11px;
+        padding: 3px 8px;
+      }
+    }
+  }
+
+  // ─ Summary bar: single column ─
+  .budget-summary {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px 12px;
+
+    &__value { font-size: 18px; }
+
+    &__day {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      grid-column: 1;
+      padding: 8px 12px;
+      background: var(--color-bg-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+    }
+
+    &__day-bar { width: 100px; }
+  }
+
+  // ─ Row sizing: tighter on mobile ─
+  .budget-row {
+    min-height: 38px;
+
+    &__name-cell { padding-left: 10px; font-size: 13px; }
+    &__planned-cell { padding-right: 8px; }
+    &__name { font-size: 13px; }
+  }
+
+  .budget-group__header {
+    min-height: 40px;
+    padding: 0 10px;
+  }
+
+  .budget-group__name-cell {
+    font-size: 12.5px;
+  }
+
+  // ─ Table header: compact on mobile ─
+  .budget-view__table-head {
+    padding: 6px 0;
+
+    .budget-view__th { font-size: 10px; }
+  }
+
+  // ─ Month picker: make dropdown anchored correctly ─
+  .budget-view__month-dropdown {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}

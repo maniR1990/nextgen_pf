@@ -16,9 +16,32 @@ function getApiErrorMessage(json: ApiJson<unknown>): string {
 }
 
 export async function readV1Json<T>(res: Response): Promise<T> {
-  const json = (await res.json()) as ApiJson<T>;
-  const failed = !res.ok || json.ok === false || json.success === false;
-  if (failed) {
+  // 204 No Content and any response with no body — treat as success with no data
+  const contentType = res.headers.get('content-type') ?? '';
+  const hasBody = contentType.includes('application/json') || res.status !== 204;
+
+  if (!res.ok) {
+    if (hasBody) {
+      try {
+        const errJson = (await res.json()) as ApiJson<T>;
+        const msg = getApiErrorMessage(errJson);
+        throw new Error(msg);
+      } catch (parseErr) {
+        if (parseErr instanceof Error && !parseErr.message.startsWith('Request failed')) {
+          throw parseErr;
+        }
+      }
+    }
+    throw new Error(`Request failed: ${res.status} ${res.statusText}`);
+  }
+
+  if (!hasBody) return undefined as T;
+
+  const text = await res.text();
+  if (!text.trim()) return undefined as T;
+
+  const json = JSON.parse(text) as ApiJson<T>;
+  if (json.ok === false || json.success === false) {
     throw new Error(getApiErrorMessage(json));
   }
   return json.data;
@@ -57,17 +80,24 @@ async function apiWriteV1<T>(
   path: string,
   method: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   body?: unknown,
+  extraHeaders?: Record<string, string>,
 ): Promise<T> {
+  const baseHeaders: Record<string, string> =
+    body !== undefined ? { 'Content-Type': 'application/json' } : {};
   const res = await fetchWithSession(path, {
     method,
-    headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+    headers: { ...baseHeaders, ...extraHeaders },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   return readV1Json<T>(res);
 }
 
-export function apiPostV1<T>(path: string, body: unknown): Promise<T> {
-  return apiWriteV1<T>(path, 'POST', body);
+export function apiPostV1<T>(
+  path: string,
+  body: unknown,
+  extraHeaders?: Record<string, string>,
+): Promise<T> {
+  return apiWriteV1<T>(path, 'POST', body, extraHeaders);
 }
 
 export function apiPutV1<T>(path: string, body: unknown): Promise<T> {
@@ -78,6 +108,6 @@ export function apiPatchV1<T>(path: string, body?: unknown): Promise<T> {
   return apiWriteV1<T>(path, 'PATCH', body);
 }
 
-export function apiDeleteV1<T>(path: string): Promise<T> {
-  return apiWriteV1<T>(path, 'DELETE');
+export function apiDeleteV1<T>(path: string, extraHeaders?: Record<string, string>): Promise<T> {
+  return apiWriteV1<T>(path, 'DELETE', undefined, extraHeaders);
 }

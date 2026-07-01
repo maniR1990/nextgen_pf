@@ -64,8 +64,10 @@
   &__summary-value {
     font-size: var(--font-size-sm);
     font-weight: var(--font-variation-semibold);
-    &--credit { color: var(--color-success); }
-    &--debit  { color: var(--color-error); }
+    font-variant-numeric: tabular-nums;
+    &--credit   { color: var(--color-success); }
+    &--debit    { color: var(--color-error); }
+    &--neutral  { color: var(--color-text-muted); }
   }
 
   // Filter tabs
@@ -200,15 +202,20 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    padding: var(--space-3);
-    background: color-mix(in srgb, var(--color-brand) 5%, var(--color-bg-surface));
-    border: 1px solid color-mix(in srgb, var(--color-brand) 14%, var(--color-border));
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-bg-surface);
+    border: var(--border-width) solid var(--color-border);
+    border-left: 3px solid var(--color-border);
     border-radius: var(--radius-md);
     transition: background var(--transition-fast);
 
+    &--credit  { border-left-color: var(--color-success); }
+    &--debit   { border-left-color: var(--color-error); }
+    &--neutral { border-left-color: var(--color-text-muted); }
+
     &--clickable {
       cursor: pointer;
-      &:hover { background: color-mix(in srgb, var(--color-brand) 10%, var(--color-bg-surface)); }
+      &:hover { background: var(--color-bg-subtle); }
       &:focus-visible { @include m.focus-ring; }
     }
 
@@ -288,18 +295,23 @@
   }
 
   &__card-subtitle {
-    // category label
     font-family: var(--font-family-sans);
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
     color: var(--color-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
 
-    @include m.respond-below(sm) {
-      font-size: 0.7rem;
-    }
+  &__card-notes {
+    font-size: 10px;
+    color: var(--color-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-style: italic;
+    opacity: 0.8;
   }
 
   // Payment method chip (UPI, Auto Debit, etc.)

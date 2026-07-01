@@ -1,6 +1,5 @@
 import { isApiError } from '@/lib/api/errors';
 import { compose, withAuth, withIdempotency, withValidation } from '@/lib/api/middleware';
-import { created, error, ok } from '@/lib/api/response';
 import { v1Created, v1FromApiError, v1Ok, v1Paginated } from '@/lib/api/v1/envelope';
 import { getLogger } from '@/lib/logger';
 import { getIncomePeriodData } from '@/lib/utils/incomePeriod';
@@ -24,9 +23,10 @@ export const handleCreateTransaction = compose(
     const body = await req.json();
     const dto = { ...body, userId: ctx.session!.id };
     const transaction = await TransactionService.createTransaction(dto);
-    return created(transaction);
+    return v1Created(transaction);
   } catch (err) {
-    if (isApiError(err)) return error(err);
+    log.error('createTransaction', { err });
+    if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }
 });
@@ -53,9 +53,10 @@ export const handleGetTransactions = compose(withAuth())(async (req, ctx) => {
       search,
     });
 
-    return ok(result);
+    return v1Ok(result);
   } catch (err) {
-    if (isApiError(err)) return error(err);
+    log.error('getTransactions', { err });
+    if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }
 });
@@ -64,9 +65,10 @@ export const handleCheckDuplicates = compose(withAuth())(async (req, ctx) => {
   try {
     const { merchant, amount, date } = await req.json();
     const dupes = await TransactionService.checkDuplicates(ctx.session!.id, merchant, amount, date);
-    return ok(dupes);
+    return v1Ok(dupes);
   } catch (err) {
-    if (isApiError(err)) return error(err);
+    log.error('checkDuplicates', { err });
+    if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }
 });

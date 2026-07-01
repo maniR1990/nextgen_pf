@@ -1,5 +1,7 @@
 'use client';
 
+import { MonthNavControl } from '@/components/common/MonthNavControl/MonthNavControl';
+import { MonthPicker } from '@/components/common/MonthPicker/MonthPicker';
 import {
   TRANSACTION_FILTER_ALL,
   TRANSACTION_FILTER_CHIPS,
@@ -11,10 +13,13 @@ import { apiGetV1 } from '@/lib/query/fetcher';
 import { queryKeys } from '@/lib/query/queryKeys';
 import type { PaymentSourceOption } from '@/types/finance';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDownUp, Building2, Calendar } from 'lucide-react';
+import { ArrowDownUp, Building2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 export function TransactionFilterBar() {
   const { filters, setFilters, monthLabel } = useTransactionFilters();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   const { data: sources = [] } = useQuery({
     queryKey: queryKeys.paymentSources.list(),
@@ -22,11 +27,21 @@ export function TransactionFilterBar() {
     staleTime: 15 * 60_000,
   });
 
-  const monthInputValue = `${filters.year}-${String(filters.month).padStart(2, '0')}`;
+  // Close picker on outside click
+  useEffect(() => {
+    if (!pickerOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [pickerOpen]);
 
-  function handleMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const [y, m] = e.target.value.split('-').map(Number);
-    if (y && m) setFilters({ year: y, month: m });
+  function shiftMonth(delta: number) {
+    const d = new Date(filters.year, filters.month - 1 + delta, 1);
+    setFilters({ year: d.getFullYear(), month: d.getMonth() + 1 });
   }
 
   function toggleSort() {
@@ -60,17 +75,35 @@ export function TransactionFilterBar() {
       </div>
 
       <div className="tx-filter-bar__controls">
-        <label className="tx-filter-bar__control tx-filter-bar__control--month">
-          <Calendar size={14} aria-hidden className="tx-filter-bar__control-icon" />
-          <span className="tx-filter-bar__control-label">{monthLabel}</span>
-          <input
-            type="month"
-            className="tx-filter-bar__month-input"
-            value={monthInputValue}
-            onChange={handleMonthChange}
-            aria-label="Budget period month"
+        {/* Month picker — MonthNavControl (prev/next) + MonthPicker popover */}
+        <div className="tx-filter-bar__month-wrap" ref={pickerRef}>
+          <MonthNavControl
+            label={monthLabel}
+            onPrev={() => shiftMonth(-1)}
+            onNext={() => shiftMonth(1)}
           />
-        </label>
+          <button
+            type="button"
+            className="tx-filter-bar__month-trigger"
+            aria-label="Pick month"
+            aria-expanded={pickerOpen}
+            onClick={() => setPickerOpen((o) => !o)}
+          >
+            ▾
+          </button>
+          {pickerOpen && (
+            <div className="tx-filter-bar__month-dropdown" role="dialog" aria-label="Month picker">
+              <MonthPicker
+                value={{ month: filters.month, year: filters.year }}
+                clearable={false}
+                onChange={({ month, year }) => {
+                  setFilters({ month, year });
+                  setPickerOpen(false);
+                }}
+              />
+            </div>
+          )}
+        </div>
 
         <label className="tx-filter-bar__control">
           <Building2 size={14} aria-hidden className="tx-filter-bar__control-icon" />

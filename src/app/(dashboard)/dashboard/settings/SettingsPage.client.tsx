@@ -23,6 +23,7 @@ import type {
   AccountDetail,
   AccountGroupWithAccounts,
   CreateAccountDto,
+  TransactionPage,
 } from '@/modules/accounts/accounts.types';
 import type { FundAllocationInput } from '@/modules/funds/funds.types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -68,7 +69,7 @@ export function SettingsPageClient() {
   } = useQuery({
     queryKey: queryKeys.accounts.list(),
     queryFn: () => apiGetV1<AccountGroupWithAccounts[]>('/api/v1/accounts?limit=100&sort=name_asc'),
-    staleTime: 0,
+    staleTime: 60_000,
   });
 
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
@@ -78,6 +79,7 @@ export function SettingsPageClient() {
     await queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all });
     await queryClient.invalidateQueries({ queryKey: queryKeys.formOptions.sources() });
     await queryClient.invalidateQueries({ queryKey: queryKeys.paymentSources.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.appHeader.all });
   }, [queryClient]);
 
   // ── Account Group handlers ──────────────────────────────────────────────────
@@ -164,7 +166,7 @@ export function SettingsPageClient() {
   const handleTransfer = useCallback(
     async (payload: TransferPayload) => {
       try {
-        await apiPatchV1(`/api/v1/accounts/${payload.fromAccountId}/transfer`, {
+        await apiPostV1(`/api/v1/accounts/${payload.fromAccountId}/transfer`, {
           toAccountId: payload.toAccountId,
           amount: payload.amount,
           note: payload.note || undefined,
@@ -193,6 +195,14 @@ export function SettingsPageClient() {
     return apiGetV1<AccountDetail>(`/api/v1/accounts/${accountId}`);
   }, []);
 
+  const transactionsLoader = useCallback(
+    (accountId: string, page: number, limit: number) =>
+      apiGetV1<TransactionPage>(
+        `/api/v1/accounts/${accountId}/transactions?page=${page}&limit=${limit}`,
+      ),
+    [],
+  );
+
   const handleSaveAllocations = useCallback(
     async (fundId: string, allocations: FundAllocationInput[]) => {
       await funds.saveAllocations(fundId, allocations);
@@ -202,8 +212,22 @@ export function SettingsPageClient() {
 
   if (accountsLoading) {
     return (
-      <div className="accounts-shell" aria-busy="true" aria-live="polite">
-        <div className="accounts-shell__loading" />
+      <div className="page-skeleton" aria-busy="true" aria-label="Loading settings">
+        <div className="page-skeleton__subnav">
+          {[80, 72, 96, 64].map((w) => (
+            <div key={w} className="page-skeleton__pill" style={{ width: w }} />
+          ))}
+        </div>
+        <div className="page-skeleton__body">
+          <div className="page-skeleton__group-header" />
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="page-skeleton__row" />
+          ))}
+          <div className="page-skeleton__group-header" />
+          {[1, 2].map((i) => (
+            <div key={i} className="page-skeleton__row page-skeleton__row--wide" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -229,6 +253,7 @@ export function SettingsPageClient() {
         onDeleteAccount={handleDeleteAccount}
         onTransfer={handleTransfer}
         onArchiveAccount={handleArchiveAccount}
+        transactionsLoader={transactionsLoader}
         onCreateFund={funds.createFund}
         onUpdateFund={funds.updateFund}
         onArchiveFund={funds.archiveFund}

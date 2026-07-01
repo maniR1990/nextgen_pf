@@ -16,13 +16,6 @@
     "collapseAfterScrollPx": 40,
     "metrics": [
       {
-        "id": "netWorth",
-        "label": "NET WORTH",
-        "dataKey": "netWorth",
-        "changeKey": "netWorthChangePct",
-        "format": "currency-inr-compact"
-      },
-      {
         "id": "readyToAssign",
         "label": "READY TO ASSIGN",
         "dataKey": "readyToAssign",

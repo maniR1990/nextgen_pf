@@ -4,7 +4,7 @@ import {
   isLiabilityAccountType,
 } from '@/constants/accounts';
 import type { AccountType } from '@prisma/client';
-import type { AccountHealth, UpcomingEventItem } from '../accounts.types';
+import type { AccountHealth, BalanceReconciliation, UpcomingEventItem } from '../accounts.types';
 
 interface HealthInput {
   balance: number;
@@ -13,6 +13,7 @@ interface HealthInput {
   archivedAt: Date | null;
   fundFillPercent: number;
   upcomingEvents: UpcomingEventItem[];
+  reconciliation: BalanceReconciliation;
 }
 
 export function buildAccountCode(
@@ -36,6 +37,7 @@ export function computeAccountHealth(input: HealthInput): AccountHealth {
       utilisationPercent: null,
       fundFillPercent: input.fundFillPercent,
       upcomingEvents: input.upcomingEvents,
+      reconciliation: input.reconciliation,
     };
   }
 
@@ -57,10 +59,14 @@ export function computeAccountHealth(input: HealthInput): AccountHealth {
 
   if (input.upcomingEvents.length > 3) score -= 5;
 
+  // Penalise drifted balance — something upstream broke the invariant
+  if (input.reconciliation.isDrifted) score -= 20;
+
   return {
     healthScore: Math.max(0, Math.min(100, score)),
     utilisationPercent,
     fundFillPercent: input.fundFillPercent,
     upcomingEvents: input.upcomingEvents,
+    reconciliation: input.reconciliation,
   };
 }

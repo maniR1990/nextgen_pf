@@ -1,4 +1,5 @@
 import { asRouteHandler } from '@/lib/api/middleware';
-import { v1GetCategoryBudgets } from '@/modules/budget-engine';
+import { v1GetMonthlySummary } from '@/modules/budget-engine';
 
-export const GET = asRouteHandler(v1GetCategoryBudgets);
+// Returns the full monthly budget summary (groups + categories)
+export const GET = asRouteHandler(v1GetMonthlySummary);

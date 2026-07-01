@@ -1,5 +1,6 @@
 'use client';
 
+import { NavigationProgress } from '@/components/common/NavigationProgress';
 import { SessionExpiredModal } from '@/components/common/SessionExpiredModal';
 import { TransactionDialog } from '@/components/common/TransactionDialog';
 import { AppFooter } from '@/components/layout/AppFooter';
@@ -10,7 +11,7 @@ import rawHeaderConfig from '@/config/appHeader.json';
 import { useAppHeaderData } from '@/hooks/useAppHeaderData';
 import { AppFooterConfigSchema } from '@/lib/schemas/appFooter';
 import { AppHeaderConfigSchema } from '@/lib/schemas/appHeader';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 
 const headerConfig = AppHeaderConfigSchema.parse(rawHeaderConfig);
 const footerConfig = AppFooterConfigSchema.parse(rawFooterConfig);
@@ -66,6 +67,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <TransactionDialog open={txOpen} onClose={() => setTxOpen(false)} />
 
+      <Suspense>
+        <NavigationProgress />
+      </Suspense>
       <SessionExpiredModal />
     </div>
   );

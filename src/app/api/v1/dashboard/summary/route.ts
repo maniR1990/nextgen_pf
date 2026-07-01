@@ -1,6 +1,9 @@
 import { asRouteHandler, compose, withAuth } from '@/lib/api/middleware';
 import { v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { prisma } from '@/lib/db/prisma';
+import { FundsService } from '@/modules/funds';
+import { NetWorthRepository } from '@/modules/net-worth/net-worth.repository';
+import { unstable_cache } from 'next/cache';
 
 function initials(name: string): string {
   return name
@@ -18,40 +21,65 @@ function daysInMonth(year: number, month: number) {
 const OUTFLOW_TYPES = ['EXPENSE', 'INVESTMENT', 'SINKING_DEPOSIT', 'ATM_WITHDRAWAL'] as const;
 const INFLOW_TYPES = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND'] as const;
 
+// Cache the heavy DB work per userId for 30 seconds.
+// Key includes userId so different users never share cached data.
+const fetchSummaryData = unstable_cache(
+  async (userId: string, year: number, month: number) => {
+    const [user, outAgg, inAgg, totalCount, pendingCount, nwAccounts, fundsSummary] =
+      await Promise.all([
+        prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { name: true } }),
+
+        prisma.financeTransaction.aggregate({
+          where: {
+            userId,
+            budgetPeriodYear: year,
+            budgetPeriodMonth: month,
+            type: { in: OUTFLOW_TYPES as never },
+          },
+          _sum: { amount: true },
+        }),
+
+        prisma.financeTransaction.aggregate({
+          where: {
+            userId,
+            budgetPeriodYear: year,
+            budgetPeriodMonth: month,
+            type: { in: INFLOW_TYPES as never },
+          },
+          _sum: { amount: true },
+        }),
+
+        prisma.financeTransaction.count({ where: { userId } }),
+        prisma.financeTransaction.count({ where: { userId, status: 'PENDING' } }),
+        NetWorthRepository.findAccountsWithGroups(userId),
+        FundsService.getSummary(userId),
+      ]);
+
+    return { user, outAgg, inAgg, totalCount, pendingCount, nwAccounts, fundsSummary };
+  },
+  ['dashboard-summary'],
+  { revalidate: 30 }, // cache per userId for 30 seconds
+);
+
 const handleSummary = compose(withAuth())(async (_req, ctx) => {
   const userId = ctx.session!.id;
   const now = new Date();
   const year = now.getFullYear();
-  const month = now.getMonth() + 1; // 1-based
+  const month = now.getMonth() + 1;
 
   try {
-    const [user, outAgg, inAgg, totalCount, pendingCount] = await Promise.all([
-      prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { name: true } }),
+    const { user, outAgg, inAgg, totalCount, pendingCount, nwAccounts, fundsSummary } =
+      await fetchSummaryData(userId, year, month);
 
-      prisma.financeTransaction.aggregate({
-        where: {
-          userId,
-          budgetPeriodYear: year,
-          budgetPeriodMonth: month,
-          type: { in: OUTFLOW_TYPES as never },
-        },
-        _sum: { amount: true },
-      }),
-
-      prisma.financeTransaction.aggregate({
-        where: {
-          userId,
-          budgetPeriodYear: year,
-          budgetPeriodMonth: month,
-          type: { in: INFLOW_TYPES as never },
-        },
-        _sum: { amount: true },
-      }),
-
-      prisma.financeTransaction.count({ where: { userId } }),
-
-      prisma.financeTransaction.count({ where: { userId, status: 'PENDING' } }),
-    ]);
+    // Compute net worth from account balances
+    let totalAssets = 0;
+    let totalLiabilities = 0;
+    for (const acc of nwAccounts) {
+      if (acc.isExcludeNetWorth) continue;
+      if (acc.group.type === 'ASSET') totalAssets += acc.balance;
+      else totalLiabilities += acc.balance;
+    }
+    const netWorth = totalAssets - totalLiabilities;
 
     const totalOut = outAgg._sum.amount ?? 0;
     const totalIn = inAgg._sum.amount ?? 0;
@@ -97,12 +125,11 @@ const handleSummary = compose(withAuth())(async (_req, ctx) => {
       spendPaceLabel,
       notificationCount: pendingCount, // pending txns drive the badge until we have a real notifications system
 
-      // Budget fields — not yet computed (no payment sources / budget engine wired)
-      netWorth: 0,
+      netWorth,
       netWorthChangePct: 0,
-      readyToAssign: 0,
-      unallocated: 0,
-      assigned: 0,
+      readyToAssign: fundsSummary.totalUnallocated,
+      unallocated: fundsSummary.totalUnallocated,
+      assigned: fundsSummary.totalAllocated,
       remaining: 0,
       spendPaceChangePct: 0,
       nextRecurringLabel: '—',

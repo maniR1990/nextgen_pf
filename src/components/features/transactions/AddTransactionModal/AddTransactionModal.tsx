@@ -29,7 +29,7 @@ import { PAYMENT_METHODS } from '@/constants/finance';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import type { TransactionFormValues } from '@/store/transactionFormStore';
 import type { CategoryOption, PaymentSourceOption, SinkingFundOption } from '@/types/finance';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface AddTransactionModalProps {
   open: boolean;
@@ -38,7 +38,7 @@ interface AddTransactionModalProps {
   categories: CategoryOption[];
   categoryGroups: PickerGroup[];
   sinkingFunds: SinkingFundOption[];
-  onCreateCategory?: (name: string, parentId: string | null) => Promise<string>;
+  onCreateCategory?: (name: string, parentId: string | null, flowType?: string) => Promise<string>;
   editId?: string;
   prefillValues?: Partial<TransactionFormValues>;
 }
@@ -78,7 +78,7 @@ export function AddTransactionModal({
     dismissDuplicate,
     reset,
     prefill,
-  } = useTransactionForm();
+  } = useTransactionForm(editId);
 
   const budgetImpact = useBudgetImpact({
     categoryId: values.categoryId,
@@ -115,16 +115,22 @@ export function AddTransactionModal({
   const showPlanned = values.type === 'EXPENSE';
   const showRecurring = ['EXPENSE', 'INVESTMENT', 'SINKING_DEPOSIT'].includes(values.type);
 
-  // Prefill store when opening in edit mode
+  // Track which editId we've already prefilled so we don't clobber user edits
+  // if prefillValues re-renders (e.g. background refetch of same transaction).
+  const prefillAppliedFor = useRef<string | null>(null);
+
+  // Prefill store when opening in edit mode — also re-runs when prefillValues
+  // arrives asynchronously (fetch completes after dialog mount).
   useEffect(() => {
     if (!open) return;
-    if (editId && prefillValues) {
+    if (editId && prefillValues && prefillAppliedFor.current !== editId) {
       prefill(prefillValues);
+      prefillAppliedFor.current = editId;
     } else if (!editId) {
       reset();
+      prefillAppliedFor.current = null;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, editId]);
+  }, [open, editId, prefillValues, prefill, reset]);
 
   // Auto-close edit modal after successful update (no success screen for edits)
   useEffect(() => {
@@ -146,7 +152,7 @@ export function AddTransactionModal({
 
   const handleFormSubmit = useCallback(() => {
     if (editId) {
-      handleUpdate(editId);
+      handleUpdate();
     } else {
       handleSubmit();
     }

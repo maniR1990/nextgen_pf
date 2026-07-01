@@ -11,11 +11,15 @@ import { TextLink } from '@/components/ui/TextLink';
 import { getEnabledOAuthProviders } from '@/constants/oauth';
 import { ROUTES } from '@/constants/routes';
 import { parseClientError } from '@/lib/api/parseClientError';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl');
+  const isInactivity = searchParams.get('reason') === 'inactivity';
+  const justRegistered = searchParams.get('registered') === '1';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formError, setFormError] = useState('');
@@ -40,9 +44,8 @@ export function LoginForm() {
       body: JSON.stringify({ email, password }),
     });
 
-    setLoading(false);
-
     if (!res.ok) {
+      setLoading(false);
       const apiError = await parseClientError(res);
       if (apiError.code === 'EMAIL_NOT_VERIFIED') setUnverified(true);
       setFormError(apiError.message);
@@ -53,7 +56,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push(ROUTES.DASHBOARD);
+    router.push(callbackUrl ?? ROUTES.DASHBOARD);
   }
 
   async function resendVerification() {
@@ -76,6 +79,14 @@ export function LoginForm() {
     <form onSubmit={handleSubmit} className="auth-form">
       <AuthFormHeader title="Welcome back" subtitle="Sign in to your account" />
 
+      {justRegistered && !formError ? (
+        <Alert variant="success">Account created! Sign in to get started.</Alert>
+      ) : null}
+      {isInactivity && !formError ? (
+        <Alert variant="warning">
+          Your session expired due to inactivity. Please sign in again.
+        </Alert>
+      ) : null}
       {formError ? <Alert variant="error">{formError}</Alert> : null}
 
       {hasOAuth ? (

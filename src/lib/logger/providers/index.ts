@@ -13,7 +13,6 @@ export function resolveLoggerProvider(minLevel: LogLevel): ILoggerProvider {
       return createConsoleProvider(minLevel);
     case 'json':
       return createJsonProvider(minLevel);
-    case 'pino':
     default:
       return createPinoProvider(minLevel);
   }

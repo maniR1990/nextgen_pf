@@ -139,8 +139,7 @@ async function ensureMongodRunning(): Promise<void> {
       tryInitReplicaSet(mongoshPath);
     } else {
       console.log(
-        '  ℹ mongosh not found — if this is a fresh data directory, run once:\n' +
-          `  mongosh --eval "rs.initiate({_id:'${REPLICA_SET}',members:[{_id:0,host:'${MONGO_HOST}:${MONGO_PORT}'}]})"`,
+        `  ℹ mongosh not found — if this is a fresh data directory, run once:\n  mongosh --eval "rs.initiate({_id:'${REPLICA_SET}',members:[{_id:0,host:'${MONGO_HOST}:${MONGO_PORT}'}]})"`,
       );
     }
   } else {
@@ -210,9 +209,7 @@ main().catch((error: unknown) => {
   if (isReplicaSetError) {
     console.error(`✗ ${message}`);
     console.error(
-      '\nMongoDB must run as a replica set. Run this once in mongosh:\n' +
-        `  rs.initiate({_id:'${REPLICA_SET}',members:[{_id:0,host:'${MONGO_HOST}:${MONGO_PORT}'}]})\n` +
-        `\nOr set MONGOSH_PATH env var so ensure-db.ts can do it automatically.`,
+      `\nMongoDB must run as a replica set. Run this once in mongosh:\n  rs.initiate({_id:'${REPLICA_SET}',members:[{_id:0,host:'${MONGO_HOST}:${MONGO_PORT}'}]})\n\nOr set MONGOSH_PATH env var so ensure-db.ts can do it automatically.`,
     );
   } else {
     console.error(`✗ Database setup failed: ${message}`);

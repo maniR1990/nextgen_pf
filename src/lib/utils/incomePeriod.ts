@@ -78,7 +78,7 @@ export function getIncomePeriodData(dateStr: string): IncomePeriodData {
 
 export function formatAmountShort(amountStr: string): string {
   const n = Number.parseFloat(amountStr);
-  if (!n || isNaN(n) || n <= 0) return '';
+  if (!n || Number.isNaN(n) || n <= 0) return '';
   if (n >= 100000) return `+₹${(n / 100000).toFixed(1).replace(/\.0$/, '')}L`;
   if (n >= 1000) return `+₹${Math.round(n / 1000)}K`;
   return `+₹${n.toLocaleString('en-IN')}`;

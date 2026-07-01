@@ -43,6 +43,9 @@ export function useSettingsCategoriesCrud() {
   const invalidate = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
     await queryClient.invalidateQueries({ queryKey: queryKeys.formOptions.categories() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.budget.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.lists() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.appHeader.all });
   }, [queryClient]);
 
   const handleCreate = useCallback<NonNullable<CategoryHierarchyCrudHandlers['onCreate']>>(

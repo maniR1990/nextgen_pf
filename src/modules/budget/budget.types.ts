@@ -1,4 +1,9 @@
-import type { BudgetEntryTag, BudgetLineKind, BudgetSectionVariant } from '@prisma/client';
+// Legacy budget types — BudgetLine model has been superseded by Budget (budget-engine).
+// Kept as stubs to avoid cascade errors in old /api/budget routes.
+
+export type BudgetLineKind = string;
+export type BudgetSectionVariant = string;
+export type BudgetEntryTag = string;
 
 export interface BudgetLineRecord {
   id: string;

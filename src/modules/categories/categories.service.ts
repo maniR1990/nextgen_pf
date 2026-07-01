@@ -6,7 +6,6 @@ import {
 } from '@/constants/categories';
 import {
   CategoryDepthExceededError,
-  CategoryHasTransactionsError,
   CategoryNotFoundError,
   ConflictError,
   ForbiddenError,
@@ -217,7 +216,8 @@ export const CategoriesService = {
   async update(id: string, userId: string, dto: UpdateCategoryDto) {
     const existing = await CategoriesRepository.findById(id);
     assertAccessible(existing, userId);
-    if (!existing.userId) throw new ForbiddenError('System categories cannot be modified');
+    if (existing.level === 0)
+      throw new ForbiddenError('Top-level group categories cannot be modified');
 
     const data: Parameters<typeof CategoriesRepository.update>[1] = {
       ...(dto.name !== undefined && { name: dto.name }),
@@ -353,17 +353,17 @@ export const CategoriesService = {
   async delete(id: string, userId: string) {
     const category = await CategoriesRepository.findById(id);
     assertAccessible(category, userId);
-    if (!category.userId) throw new ForbiddenError('System categories cannot be deleted');
-
-    const txCount = await CategoriesRepository.countTransactions(id);
-    if (txCount > 0) throw new CategoryHasTransactionsError(txCount);
+    if (category.level === 0)
+      throw new ForbiddenError('Top-level group categories cannot be deleted');
 
     const flat = await CategoriesRepository.findAccessible(userId, { includeArchived: true });
     const descendants = collectDescendantIds(flat, id);
+
+    // Unset categoryId on any linked transactions so they become "uncategorized"
+    // rather than blocking the delete. Transactions remain intact.
     for (const descId of descendants) {
-      if (descId === id) continue;
-      const childTx = await CategoriesRepository.countTransactions(descId);
-      if (childTx > 0) throw new CategoryHasTransactionsError(childTx);
+      const txCount = await CategoriesRepository.countTransactions(descId);
+      if (txCount > 0) await CategoriesRepository.unsetTransactionCategory(descId);
     }
 
     await CategoriesRepository.archiveMany([...descendants]);

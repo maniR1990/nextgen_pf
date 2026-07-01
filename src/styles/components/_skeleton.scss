@@ -99,3 +99,71 @@
   width: 100%;
   height: var(--space-4);
 }
+
+// ── Page-level loading skeleton (used by loading.tsx across all dashboard routes) ──
+
+@mixin shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--comp-skeleton-bg) 0%,
+    var(--comp-skeleton-highlight) 50%,
+    var(--comp-skeleton-bg) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer var(--comp-skeleton-duration) var(--ease-in-out) infinite;
+  border-radius: 6px;
+}
+
+.page-skeleton {
+  width: 100%;
+  padding: 0 24px 40px;
+
+  // Sub-nav pill row (filter tabs, breadcrumbs)
+  &__subnav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 20px;
+  }
+
+  &__pill {
+    @include shimmer;
+    height: 28px;
+    width: 72px;
+    border-radius: 999px;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  // Group header bar (darker, full width)
+  &__group-header {
+    @include shimmer;
+    height: 36px;
+    width: 100%;
+    margin: 12px 0 4px;
+    opacity: 0.7;
+  }
+
+  // Content rows
+  &__row {
+    @include shimmer;
+    height: 34px;
+    width: 85%;
+    margin-left: 16px;
+
+    &--wide   { width: 92%; }
+    &--narrow { width: 60%; }
+  }
+
+  @media (max-width: 640px) {
+    padding: 0 12px 32px;
+
+    &__row { margin-left: 8px; }
+  }
+}

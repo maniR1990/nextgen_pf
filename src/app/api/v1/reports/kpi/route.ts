@@ -113,7 +113,9 @@ const handleReportsKpi = compose(withAuth())(async (req, ctx) => {
         .join(' + ') || '—';
 
     // Budget totals from budget engine (planned vs spent across all categories)
-    const expensesBudget = budgetSummary.totals.totalPlanned;
+    const expensesBudget = (budgetSummary.groups ?? [])
+      .filter((g) => g.type === 'EXPENSE')
+      .reduce((sum, g) => sum + g.planned, 0);
     const expensesPct =
       expensesBudget > 0 ? Math.round((expensesSpent / expensesBudget) * 1000) / 10 : 0;
     const expensesVariant: 'success' | 'warning' | 'error' =

@@ -3,14 +3,103 @@
 import { useToast } from '@/components/common/ToastProvider/useToast';
 import type { TxType } from '@/constants/finance';
 import { TX_TYPE_META } from '@/constants/finance';
+import { useCreateTransaction, usePatchTransaction } from '@/hooks/useTransactions';
+import type { TransactionBody } from '@/hooks/useTransactions';
 import { CreateTransactionSchema } from '@/modules/transactions/transactions.schema';
 import { useTransactionFormStore } from '@/store/transactionFormStore';
 import type { FormErrors, SuccessData } from '@/store/transactionFormStore';
 import { useCallback } from 'react';
 
-export function useTransactionForm() {
+// ── Body builder ──────────────────────────────────────────────────────────────
+
+/**
+ * Maps Zustand form values → API body.
+ * Extracted so create and update share exactly the same shape.
+ */
+export function buildTransactionBody(
+  values: ReturnType<typeof useTransactionFormStore.getState>['values'],
+): TransactionBody {
+  const amountNum = Number.parseFloat(values.amount);
+  return {
+    type: values.type,
+    date: values.date,
+    budgetPeriodYear: values.budgetPeriodYear,
+    budgetPeriodMonth: values.budgetPeriodMonth,
+    amount: amountNum,
+    merchant: values.merchant || undefined,
+    categoryId: values.categoryId || undefined,
+    paymentSourceId: values.sourceId,
+    toAccountId: values.toAccountId || undefined,
+    paymentMethod: values.method,
+    isPlanned: values.isPlanned,
+    isRecurring: values.isRecurring,
+    notes: values.notes || undefined,
+    tags: values.tags
+      ? values.tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean)
+      : [],
+    // Investment
+    assetClass: values.assetClass || undefined,
+    fundName: values.fundName || undefined,
+    units: values.units ? Number.parseFloat(values.units) : undefined,
+    nav: values.nav ? Number.parseFloat(values.nav) : undefined,
+    mfPlan: values.mfPlan || undefined,
+    taxSection: values.taxSection || undefined,
+    // Income
+    incomeType: values.incomeType || undefined,
+    tds: values.tds ? Number.parseFloat(values.tds) : undefined,
+    // Gift
+    giftFrom: values.giftFrom || undefined,
+    occasion: values.occasion || undefined,
+    // Sinking
+    sfId: values.sfId || undefined,
+    // Expense extras
+    isTaxDed: values.isTaxDed || undefined,
+    isReimbursable: values.isReimbursable || undefined,
+    reimbDate: values.reimbDate || undefined,
+    // Reimbursement
+    reimbFrom: values.reimbFrom || undefined,
+    origTxRef: values.origTxRef || undefined,
+    // Transfer
+    txPurpose: values.txPurpose || undefined,
+    txFee: values.txFee ? Number.parseFloat(values.txFee) : undefined,
+    // ATM
+    atmLocation: values.atmLocation || undefined,
+    atmPurpose: values.atmPurpose || undefined,
+    // Refund
+    refundReason: values.refundReason || undefined,
+    // Coupon
+    origPrice: values.origPrice ? Number.parseFloat(values.origPrice) : undefined,
+    couponCode: values.couponCode || undefined,
+    platform: values.platform || undefined,
+    // Points
+    ptsSpent: values.ptsSpent ? Number.parseFloat(values.ptsSpent) : undefined,
+    ptsRate: values.ptsRate ? Number.parseFloat(values.ptsRate) : undefined,
+    // Recurring
+    recSchedule: values.isRecurring
+      ? {
+          frequency: values.recFrequency,
+          every: Number.parseInt(values.recEvery) || 1,
+          endCondition: values.recEndCondition,
+          count: values.recCount ? Number.parseInt(values.recCount) : undefined,
+          endDate: values.recEndDate || undefined,
+        }
+      : undefined,
+  };
+}
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
+
+export function useTransactionForm(editId?: string) {
   const store = useTransactionFormStore();
   const toast = useToast();
+
+  // Mutations — invalidation is handled inside each mutation's onSuccess/onError.
+  // This hook only drives Zustand store state (UI: loading, success, errors).
+  const createTx = useCreateTransaction();
+  const patchTx = usePatchTransaction(editId ?? '');
 
   const handleTypeChange = useCallback((type: TxType) => store.setType(type), [store]);
 
@@ -21,9 +110,8 @@ export function useTransactionForm() {
       // Auto-derive budget period from date
       if (key === 'date') {
         const d = new Date(value as string);
-        if (!isNaN(d.getTime())) {
+        if (!Number.isNaN(d.getTime())) {
           const isIncome = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT'].includes(store.values.type);
-          // Income received in month N funds budget month N+1
           const budgetMonth = isIncome ? d.getMonth() + 2 : d.getMonth() + 1;
           const budgetYear = isIncome && budgetMonth > 12 ? d.getFullYear() + 1 : d.getFullYear();
           store.setField('budgetPeriodYear', budgetYear);
@@ -35,7 +123,7 @@ export function useTransactionForm() {
       if (key === 'units' || key === 'nav') {
         const units = Number.parseFloat(key === 'units' ? (value as string) : store.values.units);
         const nav = Number.parseFloat(key === 'nav' ? (value as string) : store.values.nav);
-        if (!isNaN(units) && !isNaN(nav) && units > 0 && nav > 0) {
+        if (!Number.isNaN(units) && !Number.isNaN(nav) && units > 0 && nav > 0) {
           store.setField('amount', String((units * nav).toFixed(2)));
         }
       }
@@ -48,7 +136,7 @@ export function useTransactionForm() {
         const rate = Number.parseFloat(
           key === 'ptsRate' ? (value as string) : store.values.ptsRate,
         );
-        if (!isNaN(pts) && !isNaN(rate) && pts > 0 && rate > 0) {
+        if (!Number.isNaN(pts) && !Number.isNaN(rate) && pts > 0 && rate > 0) {
           store.setField('amount', String((pts * rate).toFixed(2)));
         }
       }
@@ -62,12 +150,12 @@ export function useTransactionForm() {
     const errors: FormErrors = {};
 
     const result = CreateTransactionSchema.safeParse({
-      userId: 'validation-only', // placeholder — real userId added server-side
+      userId: 'validation-only',
       type: values.type,
       date: values.date,
       budgetPeriodYear: values.budgetPeriodYear,
       budgetPeriodMonth: values.budgetPeriodMonth,
-      amount: isNaN(amountNum) ? 0 : amountNum,
+      amount: Number.isNaN(amountNum) ? 0 : amountNum,
       paymentSourceId: values.sourceId,
       paymentMethod: values.method,
       isPlanned: values.isPlanned,
@@ -92,20 +180,19 @@ export function useTransactionForm() {
     if (!result.success) {
       for (const issue of result.error.issues) {
         const path = issue.path[0] as string;
-        // Map schema field names → form field names
         const fieldMap: Record<string, keyof typeof values> = {
           paymentSourceId: 'sourceId',
           paymentMethod: 'method',
         };
         const formKey = (fieldMap[path] ?? path) as keyof typeof values;
-        if (!errors[formKey]) {
-          errors[formKey] = issue.message;
-        }
+        if (!errors[formKey]) errors[formKey] = issue.message;
       }
     }
 
     return errors;
   }, [store]);
+
+  // ── Submit (create) ─────────────────────────────────────────────────────────
 
   const handleSubmit = useCallback(async (): Promise<boolean> => {
     const errors = validate();
@@ -118,92 +205,10 @@ export function useTransactionForm() {
 
     try {
       const { values } = store;
+      const body = buildTransactionBody(values);
+      await createTx.mutateAsync(body);
+
       const amountNum = Number.parseFloat(values.amount);
-
-      const body = {
-        type: values.type,
-        date: values.date,
-        budgetPeriodYear: values.budgetPeriodYear,
-        budgetPeriodMonth: values.budgetPeriodMonth,
-        amount: amountNum,
-        merchant: values.merchant || undefined,
-        categoryId: values.categoryId || undefined,
-        paymentSourceId: values.sourceId,
-        toAccountId: values.toAccountId || undefined,
-        paymentMethod: values.method,
-        isPlanned: values.isPlanned,
-        isRecurring: values.isRecurring,
-        notes: values.notes || undefined,
-        tags: values.tags
-          ? values.tags
-              .split(',')
-              .map((t) => t.trim())
-              .filter(Boolean)
-          : [],
-        // Investment
-        assetClass: values.assetClass || undefined,
-        fundName: values.fundName || undefined,
-        units: values.units ? Number.parseFloat(values.units) : undefined,
-        nav: values.nav ? Number.parseFloat(values.nav) : undefined,
-        mfPlan: values.mfPlan || undefined,
-        taxSection: values.taxSection || undefined,
-        // Income
-        incomeType: values.incomeType || undefined,
-        tds: values.tds ? Number.parseFloat(values.tds) : undefined,
-        // Gift
-        giftFrom: values.giftFrom || undefined,
-        occasion: values.occasion || undefined,
-        // Sinking
-        sfId: values.sfId || undefined,
-        // Expense extras
-        isTaxDed: values.isTaxDed || undefined,
-        isReimbursable: values.isReimbursable || undefined,
-        reimbDate: values.reimbDate || undefined,
-        // Reimbursement
-        reimbFrom: values.reimbFrom || undefined,
-        origTxRef: values.origTxRef || undefined,
-        // Transfer
-        txPurpose: values.txPurpose || undefined,
-        txFee: values.txFee ? Number.parseFloat(values.txFee) : undefined,
-        // ATM
-        atmLocation: values.atmLocation || undefined,
-        atmPurpose: values.atmPurpose || undefined,
-        // Refund
-        refundReason: values.refundReason || undefined,
-        // Coupon
-        origPrice: values.origPrice ? Number.parseFloat(values.origPrice) : undefined,
-        couponCode: values.couponCode || undefined,
-        platform: values.platform || undefined,
-        // Points
-        ptsSpent: values.ptsSpent ? Number.parseFloat(values.ptsSpent) : undefined,
-        ptsRate: values.ptsRate ? Number.parseFloat(values.ptsRate) : undefined,
-        // Recurring
-        recSchedule: values.isRecurring
-          ? {
-              frequency: values.recFrequency,
-              every: Number.parseInt(values.recEvery) || 1,
-              endCondition: values.recEndCondition,
-              count: values.recCount ? Number.parseInt(values.recCount) : undefined,
-              endDate: values.recEndDate || undefined,
-            }
-          : undefined,
-      };
-
-      const idempotencyKey = crypto.randomUUID();
-      const res = await fetch('/api/v1/transactions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Idempotency-Key': idempotencyKey,
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.error?.message ?? json.error ?? 'Failed to log transaction');
-      }
-
       const typeMeta = TX_TYPE_META[values.type];
       const d = new Date(values.date);
       const monthLabel = d.toLocaleString('en-IN', { month: 'short', year: 'numeric' });
@@ -221,109 +226,41 @@ export function useTransactionForm() {
       store.setSubmitState('success');
       return true;
     } catch (err) {
+      // useCreateTransaction's onError already showed a toast — just update form state
       const message = err instanceof Error ? err.message : 'Something went wrong';
       store.setErrors({ _form: message });
       store.setSubmitState('error');
-      toast.error(message);
       return false;
     }
-  }, [store, validate, toast]);
+  }, [store, validate, createTx]);
 
-  const handleUpdate = useCallback(
-    async (editId: string): Promise<boolean> => {
-      const errors = validate();
-      if (Object.keys(errors).length > 0) {
-        store.setErrors(errors);
-        return false;
-      }
+  // ── Update (edit) ───────────────────────────────────────────────────────────
 
-      store.setSubmitState('loading');
+  const handleUpdate = useCallback(async (): Promise<boolean> => {
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      store.setErrors(errors);
+      return false;
+    }
 
-      try {
-        const { values } = store;
-        const amountNum = Number.parseFloat(values.amount);
+    store.setSubmitState('loading');
 
-        const body = {
-          type: values.type,
-          date: values.date,
-          budgetPeriodYear: values.budgetPeriodYear,
-          budgetPeriodMonth: values.budgetPeriodMonth,
-          amount: amountNum,
-          merchant: values.merchant || undefined,
-          categoryId: values.categoryId || undefined,
-          paymentSourceId: values.sourceId,
-          toAccountId: values.toAccountId || undefined,
-          paymentMethod: values.method,
-          isPlanned: values.isPlanned,
-          isRecurring: values.isRecurring,
-          notes: values.notes || undefined,
-          tags: values.tags
-            ? values.tags
-                .split(',')
-                .map((t) => t.trim())
-                .filter(Boolean)
-            : [],
-          assetClass: values.assetClass || undefined,
-          fundName: values.fundName || undefined,
-          units: values.units ? Number.parseFloat(values.units) : undefined,
-          nav: values.nav ? Number.parseFloat(values.nav) : undefined,
-          mfPlan: values.mfPlan || undefined,
-          taxSection: values.taxSection || undefined,
-          incomeType: values.incomeType || undefined,
-          tds: values.tds ? Number.parseFloat(values.tds) : undefined,
-          giftFrom: values.giftFrom || undefined,
-          occasion: values.occasion || undefined,
-          sfId: values.sfId || undefined,
-          isTaxDed: values.isTaxDed || undefined,
-          isReimbursable: values.isReimbursable || undefined,
-          reimbDate: values.reimbDate || undefined,
-          reimbFrom: values.reimbFrom || undefined,
-          origTxRef: values.origTxRef || undefined,
-          txPurpose: values.txPurpose || undefined,
-          txFee: values.txFee ? Number.parseFloat(values.txFee) : undefined,
-          atmLocation: values.atmLocation || undefined,
-          atmPurpose: values.atmPurpose || undefined,
-          refundReason: values.refundReason || undefined,
-          origPrice: values.origPrice ? Number.parseFloat(values.origPrice) : undefined,
-          couponCode: values.couponCode || undefined,
-          platform: values.platform || undefined,
-          ptsSpent: values.ptsSpent ? Number.parseFloat(values.ptsSpent) : undefined,
-          ptsRate: values.ptsRate ? Number.parseFloat(values.ptsRate) : undefined,
-          recSchedule: values.isRecurring
-            ? {
-                frequency: values.recFrequency,
-                every: Number.parseInt(values.recEvery) || 1,
-                endCondition: values.recEndCondition,
-                count: values.recCount ? Number.parseInt(values.recCount) : undefined,
-                endDate: values.recEndDate || undefined,
-              }
-            : undefined,
-        };
+    try {
+      const body = buildTransactionBody(store.values);
+      await patchTx.mutateAsync(body);
 
-        const res = await fetch(`/api/v1/transactions/${editId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
+      store.setSubmitState('success');
+      toast.success('Transaction updated');
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      store.setErrors({ _form: message });
+      store.setSubmitState('error');
+      return false;
+    }
+  }, [store, validate, patchTx, toast]);
 
-        if (!res.ok) {
-          const json = await res.json();
-          throw new Error(json.error?.message ?? json.error ?? 'Failed to update transaction');
-        }
-
-        store.setSubmitState('success');
-        toast.success('Transaction updated');
-        return true;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Something went wrong';
-        store.setErrors({ _form: message });
-        store.setSubmitState('error');
-        toast.error(message);
-        return false;
-      }
-    },
-    [store, validate, toast],
-  );
+  // ── Log another — preserve account + method context ─────────────────────────
 
   const handleLogAnother = useCallback(() => {
     const { values } = store;
@@ -339,6 +276,7 @@ export function useTransactionForm() {
     submitState: store.submitState,
     successData: store.successData,
     isDuplicateDismissed: store.isDuplicateDismissed,
+    isSubmitting: createTx.isPending || patchTx.isPending,
     handleTypeChange,
     handleFieldChange,
     handleSubmit,

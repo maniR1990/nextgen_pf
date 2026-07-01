@@ -14,17 +14,17 @@ import { getEnabledOAuthProviders } from '@/constants/oauth';
 import { ROUTES } from '@/constants/routes';
 import { parseClientError } from '@/lib/api/parseClientError';
 import { RegisterSchema } from '@/modules/auth/auth.schema';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { VerifyEmailPending } from './VerifyEmailPending';
 
 export function RegisterForm() {
+  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [formError, setFormError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [successEmail, setSuccessEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const hasOAuth = getEnabledOAuthProviders().length > 0;
 
@@ -56,19 +56,16 @@ export function RegisterForm() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(parsed.data),
     });
-    setLoading(false);
 
     if (!res.ok) {
+      setLoading(false);
       const apiError = await parseClientError(res);
       setFormError(apiError.message);
       return;
     }
 
-    setSuccessEmail(parsed.data.email);
-  }
-
-  if (successEmail) {
-    return <VerifyEmailPending email={successEmail} />;
+    // Account created — go straight to login with a success message.
+    router.push(`${ROUTES.LOGIN}?registered=1`);
   }
 
   return (

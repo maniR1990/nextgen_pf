@@ -14,6 +14,11 @@ export interface TimelineTransaction {
   tags?: string[];
   budgetPeriodYear: number;
   budgetPeriodMonth: number;
+  sourceLabel?: string;
+  toAccountName?: string;
+  notes?: string;
+  status?: string;
+  txType?: string;
 }
 
 export interface TimelineGroup {
@@ -63,13 +68,15 @@ export function TransactionTimeline({
   const summary = useMemo(() => {
     let totalIncome = 0;
     let totalExpense = 0;
+    let totalTransfers = 0;
     for (const g of groups) {
       for (const tx of g.transactions) {
-        if (tx.type === 'credit') totalIncome += tx.amount;
+        if (tx.txType === 'TRANSFER') totalTransfers += tx.amount;
+        else if (tx.type === 'credit') totalIncome += tx.amount;
         else if (tx.type === 'debit') totalExpense += tx.amount;
       }
     }
-    return { totalIncome, totalExpense, net: totalIncome - totalExpense };
+    return { totalIncome, totalExpense, totalTransfers, net: totalIncome - totalExpense };
   }, [groups]);
 
   if (loading) {
@@ -91,7 +98,7 @@ export function TransactionTimeline({
 
   return (
     <div className="tx-timeline max-w-4xl mx-auto p-8" aria-label="Transaction timeline">
-      {/* Optional summary bar */}
+      {/* Summary bar */}
       {showSummary && groups.length > 0 && (
         <div className="tx-timeline__summary">
           <div className="tx-timeline__summary-item">
@@ -107,6 +114,17 @@ export function TransactionTimeline({
               −₹{summary.totalExpense.toLocaleString('en-IN')}
             </span>
           </div>
+          {summary.totalTransfers > 0 && (
+            <>
+              <div className="tx-timeline__summary-divider" />
+              <div className="tx-timeline__summary-item">
+                <span className="tx-timeline__summary-label">Transferred</span>
+                <span className="tx-timeline__summary-value tx-timeline__summary-value--neutral">
+                  ₹{summary.totalTransfers.toLocaleString('en-IN')}
+                </span>
+              </div>
+            </>
+          )}
           <div className="tx-timeline__summary-divider" />
           <div className="tx-timeline__summary-item">
             <span className="tx-timeline__summary-label">Net</span>
@@ -170,6 +188,7 @@ export function TransactionTimeline({
                         key={tx.id}
                         className={[
                           'tx-timeline__card',
+                          `tx-timeline__card--${tx.type}`,
                           onTransactionClick ? 'tx-timeline__card--clickable' : '',
                           showActions ? 'tx-timeline__card--has-actions' : '',
                         ]
@@ -195,8 +214,13 @@ export function TransactionTimeline({
                         <div className="tx-timeline__card-body">
                           <span className="tx-timeline__card-merchant">{tx.merchant}</span>
                           <span className="tx-timeline__card-subtitle">
-                            {[tx.category, tx.method].filter(Boolean).join(' · ')}
+                            {tx.txType === 'TRANSFER'
+                              ? [tx.category, tx.method].filter(Boolean).join(' · ')
+                              : [tx.category, tx.sourceLabel, tx.method]
+                                  .filter(Boolean)
+                                  .join(' · ')}
                           </span>
+                          {tx.notes && <span className="tx-timeline__card-notes">{tx.notes}</span>}
                         </div>
                         <span
                           className={`tx-timeline__card-amount tx-timeline__card-amount--${tx.type}`}

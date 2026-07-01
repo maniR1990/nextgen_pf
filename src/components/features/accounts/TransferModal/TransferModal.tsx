@@ -21,6 +21,8 @@ export interface TransferModalProps {
   onClose: () => void;
   accounts: AccountSummary[];
   fromAccountId: string;
+  /** accountId → goal fund name — shown as a hint when transferring to a dedicated investment account */
+  goalByAccountId?: Record<string, string>;
   onSubmit: (payload: TransferPayload) => Promise<void>;
 }
 
@@ -31,6 +33,7 @@ export function TransferModal({
   onClose,
   accounts,
   fromAccountId,
+  goalByAccountId = {},
   onSubmit,
 }: TransferModalProps) {
   const [toAccountId, setToAccountId] = useState('');
@@ -45,6 +48,7 @@ export function TransferModal({
     .map((a) => ({ value: a.id, label: a.name }));
 
   const fromAccount = accounts.find((a) => a.id === fromAccountId);
+  const destinationGoal = toAccountId ? goalByAccountId[toAccountId] : undefined;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -94,6 +98,11 @@ export function TransferModal({
             onChange={(e) => setToAccountId(e.target.value)}
             required
           />
+          {destinationGoal && (
+            <p className="transfer-modal__goal-hint">
+              → Counts toward <strong>{destinationGoal}</strong> goal
+            </p>
+          )}
           <AmountInput value={amount} onChange={setAmount} label="Amount (₹)" showChips={false} />
           <FormField label="Date" htmlFor="transfer-date">
             <input

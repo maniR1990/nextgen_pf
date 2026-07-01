@@ -144,6 +144,7 @@ export interface FinanceTransactionRow {
   merchant?: string;
   categoryLabel?: string;
   sourceLabel?: string;
+  toAccountName?: string;
   method: string;
   status: string;
   isPlanned: boolean;

@@ -10,16 +10,30 @@ function toDateKey(dateStr: string): string {
 
 export function mapRowToTimelineTransaction(row: FinanceTransactionRow) {
   const meta = TX_TYPE_META[row.type];
+  const isTransfer = row.type === 'TRANSFER';
   return {
     id: row.id,
-    merchant: row.merchant ?? meta.label,
-    category: row.categoryLabel ?? meta.description,
+    merchant: isTransfer
+      ? row.toAccountName
+        ? `→ ${row.toAccountName}`
+        : meta.label
+      : (row.merchant ?? meta.label),
+    category: isTransfer
+      ? row.sourceLabel
+        ? `From ${row.sourceLabel}`
+        : meta.description
+      : (row.categoryLabel ?? meta.description),
     method: row.method ?? '',
     amount: row.amount,
     type: meta.amountSign,
     tags: row.tags,
     budgetPeriodYear: row.budgetPeriodYear,
     budgetPeriodMonth: row.budgetPeriodMonth,
+    sourceLabel: row.sourceLabel,
+    toAccountName: row.toAccountName,
+    notes: row.notes,
+    status: row.status,
+    txType: row.type,
   };
 }
 

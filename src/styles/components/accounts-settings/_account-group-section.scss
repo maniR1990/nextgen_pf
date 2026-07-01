@@ -76,6 +76,31 @@
     }
   }
 
+  &__total-hidden {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    letter-spacing: 0.1em;
+  }
+
+  &__eye {
+    @include m.flex-center;
+    width: var(--space-6);
+    height: var(--space-6);
+    border: none;
+    background: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    padding: 0;
+    flex-shrink: 0;
+
+    &:hover {
+      color: var(--color-text-secondary);
+      background: var(--color-bg-subtle);
+    }
+  }
+
   &__menu-wrap {
     position: relative;
     flex-shrink: 0;

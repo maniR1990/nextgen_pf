@@ -1,5 +1,5 @@
 import type { FundSort } from '@/constants/funds';
-import type { FundAllocationType, FundPurpose } from '@prisma/client';
+import type { AccountType, FundAllocationType, FundPurpose } from '@prisma/client';
 
 export interface FundAllocationInput {
   accountId: string;
@@ -12,6 +12,7 @@ export interface SourceBreakdown {
   accountId: string;
   accountName: string;
   accountCode: string;
+  accountType: AccountType;
   type: FundAllocationType;
   value: number;
   priority: number;

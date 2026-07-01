@@ -142,6 +142,23 @@ export function CategoryHierarchy({
             onChange={(e) => setSearchQuery(e.target.value)}
             aria-label="Search categories"
           />
+          {!searchQuery && (
+            <button
+              type="button"
+              className="cat-hierarchy__collapse-btn"
+              onClick={() => {
+                const allIds = toExpandedSetFromNodes(config.nodes);
+                const isAllExpanded = config.nodes.every((n) => uncontrolledExpanded.has(n.id));
+                const next = isAllExpanded ? new Set<string>() : allIds;
+                setUncontrolledExpanded(next);
+                onExpandedChange?.([...next]);
+              }}
+            >
+              {config.nodes.every((n) => uncontrolledExpanded.has(n.id))
+                ? 'Collapse all'
+                : 'Expand all'}
+            </button>
+          )}
         </div>
 
         {config.nodes.length === 0 && onCreate ? (

@@ -61,7 +61,6 @@ export function FundGroupFormDialog({
               onChange={(e) => setName(e.target.value)}
               maxLength={80}
               placeholder="e.g. Kids Education"
-              autoFocus
             />
           </FormField>
           <FormField label="Description" htmlFor="fg-desc">

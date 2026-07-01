@@ -153,7 +153,7 @@ export function DataTable<T extends Record<string, unknown> & { id: string }>({
         <div className="data-table__scroll table-scroll" role="region" aria-label="Data table">
           <table className="data-table__grid" role="grid">
             <thead className="data-table__head">
-              <tr role="row">
+              <tr>
                 {selectable && (
                   <th
                     className="data-table__head-cell data-table__head-cell--select data-table__cell--frozen"
@@ -229,7 +229,7 @@ export function DataTable<T extends Record<string, unknown> & { id: string }>({
                 )}
               </tr>
               {hasFilters && (
-                <tr className="data-table__filter-row" role="row">
+                <tr className="data-table__filter-row">
                   {selectable && <th className="data-table__filter-cell" aria-hidden />}
                   {state.displayColumns.map((column) => (
                     <th
@@ -284,7 +284,7 @@ export function DataTable<T extends Record<string, unknown> & { id: string }>({
 
               {!loading &&
                 state.pagination.rows.map((row) => (
-                  <tr key={String(row.id)} className="data-table__row" role="row">
+                  <tr key={String(row.id)} className="data-table__row">
                     {selectable && (
                       <td className="data-table__cell data-table__cell--select data-table__cell--frozen">
                         <input

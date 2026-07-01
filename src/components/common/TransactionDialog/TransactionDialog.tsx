@@ -1,22 +1,12 @@
 'use client';
 
-/**
- * TransactionDialog — production-ready transaction entry dialog.
- *
- * Server component usage (zero loading state):
- *   const options = await loadTransactionOptions(userId);  // server-side
- *   return <TransactionDialog open={...} onClose={...} initialOptions={options} />;
- *
- * Client-only usage (data fetched on open):
- *   return <TransactionDialog open={...} onClose={...} />;
- */
-
 import { AddTransactionModal } from '@/components/features/transactions/AddTransactionModal';
+import { apiPostV1 } from '@/lib/query/fetcher';
 import { queryKeys } from '@/lib/query/queryKeys';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import type { TransactionFormValues } from '@/store/transactionFormStore';
 import type { CategoryOption, PaymentSourceOption, SinkingFundOption } from '@/types/finance';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFormOptions } from './hooks/useFormOptions';
 import type { FormOptions } from './hooks/useFormOptions';
 
@@ -25,7 +15,7 @@ export interface TransactionDialogProps {
   onClose: () => void;
   /** Pre-fetched by a server component — eliminates loading state entirely. */
   initialOptions?: FormOptions;
-  /** Called after a successful submission so the parent can invalidate queries. */
+  /** Called after a successful submission so the parent can trigger extra side-effects. */
   onSuccess?: () => void;
   /** When set, opens modal in edit mode with this transaction's data pre-filled. */
   editId?: string;
@@ -56,13 +46,7 @@ function toCategoryOption(c: FormOptions['categories'][number]): CategoryOption 
 }
 
 function toSinkingFundOption(f: FormOptions['sinkingFunds'][number]): SinkingFundOption {
-  return {
-    id: f.id,
-    label: f.label,
-    target: f.target,
-    saved: f.saved,
-    monthly: f.monthly,
-  };
+  return { id: f.id, label: f.label, target: f.target, saved: f.saved, monthly: f.monthly };
 }
 
 export function TransactionDialog({
@@ -73,29 +57,44 @@ export function TransactionDialog({
   editId,
   prefillValues,
 }: TransactionDialogProps) {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   const { sources, categories, categoryGroups, sinkingFunds, isLoading } =
     useFormOptions(initialOptions);
 
+  // Mutation for inline category creation inside the transaction form
+  const createCategory = useMutation({
+    mutationFn: ({
+      name,
+      parentId,
+      type,
+    }: {
+      name: string;
+      parentId: string | null;
+      type?: string;
+    }) => {
+      const body: Record<string, unknown> = { name };
+      if (parentId) body.parentId = parentId;
+      else if (type) body.type = type.toUpperCase();
+      return apiPostV1<{ id: string }>('/api/v1/categories', body);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.categories.all });
+      void qc.invalidateQueries({ queryKey: queryKeys.formOptions.categories() });
+    },
+  });
+
   const handleClose = () => {
     onClose();
-    if (onSuccess) {
-      // Invalidate transaction list and budget queries so the UI refreshes
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['budget'] });
-    }
+    onSuccess?.();
   };
 
-  async function handleCreateCategory(name: string, parentId: string | null): Promise<string> {
-    const res = await fetch('/api/v1/categories', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, ...(parentId ? { parentId } : {}) }),
-    });
-    if (!res.ok) throw new Error('Failed to create category');
-    const json = await res.json();
-    queryClient.invalidateQueries({ queryKey: queryKeys.formOptions.categories() });
-    return json.data.id as string;
+  async function handleCreateCategory(
+    name: string,
+    parentId: string | null,
+    flowType?: string,
+  ): Promise<string> {
+    const result = await createCategory.mutateAsync({ name, parentId, type: flowType });
+    return result.id;
   }
 
   return (
@@ -104,7 +103,7 @@ export function TransactionDialog({
       onClose={handleClose}
       paymentSources={isLoading ? [] : sources.map(toPaymentSourceOption)}
       categories={isLoading ? [] : categories.map(toCategoryOption)}
-      categoryGroups={isLoading ? [] : categoryGroups}
+      categoryGroups={isLoading ? [] : (categoryGroups as PickerGroup[])}
       sinkingFunds={isLoading ? [] : sinkingFunds.map(toSinkingFundOption)}
       onCreateCategory={handleCreateCategory}
       editId={editId}
@@ -112,3 +111,5 @@ export function TransactionDialog({
     />
   );
 }
+
+export type { FormOptions };

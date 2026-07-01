@@ -3,15 +3,18 @@
 import { Button } from '@/components/ui/Button';
 import { Tabs } from '@/components/ui/Tabs';
 import { ACCOUNT_TYPE_META } from '@/constants/accounts';
+import { getTxSignedAmount } from '@/lib/balance-engine/core';
 import type {
   AccountDetail,
   AccountGroupWithAccounts,
+  AccountSummary,
   CreateAccountDto,
   TransactionPage,
 } from '@/modules/accounts/accounts.types';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ArrowLeftRight, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { BalancePill } from '../BalancePill';
+import { TransferModal, type TransferPayload } from '../TransferModal';
 
 const DRAWER_TABS = [
   { id: 'overview', label: 'Overview' },
@@ -36,6 +39,8 @@ export interface AccountDetailDrawerProps {
   onClose: () => void;
   onUpdate?: (id: string, dto: Partial<CreateAccountDto>) => Promise<void>;
   accountGroups?: AccountGroupWithAccounts[];
+  accounts?: AccountSummary[];
+  onTransfer?: (payload: TransferPayload) => Promise<void>;
   inline?: boolean;
   transactionsLoader?: (accountId: string, page: number, limit: number) => Promise<TransactionPage>;
 }
@@ -48,6 +53,8 @@ export function AccountDetailDrawer({
   onClose,
   onUpdate,
   accountGroups = [],
+  accounts = [],
+  onTransfer,
   inline = false,
   transactionsLoader,
 }: AccountDetailDrawerProps) {
@@ -59,12 +66,17 @@ export function AccountDetailDrawer({
   const [editOpeningBalance, setEditOpeningBalance] = useState('');
   const [editAccountNumber, setEditAccountNumber] = useState('');
   const [editIfscCode, setEditIfscCode] = useState('');
+  const [editOpenedOn, setEditOpenedOn] = useState('');
+  const [editBalanceAsOf, setEditBalanceAsOf] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const [transferOpen, setTransferOpen] = useState(false);
 
   const [txPage, setTxPage] = useState(1);
   const [txData, setTxData] = useState<TransactionPage | null>(null);
   const [txLoading, setTxLoading] = useState(false);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset fields only when account identity changes; setters are stable
   useEffect(() => {
     setTxPage(1);
     setTxData(null);
@@ -75,8 +87,11 @@ export function AccountDetailDrawer({
     setEditOpeningBalance('');
     setEditAccountNumber('');
     setEditIfscCode('');
+    setEditOpenedOn('');
+    setEditBalanceAsOf('');
   }, [account?.id]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: transactionsLoader omitted intentionally; account?.id used as stable key instead of full object
   useEffect(() => {
     if (activeTab !== 'transactions' || !transactionsLoader || !account) return;
     let cancelled = false;
@@ -92,8 +107,6 @@ export function AccountDetailDrawer({
     return () => {
       cancelled = true;
     };
-    // transactionsLoader intentionally omitted — caller must stabilize the reference
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, txPage, account?.id]);
 
   if (!open || !account) return null;
@@ -113,6 +126,8 @@ export function AccountDetailDrawer({
         ...(editOpeningBalance !== '' && { openingBalance: Number.parseFloat(editOpeningBalance) }),
         ...(editAccountNumber !== '' && { accountNumber: editAccountNumber }),
         ...(editIfscCode !== '' && { ifscCode: editIfscCode }),
+        ...(editOpenedOn !== '' && { openedOn: editOpenedOn }),
+        ...(editBalanceAsOf !== '' && { balanceAsOf: editBalanceAsOf }),
       });
     } finally {
       setSaving(false);
@@ -126,7 +141,6 @@ export function AccountDetailDrawer({
         className={['account-detail-drawer', inline ? 'account-detail-drawer--inline' : '']
           .filter(Boolean)
           .join(' ')}
-        role="complementary"
         aria-label={`${account.name} details`}
       >
         {/* Drawer header */}
@@ -143,6 +157,17 @@ export function AccountDetailDrawer({
               className="account-detail-drawer__balance"
             />
           </div>
+          {onTransfer && accounts.length > 1 && (
+            <button
+              type="button"
+              className="account-detail-drawer__transfer-btn"
+              aria-label="Transfer money"
+              onClick={() => setTransferOpen(true)}
+            >
+              <ArrowLeftRight size={16} aria-hidden />
+              <span>Transfer</span>
+            </button>
+          )}
           <button
             type="button"
             className="account-detail-drawer__close"
@@ -174,11 +199,92 @@ export function AccountDetailDrawer({
                     ₹{formatINR(account.openingBalance)}
                   </span>
                 </div>
-                <div className="account-detail-drawer__kpi">
-                  <span className="account-detail-drawer__kpi-label">Status</span>
-                  <span className="account-detail-drawer__kpi-value">{account.status}</span>
-                </div>
-                {account.creditLimit && (
+
+                {/* Net Gain / Loss — always useful when openingBalance is non-zero */}
+                {account.openingBalance > 0 &&
+                  (() => {
+                    const gain = account.balance - account.openingBalance;
+                    const pct = ((gain / account.openingBalance) * 100).toFixed(1);
+                    const positive = gain >= 0;
+                    return (
+                      <div className="account-detail-drawer__kpi">
+                        <span className="account-detail-drawer__kpi-label">Net Gain / Loss</span>
+                        <span
+                          className={[
+                            'account-detail-drawer__kpi-value',
+                            positive
+                              ? 'account-detail-drawer__kpi-value--positive'
+                              : 'account-detail-drawer__kpi-value--negative',
+                          ].join(' ')}
+                        >
+                          {positive ? '+' : '−'}₹{formatINR(Math.abs(gain))}
+                          <span className="account-detail-drawer__kpi-badge">
+                            {positive ? '+' : ''}
+                            {pct}%
+                          </span>
+                        </span>
+                      </div>
+                    );
+                  })()}
+
+                {/* Invested amount if explicitly tracked */}
+                {account.investedAmount != null && (
+                  <div className="account-detail-drawer__kpi">
+                    <span className="account-detail-drawer__kpi-label">Invested Amount</span>
+                    <span className="account-detail-drawer__kpi-value">
+                      ₹{formatINR(account.investedAmount)}
+                    </span>
+                  </div>
+                )}
+
+                {/* XIRR — annualised return */}
+                {account.xirr != null && (
+                  <div className="account-detail-drawer__kpi">
+                    <span className="account-detail-drawer__kpi-label">XIRR</span>
+                    <span
+                      className={[
+                        'account-detail-drawer__kpi-value',
+                        account.xirr >= 0
+                          ? 'account-detail-drawer__kpi-value--positive'
+                          : 'account-detail-drawer__kpi-value--negative',
+                      ].join(' ')}
+                    >
+                      {account.xirr >= 0 ? '+' : ''}
+                      {account.xirr.toFixed(2)}%
+                    </span>
+                  </div>
+                )}
+
+                {/* Absolute return if separately tracked */}
+                {account.absoluteReturn != null && (
+                  <div className="account-detail-drawer__kpi">
+                    <span className="account-detail-drawer__kpi-label">Absolute Return</span>
+                    <span
+                      className={[
+                        'account-detail-drawer__kpi-value',
+                        account.absoluteReturn >= 0
+                          ? 'account-detail-drawer__kpi-value--positive'
+                          : 'account-detail-drawer__kpi-value--negative',
+                      ].join(' ')}
+                    >
+                      {account.absoluteReturn >= 0 ? '+' : ''}
+                      {account.absoluteReturn.toFixed(2)}%
+                    </span>
+                  </div>
+                )}
+
+                {/* Expected return target */}
+                {account.expectedReturn != null && (
+                  <div className="account-detail-drawer__kpi">
+                    <span className="account-detail-drawer__kpi-label">Expected Return</span>
+                    <span className="account-detail-drawer__kpi-value">
+                      {account.expectedReturn}% p.a.
+                    </span>
+                  </div>
+                )}
+
+                {/* Credit card fields */}
+                {account.creditLimit != null && (
                   <div className="account-detail-drawer__kpi">
                     <span className="account-detail-drawer__kpi-label">Credit Limit</span>
                     <span className="account-detail-drawer__kpi-value">
@@ -186,11 +292,118 @@ export function AccountDetailDrawer({
                     </span>
                   </div>
                 )}
-                {account.interestRate && (
+                {account.creditLimit != null && (
+                  <div className="account-detail-drawer__kpi">
+                    <span className="account-detail-drawer__kpi-label">Available Credit</span>
+                    <span className="account-detail-drawer__kpi-value">
+                      ₹{formatINR(Math.max(0, account.creditLimit - account.balance))}
+                    </span>
+                  </div>
+                )}
+                {account.minimumPayment != null && (
+                  <div className="account-detail-drawer__kpi">
+                    <span className="account-detail-drawer__kpi-label">Min. Payment</span>
+                    <span className="account-detail-drawer__kpi-value">
+                      ₹{formatINR(account.minimumPayment)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Loan fields */}
+                {account.emi != null && (
+                  <div className="account-detail-drawer__kpi">
+                    <span className="account-detail-drawer__kpi-label">EMI</span>
+                    <span className="account-detail-drawer__kpi-value">
+                      ₹{formatINR(account.emi)} / mo
+                    </span>
+                  </div>
+                )}
+                {account.remainingEmis != null && (
+                  <div className="account-detail-drawer__kpi">
+                    <span className="account-detail-drawer__kpi-label">Remaining EMIs</span>
+                    <span className="account-detail-drawer__kpi-value">
+                      {account.remainingEmis}
+                    </span>
+                  </div>
+                )}
+                {account.interestPaidTotal != null && (
+                  <div className="account-detail-drawer__kpi">
+                    <span className="account-detail-drawer__kpi-label">Interest Paid</span>
+                    <span className="account-detail-drawer__kpi-value">
+                      ₹{formatINR(account.interestPaidTotal)}
+                    </span>
+                  </div>
+                )}
+                {account.interestRate != null && (
                   <div className="account-detail-drawer__kpi">
                     <span className="account-detail-drawer__kpi-label">Interest Rate</span>
                     <span className="account-detail-drawer__kpi-value">
                       {account.interestRate}%
+                    </span>
+                  </div>
+                )}
+                {account.maturityDate != null && (
+                  <div className="account-detail-drawer__kpi">
+                    <span className="account-detail-drawer__kpi-label">Maturity Date</span>
+                    <span className="account-detail-drawer__kpi-value">
+                      {formatDate(account.maturityDate)}
+                    </span>
+                  </div>
+                )}
+                {account.category80C && (
+                  <div className="account-detail-drawer__kpi">
+                    <span className="account-detail-drawer__kpi-label">Tax Benefit</span>
+                    <span className="account-detail-drawer__kpi-value account-detail-drawer__kpi-value--positive">
+                      Sec 80C eligible
+                    </span>
+                  </div>
+                )}
+
+                {/* Balance freshness */}
+                {account.balanceAsOf != null && (
+                  <div className="account-detail-drawer__kpi">
+                    <span className="account-detail-drawer__kpi-label">Balance as of</span>
+                    <span className="account-detail-drawer__kpi-value">
+                      {formatDate(account.balanceAsOf)}
+                    </span>
+                  </div>
+                )}
+
+                <div className="account-detail-drawer__kpi">
+                  <span className="account-detail-drawer__kpi-label">Status</span>
+                  <span className="account-detail-drawer__kpi-value">{account.status}</span>
+                </div>
+
+                {/* Linked accounts */}
+                {account.linkedAccounts.length > 0 && (
+                  <div className="account-detail-drawer__kpi account-detail-drawer__kpi--full">
+                    <span className="account-detail-drawer__kpi-label">Linked Accounts</span>
+                    <span className="account-detail-drawer__kpi-value">
+                      {account.linkedAccounts.map((a) => a.name).join(', ')}
+                    </span>
+                  </div>
+                )}
+
+                {/* Tags */}
+                {account.tags.length > 0 && (
+                  <div className="account-detail-drawer__kpi account-detail-drawer__kpi--full">
+                    <span className="account-detail-drawer__kpi-label">Tags</span>
+                    <div className="account-detail-drawer__tags">
+                      {account.tags.map((t) => (
+                        <span key={t} className="account-detail-drawer__tag">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Note */}
+                {account.note && (
+                  <div className="account-detail-drawer__kpi account-detail-drawer__kpi--full">
+                    <span className="account-detail-drawer__kpi-label">Note</span>
+                    <span className="account-detail-drawer__kpi-value account-detail-drawer__kpi-value--note">
+                      {account.note}
                     </span>
                   </div>
                 )}
@@ -199,19 +412,59 @@ export function AccountDetailDrawer({
                 <div className="account-detail-drawer__activity">
                   <h3 className="account-detail-drawer__section-title">Recent Activity</h3>
                   <ul className="account-detail-drawer__activity-list">
-                    {account.recentActivity.map((item) => (
-                      <li key={item.id} className="account-detail-drawer__activity-item">
-                        <span className="account-detail-drawer__activity-merchant">
-                          {item.merchant ?? 'Unknown'}
-                        </span>
-                        <span className="account-detail-drawer__activity-amount">
-                          ₹{formatINR(Math.abs(item.amount))}
-                        </span>
-                        <span className="account-detail-drawer__activity-date">
-                          {formatDate(item.date)}
-                        </span>
-                      </li>
-                    ))}
+                    {account.recentActivity.map((item) => {
+                      const isTransferIn =
+                        item.type === 'TRANSFER' && item.toAccount?.id === account.id;
+                      const label =
+                        item.type === 'TRANSFER'
+                          ? isTransferIn
+                            ? `From ${item.account?.name ?? '—'}`
+                            : `To ${item.toAccount?.name ?? '—'}`
+                          : (item.merchant ?? item.category?.name ?? 'Unknown');
+                      const signed = getTxSignedAmount(
+                        {
+                          type: item.type,
+                          amount: item.amount,
+                          accountId: item.accountId ?? '',
+                          toAccountId: item.toAccount?.id ?? null,
+                        },
+                        account.id,
+                      );
+                      return (
+                        <li key={item.id} className="account-detail-drawer__activity-item">
+                          <div className="account-detail-drawer__activity-info">
+                            <span className="account-detail-drawer__activity-merchant">
+                              {label}
+                            </span>
+                            {item.notes && (
+                              <span className="account-detail-drawer__activity-notes">
+                                {item.notes}
+                              </span>
+                            )}
+                          </div>
+                          <span
+                            className={[
+                              'account-detail-drawer__activity-amount',
+                              signed >= 0
+                                ? 'account-detail-drawer__activity-amount--credit'
+                                : 'account-detail-drawer__activity-amount--debit',
+                            ].join(' ')}
+                          >
+                            {signed >= 0 ? '+' : '−'}₹{formatINR(Math.abs(signed))}
+                          </span>
+                          <div className="account-detail-drawer__activity-meta">
+                            <span className="account-detail-drawer__activity-date">
+                              {formatDate(item.date)}
+                            </span>
+                            {item.status && item.status !== 'CLEARED' && (
+                              <span className="account-detail-drawer__activity-status">
+                                {item.status}
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
@@ -268,6 +521,25 @@ export function AccountDetailDrawer({
                 <div className="account-detail-drawer__field">
                   <label
                     className="account-detail-drawer__field-label"
+                    htmlFor="drawer-balance-as-of"
+                  >
+                    Balance as of
+                  </label>
+                  <input
+                    id="drawer-balance-as-of"
+                    type="date"
+                    className="select-field__control"
+                    defaultValue={
+                      account.balanceAsOf
+                        ? new Date(account.balanceAsOf).toISOString().slice(0, 10)
+                        : ''
+                    }
+                    onChange={(e) => setEditBalanceAsOf(e.target.value)}
+                  />
+                </div>
+                <div className="account-detail-drawer__field">
+                  <label
+                    className="account-detail-drawer__field-label"
                     htmlFor="drawer-opening-balance"
                   >
                     Opening Balance
@@ -312,10 +584,18 @@ export function AccountDetailDrawer({
                   />
                 </div>
                 <div className="account-detail-drawer__field">
-                  <span className="account-detail-drawer__field-label">Opened On</span>
-                  <span className="account-detail-drawer__field-value">
-                    {formatDate(account.openedOn)}
-                  </span>
+                  <label className="account-detail-drawer__field-label" htmlFor="drawer-opened-on">
+                    Opened On
+                  </label>
+                  <input
+                    id="drawer-opened-on"
+                    type="date"
+                    className="select-field__control"
+                    defaultValue={
+                      account.openedOn ? new Date(account.openedOn).toISOString().slice(0, 10) : ''
+                    }
+                    onChange={(e) => setEditOpenedOn(e.target.value)}
+                  />
                 </div>
                 <div className="account-detail-drawer__field account-detail-drawer__field--textarea">
                   <label className="account-detail-drawer__field-label" htmlFor="drawer-note">
@@ -392,28 +672,55 @@ export function AccountDetailDrawer({
               {transactionsLoader && txData && txData.items.length > 0 && (
                 <>
                   <ul className="account-detail-drawer__tx-list">
-                    {txData.items.map((tx) => (
-                      <li key={tx.id} className="account-detail-drawer__tx-item">
-                        <div className="account-detail-drawer__tx-info">
-                          <span className="account-detail-drawer__tx-merchant">
-                            {tx.merchant ?? 'Unknown'}
+                    {txData.items.map((tx) => {
+                      const isTransferIn =
+                        tx.type === 'TRANSFER' && tx.toAccount?.id === account.id;
+                      const label =
+                        tx.type === 'TRANSFER'
+                          ? isTransferIn
+                            ? `From ${tx.account?.name ?? '—'}`
+                            : `To ${tx.toAccount?.name ?? '—'}`
+                          : (tx.merchant ?? tx.category?.name ?? 'Unknown');
+                      const signed = getTxSignedAmount(
+                        {
+                          type: tx.type,
+                          amount: tx.amount,
+                          accountId: tx.accountId ?? '',
+                          toAccountId: tx.toAccount?.id ?? null,
+                        },
+                        account.id,
+                      );
+                      return (
+                        <li key={tx.id} className="account-detail-drawer__tx-item">
+                          <div className="account-detail-drawer__tx-info">
+                            <span className="account-detail-drawer__tx-merchant">{label}</span>
+                            <div className="account-detail-drawer__tx-sub">
+                              <span className="account-detail-drawer__tx-date">
+                                {formatDate(tx.date)}
+                              </span>
+                              {tx.notes && (
+                                <span className="account-detail-drawer__tx-notes">{tx.notes}</span>
+                              )}
+                              {tx.status && tx.status !== 'CLEARED' && (
+                                <span className="account-detail-drawer__activity-status">
+                                  {tx.status}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <span
+                            className={[
+                              'account-detail-drawer__tx-amount',
+                              signed >= 0
+                                ? 'account-detail-drawer__tx-amount--credit'
+                                : 'account-detail-drawer__tx-amount--debit',
+                            ].join(' ')}
+                          >
+                            {signed >= 0 ? '+' : '−'}₹{formatINR(Math.abs(signed))}
                           </span>
-                          <span className="account-detail-drawer__tx-date">
-                            {formatDate(tx.date)}
-                          </span>
-                        </div>
-                        <span
-                          className={[
-                            'account-detail-drawer__tx-amount',
-                            tx.amount >= 0
-                              ? 'account-detail-drawer__tx-amount--credit'
-                              : 'account-detail-drawer__tx-amount--debit',
-                          ].join(' ')}
-                        >
-                          {tx.amount >= 0 ? '+' : ''}₹{formatINR(Math.abs(tx.amount))}
-                        </span>
-                      </li>
-                    ))}
+                        </li>
+                      );
+                    })}
                   </ul>
                   {txData.total > TX_LIMIT && (
                     <div className="account-detail-drawer__tx-pagination">
@@ -450,6 +757,19 @@ export function AccountDetailDrawer({
           )}
         </div>
       </aside>
+
+      {onTransfer && transferOpen && (
+        <TransferModal
+          open={transferOpen}
+          onClose={() => setTransferOpen(false)}
+          accounts={accounts}
+          fromAccountId={acc.id}
+          onSubmit={async (payload) => {
+            await onTransfer(payload);
+            setTransferOpen(false);
+          }}
+        />
+      )}
     </>
   );
 }

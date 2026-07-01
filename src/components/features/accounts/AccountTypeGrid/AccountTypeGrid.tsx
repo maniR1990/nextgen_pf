@@ -44,7 +44,6 @@ export function AccountTypeGrid({ selected, onSelect }: AccountTypeGridProps) {
                   <button
                     key={type}
                     type="button"
-                    role="button"
                     aria-label={meta.name}
                     aria-pressed={isSelected}
                     className={[

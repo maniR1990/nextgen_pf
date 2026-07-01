@@ -17,6 +17,7 @@ import { generateSecureToken } from '@/lib/auth/tokens';
 import { prisma } from '@/lib/db/prisma';
 import { sendAuthEmail } from '@/lib/email/sendAuthEmail';
 import { getLogger } from '@/lib/logger';
+import { seedDefaultCategories } from '@/lib/seed/defaultCategories';
 import { UserRepository } from '@/modules/users/users.repository';
 import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -70,7 +71,9 @@ export const AuthService = {
     const passwordHash = await bcrypt.hash(dto.password, AUTH.BCRYPT_ROUNDS);
 
     try {
-      const autoVerify = process.env.AUTO_VERIFY_EMAIL === 'true';
+      // Default to auto-verify — email sending is not configured.
+      // Set AUTO_VERIFY_EMAIL=false in env only when email service is wired up.
+      const autoVerify = process.env.AUTO_VERIFY_EMAIL !== 'false';
       const user = await UserRepository.create({
         email: dto.email,
         name: dto.name,
@@ -114,6 +117,8 @@ export const AuthService = {
           },
         ],
       });
+
+      await seedDefaultCategories(user.id);
 
       if (!autoVerify) {
         const token = generateSecureToken();
@@ -185,12 +190,9 @@ export const AuthService = {
 
   async refresh(refreshToken: string) {
     const { verifyRefreshToken } = await import('@/lib/auth/jwt');
-    let payload;
-    try {
-      payload = await verifyRefreshToken(refreshToken);
-    } catch {
+    const payload = await verifyRefreshToken(refreshToken).catch(() => {
       throw new UnauthorizedError('Invalid refresh token');
-    }
+    });
 
     const storedUserId = await getRefreshTokenUserId(payload.jti);
     if (!storedUserId || storedUserId !== payload.sub) {

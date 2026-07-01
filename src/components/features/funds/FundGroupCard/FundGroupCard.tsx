@@ -156,9 +156,7 @@ export function FundGroupCard({
           {!isArchived && (
             <span className="fund-group-card__section-meta">
               {fundCount} {fundCount === 1 ? 'fund' : 'funds'}
-              {totalAmount != null && totalAmount > 0 && (
-                <> · {formatINRCompact(totalAmount)}</>
-              )}
+              {totalAmount != null && totalAmount > 0 && <> · {formatINRCompact(totalAmount)}</>}
             </span>
           )}
 

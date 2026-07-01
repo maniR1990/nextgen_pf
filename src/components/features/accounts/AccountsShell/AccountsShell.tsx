@@ -23,7 +23,7 @@ import type {
   FundSummary,
   FundsAggregateSummary,
 } from '@/modules/funds/funds.types';
-import { CreditCard, Plus } from 'lucide-react';
+import { ChevronsDownUp, ChevronsUpDown, CreditCard, Plus } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { AllocationEditor } from '../../funds/AllocationEditor';
@@ -47,7 +47,7 @@ export interface AccountsShellProps {
   funds: FundSummary[];
   fundGroups: FundGroupSummary[];
   fundsSummary: FundsAggregateSummary | undefined;
-  onCreateAccount: (dto: CreateAccountDto) => Promise<void>;
+  onCreateAccount: (dto: CreateAccountDto) => Promise<AccountSummary | undefined>;
   onUpdateAccount?: (id: string, dto: Partial<CreateAccountDto>) => Promise<void>;
   onDeleteAccount?: (id: string) => Promise<void>;
   onTransfer?: (payload: TransferPayload) => Promise<void>;
@@ -114,6 +114,10 @@ export function AccountsShell({
   const [deleteAccountTarget, setDeleteAccountTarget] = useState<AccountSummary | null>(null);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
+  // null = mixed (each group uses its own default), true = all collapsed, false = all expanded
+  const [collapseOverride, setCollapseOverride] = useState<boolean | null>(null);
+  const allCollapsed = collapseOverride === true;
+
   // Group modals
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<AccountGroupWithAccounts | null>(null);
@@ -139,6 +143,36 @@ export function AccountsShell({
   const [deletingFundGroupLoading, setDeletingFundGroupLoading] = useState(false);
 
   const allAccounts = accountGroups.flatMap((g) => g.accounts);
+
+  // Build accountId → fund name map for transfer goal hints
+  const goalByAccountId = funds.reduce<Record<string, string>>((map, fund) => {
+    if (fund.archivedAt) return map;
+    for (const src of fund.sources) {
+      // Consider an account "dedicated" if it's allocated at 100%
+      if (src.type === 'PERCENTAGE' && src.value >= 1) {
+        map[src.accountId] = fund.name;
+      }
+    }
+    return map;
+  }, {});
+
+  async function handleWizardSubmit(dto: CreateAccountDto, goalFundId?: string) {
+    const result = await onCreateAccount(dto);
+    // If user linked a goal and the creation returned the new account, auto-allocate 100%
+    if (goalFundId && onSaveAllocations && result && 'id' in result) {
+      const existingFund = funds.find((f) => f.id === goalFundId);
+      const existingSources = (existingFund?.sources ?? []).map((s) => ({
+        accountId: s.accountId,
+        type: s.type,
+        value: s.value,
+        priority: s.priority,
+      }));
+      await onSaveAllocations(goalFundId, [
+        ...existingSources,
+        { accountId: result.id, type: 'PERCENTAGE', value: 1, priority: 0 },
+      ]);
+    }
+  }
 
   const netWorth = computeNetWorth(
     accountGroups.flatMap((g) =>
@@ -290,6 +324,23 @@ export function AccountsShell({
                 <Button
                   size="sm"
                   variant="ghost"
+                  onClick={() => setCollapseOverride((v) => v !== true)}
+                  aria-label={allCollapsed ? 'Expand all groups' : 'Collapse all groups'}
+                  title={allCollapsed ? 'Expand all' : 'Collapse all'}
+                >
+                  {allCollapsed ? (
+                    <>
+                      <ChevronsUpDown size={14} aria-hidden /> Expand All
+                    </>
+                  ) : (
+                    <>
+                      <ChevronsDownUp size={14} aria-hidden /> Collapse All
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() => {
                     setEditingGroup(null);
                     setGroupModalOpen(true);
@@ -306,6 +357,7 @@ export function AccountsShell({
                   <AccountGroupSection
                     key={group.id}
                     group={group}
+                    collapseOverride={collapseOverride}
                     onAccountClick={openAccountDrawer}
                     onEdit={openAccountDrawer}
                     onTransfer={openTransfer}
@@ -377,6 +429,8 @@ export function AccountsShell({
                   onClose={() => setDrawerAccount(null)}
                   onUpdate={onUpdateAccount}
                   accountGroups={accountGroups}
+                  accounts={allAccounts}
+                  onTransfer={onTransfer}
                   transactionsLoader={transactionsLoader}
                 />
               )}
@@ -554,7 +608,8 @@ export function AccountsShell({
         open={wizardOpen}
         onClose={() => setWizardOpen(false)}
         accountGroups={accountGroups}
-        onSubmit={onCreateAccount}
+        funds={funds}
+        onSubmit={handleWizardSubmit}
       />
 
       <AccountDetailDrawer
@@ -563,6 +618,8 @@ export function AccountsShell({
         onClose={() => setDrawerAccount(null)}
         onUpdate={onUpdateAccount}
         accountGroups={accountGroups}
+        accounts={allAccounts}
+        onTransfer={onTransfer}
         transactionsLoader={transactionsLoader}
       />
 
@@ -572,6 +629,7 @@ export function AccountsShell({
           onClose={() => setTransferFrom(null)}
           accounts={allAccounts}
           fromAccountId={transferFrom.id}
+          goalByAccountId={goalByAccountId}
           onSubmit={onTransfer}
         />
       )}
@@ -605,6 +663,7 @@ export function AccountsShell({
             await onCreateFund(dto);
           }
         }}
+        onCreateGroup={onCreateFundGroup ? handleOpenFundGroupCreate : undefined}
       />
 
       <FundGroupFormDialog

@@ -80,7 +80,7 @@ export const CategoriesRepository = {
 
   countTransactions: (categoryId: string) =>
     prisma.financeTransaction.count({
-      where: { categoryId, voidedAt: null },
+      where: { categoryId, OR: [{ voidedAt: null }, { voidedAt: { isSet: false } }] },
     }),
 
   spendByCategoryIds: (userId: string, categoryIds: string[], year: number, month: number) => {
@@ -92,7 +92,7 @@ export const CategoriesRepository = {
         categoryId: { in: categoryIds },
         budgetPeriodYear: year,
         budgetPeriodMonth: month,
-        voidedAt: null,
+        OR: [{ voidedAt: null }, { voidedAt: { isSet: false } }],
       },
       _sum: { amount: true },
     });
@@ -105,7 +105,7 @@ export const CategoriesRepository = {
       where: {
         userId,
         categoryId,
-        voidedAt: null,
+        OR: [{ voidedAt: null }, { voidedAt: { isSet: false } }],
         date: { gte: start },
       },
       select: {
@@ -129,7 +129,7 @@ export const CategoriesRepository = {
         categoryId,
         budgetPeriodYear: year,
         budgetPeriodMonth: month,
-        voidedAt: null,
+        OR: [{ voidedAt: null }, { voidedAt: { isSet: false } }],
       },
       orderBy: { amount: 'desc' },
       take,
@@ -150,6 +150,12 @@ export const CategoriesRepository = {
     prisma.category.update({ where: { id }, data, select: CATEGORY_SELECT }),
 
   delete: (id: string) => prisma.category.delete({ where: { id } }),
+
+  unsetTransactionCategory: (categoryId: string) =>
+    prisma.financeTransaction.updateMany({
+      where: { categoryId },
+      data: { categoryId: null },
+    }),
 
   archive: (id: string) =>
     prisma.category.update({

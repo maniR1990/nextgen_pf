@@ -30,6 +30,9 @@
 @use 'charts';
 @use 'kpi-cards';
 @use 'budget-ledger';
+@use 'budget-view';
+@use 'day-of-month-picker';
+@use 'payment-schedule-panel';
 @use 'side-menu';
 @use 'timeline';
 @use 'add-transaction';

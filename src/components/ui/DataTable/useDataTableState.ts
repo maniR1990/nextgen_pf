@@ -92,6 +92,7 @@ export function useDataTableState<T extends Record<string, unknown>>({
 
   const pagination = useMemo(() => paginateRows(sorted, page, pageSize), [sorted, page, pageSize]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: setPage is stable; listed deps are exactly the filters that should reset pagination
   useEffect(() => {
     setPage(1);
   }, [globalSearch, columnFilters, pageSize, sort]);

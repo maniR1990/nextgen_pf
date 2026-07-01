@@ -1,0 +1,124 @@
+@use '../mixins' as m;
+
+// ── DayOfMonthPicker ──────────────────────────────────────────────────────────
+// Portal popover for selecting a recurring day-of-month (1–31).
+// Used by budget due-dates and the upcoming-payments calendar.
+
+.dom-picker {
+  z-index: 9999;
+  width: 244px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+  user-select: none;
+
+  // ── Header ──────────────────────────────────────────────────────────────────
+
+  &__header {
+    padding: 12px 14px 8px;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__title {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  &__selected-label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: #15803d;
+  }
+
+  // ── Grid 7 × 5 ──────────────────────────────────────────────────────────────
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    padding: 10px 8px 6px;
+  }
+
+  &__day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: none;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+    font-family: inherit;
+    padding: 0;
+
+    &:hover:not(&--selected) {
+      background: var(--color-bg-subtle);
+    }
+
+    // Today's date — subtle ring
+    &--today:not(&--selected) {
+      border: 1.5px solid var(--color-primary, #3b82f6);
+      color: var(--color-primary, #3b82f6);
+      font-weight: 700;
+    }
+
+    // Past days — de-emphasised but still clickable
+    &--past:not(&--selected) {
+      color: var(--color-text-disabled, var(--color-text-muted));
+    }
+
+    // Selected day
+    &--selected {
+      background: #15803d;
+      color: #fff;
+      font-weight: 700;
+      border-radius: var(--radius-md);
+
+      &:hover { background: #166534; }
+    }
+  }
+
+  // ── Footer ──────────────────────────────────────────────────────────────────
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px 10px;
+    border-top: 1px solid var(--color-border);
+    gap: 8px;
+  }
+
+  &__month-hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__clear {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-error, #dc2626);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 0;
+    font-family: inherit;
+    white-space: nowrap;
+    margin-left: auto;
+
+    &:hover { text-decoration: underline; }
+  }
+}

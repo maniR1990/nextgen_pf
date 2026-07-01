@@ -1,7 +1,13 @@
 'use client';
 
 import { useToast } from '@/components/common/ToastProvider/useToast';
-import { apiGetV1, apiPatchV1, apiPutV1, getFetchErrorMessage } from '@/lib/query/fetcher';
+import {
+  apiGetV1,
+  apiPatchV1,
+  apiPostV1,
+  apiPutV1,
+  getFetchErrorMessage,
+} from '@/lib/query/fetcher';
 import { queryKeys } from '@/lib/query/queryKeys';
 import type { AccountDetail } from '@/modules/accounts/accounts.types';
 import type { UpdateAccountDto } from '@/modules/accounts/accounts.types';
@@ -18,7 +24,7 @@ export function useAccountDetail(accountId: string | null) {
     queryKey,
     queryFn: () => apiGetV1<AccountDetail>(`/api/v1/accounts/${accountId}`),
     enabled: Boolean(accountId),
-    staleTime: 30_000,
+    staleTime: 0,
   });
 
   const invalidate = useCallback(async () => {
@@ -45,7 +51,7 @@ export function useAccountDetail(accountId: string | null) {
       payload: { toAccountId: string; amount: number; note?: string; date?: string },
     ) => {
       try {
-        await apiPatchV1(`/api/v1/accounts/${id}/transfer`, payload);
+        await apiPostV1(`/api/v1/accounts/${id}/transfer`, payload);
         toast.success('Transfer complete');
         await invalidate();
       } catch (err) {

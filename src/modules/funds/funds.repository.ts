@@ -83,14 +83,14 @@ export const FundsRepository = {
     if (ids.length === 0) return Promise.resolve([]);
     return prisma.account.findMany({
       where: { userId, id: { in: ids }, archivedAt: null },
-      select: { id: true, name: true, code: true, balance: true },
+      select: { id: true, name: true, code: true, type: true, balance: true },
     });
   },
 
   findUserAccounts: (userId: string) =>
     prisma.account.findMany({
       where: { userId, archivedAt: null },
-      select: { id: true, name: true, code: true, balance: true },
+      select: { id: true, name: true, code: true, type: true, balance: true },
     }),
 
   create: (data: Prisma.FundCreateInput) => prisma.fund.create({ data, select: FUND_SELECT }),

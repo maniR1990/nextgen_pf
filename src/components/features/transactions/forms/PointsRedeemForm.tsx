@@ -23,13 +23,14 @@ export function PointsRedeemForm({
   const ptsNum = Number.parseFloat(values.ptsSpent);
   const rateNum = Number.parseFloat(values.ptsRate);
   const autoAmount =
-    !isNaN(ptsNum) && !isNaN(rateNum) && ptsNum > 0 && rateNum > 0
+    !Number.isNaN(ptsNum) && !Number.isNaN(rateNum) && ptsNum > 0 && rateNum > 0
       ? (ptsNum * rateNum).toFixed(2)
       : null;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: onChange is stable from parent; only autoAmount change should trigger
   useEffect(() => {
     if (autoAmount) onChange('amount', autoAmount);
-  }, [autoAmount]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [autoAmount]);
 
   return (
     <div className="tx-form tx-form--points">

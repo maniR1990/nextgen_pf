@@ -12,7 +12,7 @@ describe('isEnabled', () => {
   it('returns true when env override is set', async () => {
     process.env.FLAG_NEW_DASHBOARD = 'true';
     expect(await isEnabled('NEW_DASHBOARD')).toBe(true);
-    delete process.env.FLAG_NEW_DASHBOARD;
+    process.env.FLAG_NEW_DASHBOARD = undefined;
   });
 
   it('returns default when flag not in DB', async () => {

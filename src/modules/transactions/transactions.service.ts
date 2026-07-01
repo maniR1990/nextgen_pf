@@ -5,9 +5,11 @@ import {
   TxLockedError,
   ValidationError,
 } from '@/lib/api/errors';
+import { applyDeltas, getBalanceDeltas, reverseDeltas } from '@/lib/balance-engine';
+import { prisma } from '@/lib/db/prisma';
 import { evaluateFraud } from '@/lib/rules-engine/evaluator';
 import { UserRepository } from '@/modules/users/users.repository';
-import { TransactionRepository } from './transactions.repository';
+import { TX_INCLUDE, TransactionRepository } from './transactions.repository';
 import type {
   CreateTransactionDto,
   GetTransactionsQuery,
@@ -16,6 +18,8 @@ import type {
 } from './transactions.types';
 
 const FUND_ALLOWED_TYPES = new Set(['TRANSFER', 'INVESTMENT', 'SINKING_DEPOSIT']);
+
+// ── Guards ────────────────────────────────────────────────────────────────
 
 function assertOwned(tx: { userId: string }, userId: string) {
   if (tx.userId !== userId) throw new NotFoundError('Transaction not found');
@@ -33,7 +37,7 @@ function validateFundGroupTag(
   if (fundGroupId == null) return;
   if (!FUND_ALLOWED_TYPES.has(type)) {
     throw new ValidationError(
-      `Fund group tagging is only allowed on TRANSFER, INVESTMENT or SINKING_DEPOSIT transactions`,
+      'Fund group tagging is only allowed on TRANSFER, INVESTMENT or SINKING_DEPOSIT transactions',
     );
   }
   if (!fundGroupFlow) {
@@ -41,8 +45,10 @@ function validateFundGroupTag(
   }
 }
 
+// ── Service ───────────────────────────────────────────────────────────────
+
 export const TransactionService = {
-  // ── v1 cursor list ────────────────────────────────────────────────────────
+  // ── List (cursor) ─────────────────────────────────────────────────────────
 
   async listWithCursor(query: ListWithCursorQuery) {
     const {
@@ -80,15 +86,10 @@ export const TransactionService = {
 
     const hasMore = rows.length > limit;
     const page = hasMore ? rows.slice(0, limit) : rows;
-    return {
-      rows: page,
-      hasMore,
-      nextCursor: hasMore ? page[page.length - 1].id : null,
-      limit,
-    };
+    return { rows: page, hasMore, nextCursor: hasMore ? page[page.length - 1].id : null, limit };
   },
 
-  // ── v1 single ─────────────────────────────────────────────────────────────
+  // ── Single ────────────────────────────────────────────────────────────────
 
   async getById(id: string, userId: string) {
     const tx = await TransactionRepository.findById(id);
@@ -96,27 +97,28 @@ export const TransactionService = {
     return tx;
   },
 
-  // ── v1 create ─────────────────────────────────────────────────────────────
+  // ── Create — atomic: ledger entry + balance update in one DB transaction ──
 
   async createTransaction(dto: CreateTransactionDto) {
-    let user;
-    try {
-      user = await UserRepository.findById(dto.userId);
-    } catch {
+    const user = await UserRepository.findById(dto.userId).catch(() => {
       throw new NotFoundError('User not found');
-    }
+    });
 
     const accountAgeDays = Math.floor(
       (Date.now() - new Date(user.createdAt).getTime()) / 86_400_000,
     );
 
     validateFundGroupTag(dto.type, dto.fundGroupId, dto.fundGroupFlow);
-
-    await evaluateFraud({ amount: dto.amount, accountAgeDays, countryMatch: true });
+    await evaluateFraud({
+      amount: dto.amount,
+      accountAgeDays,
+      countryMatch: true,
+      txType: dto.type,
+    });
 
     const txDate = new Date(dto.date);
 
-    return TransactionRepository.create({
+    const txData = {
       user: { connect: { id: dto.userId } },
       type: dto.type as never,
       date: txDate,
@@ -130,7 +132,7 @@ export const TransactionService = {
       paymentMethod: dto.paymentMethod as never,
       isPlanned: dto.isPlanned,
       isRecurring: dto.isRecurring,
-      status: (dto.status ?? 'PENDING') as never,
+      status: (dto.status ?? (dto.type === 'TRANSFER' ? 'CLEARED' : 'PENDING')) as never,
       merchant: dto.merchant,
       notes: dto.notes,
       tags: dto.tags ?? [],
@@ -148,22 +150,63 @@ export const TransactionService = {
             ...(dto.recSchedule.endDate && { endDate: new Date(dto.recSchedule.endDate) }),
           },
         }),
+    };
+
+    const delta = getBalanceDeltas({
+      type: dto.type,
+      amount: dto.amount,
+      accountId: dto.paymentSourceId,
+      toAccountId: dto.toAccountId,
+    });
+
+    return prisma.$transaction(async (tx) => {
+      const created = await tx.financeTransaction.create({
+        data: txData as never,
+        include: TX_INCLUDE,
+      });
+      await applyDeltas(tx, delta);
+      return created;
     });
   },
 
-  // ── v1 patch ──────────────────────────────────────────────────────────────
+  // ── Patch (edit) — reverse old delta, apply new delta, atomically ─────────
 
   async patch(id: string, userId: string, dto: PatchTransactionDto) {
-    const tx = await TransactionRepository.findById(id);
-    assertOwned(tx, userId);
-    assertNotLocked(tx);
+    const existing = await TransactionRepository.findById(id);
+    assertOwned(existing, userId);
+    assertNotLocked(existing);
 
-    const effectiveType = (dto.type ?? (tx as unknown as { type: string }).type) as string;
+    const existingTyped = existing as unknown as {
+      type: string;
+      accountId: string;
+      toAccountId: string | null;
+      amount: number;
+    };
+
+    const effectiveType = dto.type ?? existingTyped.type;
     validateFundGroupTag(effectiveType, dto.fundGroupId, dto.fundGroupFlow);
 
-    // Build Prisma-compatible update object with relation handling
-    const data: Record<string, unknown> = {};
+    // Snapshot of what the transaction looks like BEFORE the edit
+    const oldSnapshot = {
+      type: existingTyped.type,
+      amount: existingTyped.amount,
+      accountId: existingTyped.accountId,
+      toAccountId: existingTyped.toAccountId,
+    };
 
+    // Snapshot of what it will look like AFTER the edit
+    const newSnapshot = {
+      type: effectiveType,
+      amount: dto.amount ?? oldSnapshot.amount,
+      accountId: dto.paymentSourceId ?? oldSnapshot.accountId,
+      toAccountId: dto.toAccountId ?? oldSnapshot.toAccountId,
+    };
+
+    const oldDelta = getBalanceDeltas(oldSnapshot);
+    const newDelta = getBalanceDeltas(newSnapshot);
+
+    // Build Prisma update payload
+    const data: Record<string, unknown> = {};
     if (dto.type !== undefined) data.type = dto.type;
     if (dto.date !== undefined) data.date = new Date(dto.date);
     if (dto.amount !== undefined) data.amount = dto.amount;
@@ -178,7 +221,6 @@ export const TransactionService = {
     if (dto.paymentSourceId !== undefined) data.account = { connect: { id: dto.paymentSourceId } };
     if (dto.categoryId !== undefined) data.category = { connect: { id: dto.categoryId } };
     if (dto.toAccountId !== undefined) data.toAccount = { connect: { id: dto.toAccountId } };
-    // Type-specific direct fields
     if (dto.assetClass !== undefined) data.assetClass = dto.assetClass;
     if (dto.fundName !== undefined) data.fundName = dto.fundName;
     if (dto.units !== undefined) data.units = dto.units;
@@ -205,33 +247,81 @@ export const TransactionService = {
     if (dto.platform !== undefined) data.platform = dto.platform;
     if (dto.ptsSpent !== undefined) data.ptsSpent = dto.ptsSpent;
     if (dto.ptsRate !== undefined) data.ptsRate = dto.ptsRate;
-    if (dto.fundGroupId !== undefined) {
-      data.fundGroupId = dto.fundGroupId;
-    }
+    if (dto.fundGroupId !== undefined) data.fundGroupId = dto.fundGroupId;
     if (dto.fundGroupFlow !== undefined) data.fundGroupFlow = dto.fundGroupFlow;
 
-    return TransactionRepository.update(id, data as never);
+    return prisma.$transaction(async (tx) => {
+      const updated = await tx.financeTransaction.update({
+        where: { id },
+        data: data as never,
+        include: TX_INCLUDE,
+      });
+      await applyDeltas(tx, reverseDeltas(oldDelta)); // undo old effect
+      await applyDeltas(tx, newDelta); // apply new effect
+      return updated;
+    });
   },
 
-  // ── v1 void ───────────────────────────────────────────────────────────────
+  // ── Void — mark voided + reverse balance, atomically ─────────────────────
 
   async voidTransaction(id: string, userId: string) {
-    const tx = await TransactionRepository.findById(id);
-    assertOwned(tx, userId);
-    assertNotLocked(tx);
-    return TransactionRepository.void(id);
+    const existing = await TransactionRepository.findById(id);
+    assertOwned(existing, userId);
+    assertNotLocked(existing);
+
+    const existingTyped = existing as unknown as {
+      type: string;
+      amount: number;
+      accountId: string;
+      toAccountId: string | null;
+    };
+
+    const delta = getBalanceDeltas({
+      type: existingTyped.type,
+      amount: existingTyped.amount,
+      accountId: existingTyped.accountId,
+      toAccountId: existingTyped.toAccountId,
+    });
+
+    return prisma.$transaction(async (tx) => {
+      const voided = await tx.financeTransaction.update({
+        where: { id },
+        data: { status: 'VOID', voidedAt: new Date() },
+        include: TX_INCLUDE,
+      });
+      await applyDeltas(tx, reverseDeltas(delta));
+      return voided;
+    });
   },
 
-  // ── v1 hard delete ────────────────────────────────────────────────────────
+  // ── Hard delete — remove record + reverse balance, atomically ─────────────
 
   async hardDelete(id: string, userId: string) {
-    const tx = await TransactionRepository.findById(id);
-    assertOwned(tx, userId);
-    assertNotLocked(tx);
-    await TransactionRepository.hardDelete(id);
+    const existing = await TransactionRepository.findById(id);
+    assertOwned(existing, userId);
+    assertNotLocked(existing);
+
+    const existingTyped = existing as unknown as {
+      type: string;
+      amount: number;
+      accountId: string;
+      toAccountId: string | null;
+    };
+
+    const delta = getBalanceDeltas({
+      type: existingTyped.type,
+      amount: existingTyped.amount,
+      accountId: existingTyped.accountId,
+      toAccountId: existingTyped.toAccountId,
+    });
+
+    await prisma.$transaction(async (tx) => {
+      await tx.financeTransaction.delete({ where: { id } });
+      await applyDeltas(tx, reverseDeltas(delta));
+    });
   },
 
-  // ── duplicate check ───────────────────────────────────────────────────────
+  // ── Duplicate check ───────────────────────────────────────────────────────
 
   async checkDuplicates(userId: string, merchant: string, amount: number, dateStr: string) {
     return TransactionRepository.findDuplicates(userId, merchant, amount, new Date(dateStr));
@@ -248,7 +338,7 @@ export const TransactionService = {
     return null;
   },
 
-  // ── legacy OFFSET list (backward compat) ──────────────────────────────────
+  // ── Legacy OFFSET list ────────────────────────────────────────────────────
 
   async getTransactions(query: GetTransactionsQuery) {
     const { userId, page = 1, limit = 20, type, fromDate, toDate, categoryId, search } = query;

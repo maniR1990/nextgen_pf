@@ -14,12 +14,13 @@ function clampDay(day: number, year: number, month: number) {
 }
 
 function addMonths(year: number, month: number, n: number): [number, number] {
-  month += n;
-  while (month > 11) {
-    month -= 12;
-    year += 1;
+  let m = month + n;
+  let y = year;
+  while (m > 11) {
+    m -= 12;
+    y += 1;
   }
-  return [year, month];
+  return [y, m];
 }
 
 /** Returns the next N future occurrence dates based on template frequency. */

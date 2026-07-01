@@ -1,10 +1,23 @@
 'use client';
 
+import { ACCOUNT_TYPE_META } from '@/constants/accounts';
 import { formatINRCompact } from '@/lib/utils/format';
-import type { FundSummary } from '@/modules/funds/funds.types';
+import type { FundSummary, SourceBreakdown } from '@/modules/funds/funds.types';
 import { MoreHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+
+/** Investment / alternate account types — their full balance is dedicated capital */
+const INVESTMENT_GROUPS = new Set(['investment', 'alternate']);
+
+function isDedicatedSource(s: SourceBreakdown): boolean {
+  const meta = ACCOUNT_TYPE_META[s.accountType];
+  return meta ? INVESTMENT_GROUPS.has(meta.group) : false;
+}
+
+function accountLabel(type: string): string {
+  return (ACCOUNT_TYPE_META as Record<string, { name: string } | undefined>)[type]?.name ?? type;
+}
 
 const PURPOSE_LABEL: Record<string, string> = {
   EMERGENCY: 'Safety',
@@ -42,6 +55,11 @@ export function FundListRow({ fund, onEdit, onAllocate, onArchive, onDelete }: F
   const purposeLabel = PURPOSE_LABEL[fund.purpose] ?? fund.purpose;
   const hasMenu = onEdit || onAllocate || onArchive || onDelete;
 
+  // Dedicated sources: investment/alternate accounts that are 100% allocated to this fund
+  const dedicatedSources = fund.sources.filter(
+    (s) => isDedicatedSource(s) && s.type === 'PERCENTAGE' && s.value >= 1,
+  );
+
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e: MouseEvent) => {
@@ -77,6 +95,20 @@ export function FundListRow({ fund, onEdit, onAllocate, onArchive, onDelete }: F
         <span className="fund-list-row__info">
           <span className="fund-list-row__name">{fund.name}</span>
           <span className="fund-list-row__badge">{purposeLabel}</span>
+          {dedicatedSources.length > 0 && (
+            <span className="fund-list-row__dedicated">
+              {dedicatedSources.slice(0, 2).map((s) => (
+                <span key={s.accountId} className="fund-list-row__dedicated-chip">
+                  {accountLabel(s.accountType)} · {formatINRCompact(s.accountBalance)}
+                </span>
+              ))}
+              {dedicatedSources.length > 2 && (
+                <span className="fund-list-row__dedicated-chip fund-list-row__dedicated-chip--more">
+                  +{dedicatedSources.length - 2} more
+                </span>
+              )}
+            </span>
+          )}
         </span>
 
         <span

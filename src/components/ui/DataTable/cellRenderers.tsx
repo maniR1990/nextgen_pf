@@ -86,8 +86,6 @@ export function renderDataTableCell<T extends Record<string, unknown>>(
       const tone = num >= 0 ? 'data-table__amount--positive' : 'data-table__amount--negative';
       return <span className={['data-table__amount', tone].join(' ')}>{formatAmount(value)}</span>;
     }
-    case 'date':
-    case 'text':
     default:
       return <span>{String(value ?? '')}</span>;
   }
