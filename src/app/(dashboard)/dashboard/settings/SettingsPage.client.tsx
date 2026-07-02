@@ -22,6 +22,7 @@ import { queryKeys } from '@/lib/query/queryKeys';
 import type {
   AccountDetail,
   AccountGroupWithAccounts,
+  AccountSummary,
   CreateAccountDto,
   TransactionPage,
 } from '@/modules/accounts/accounts.types';
@@ -129,11 +130,12 @@ export function SettingsPageClient() {
   // ── Account handlers ────────────────────────────────────────────────────────
 
   const handleCreateAccount = useCallback(
-    async (dto: CreateAccountDto) => {
+    async (dto: CreateAccountDto): Promise<AccountSummary | undefined> => {
       try {
-        await apiPostV1('/api/v1/accounts', dto);
+        const result = await apiPostV1<AccountSummary>('/api/v1/accounts', dto);
         toast.success('Account created', { description: dto.name });
         await invalidateAccounts();
+        return result;
       } catch (err) {
         toast.error(getFetchErrorMessage(err, 'Could not create account'));
         throw err;

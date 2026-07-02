@@ -64,7 +64,7 @@ function currentBudgetPeriod() {
   return { year: now.getFullYear(), month: now.getMonth() + 1 };
 }
 
-function toTreeNode(row: CategoryRow, monthlySpend: number): Omit<CategoryTreeNode, 'children'> {
+function toTreeNode(row: CategoryRow, monthlySpend: number): CategoryTreeNode {
   return {
     id: row.id,
     name: row.name,

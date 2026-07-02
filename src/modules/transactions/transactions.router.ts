@@ -93,6 +93,7 @@ export const v1ListTransactions = compose(withAuth())(async (req, ctx) => {
       ...parsed.data,
       type: parsed.data.type as never,
       types: typesParam?.length ? typesParam : undefined,
+      status: parsed.data.status as never,
     });
 
     return v1Paginated(result.rows, {

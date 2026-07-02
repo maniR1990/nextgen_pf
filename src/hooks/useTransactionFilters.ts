@@ -69,7 +69,7 @@ export function filtersToApiParams(
   params.set('limit', '20');
   params.set('sort', filters.sort);
 
-  const apiTypes = chipToApiTypes(filters.typeChip);
+  const apiTypes = chipToApiTypes(filters.typeChip as TransactionFilterChip);
   if (apiTypes?.length === 1) params.set('type', apiTypes[0]!);
   else if (apiTypes && apiTypes.length > 1) params.set('types', apiTypes.join(','));
 

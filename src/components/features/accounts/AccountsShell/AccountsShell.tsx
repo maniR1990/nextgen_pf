@@ -156,7 +156,10 @@ export function AccountsShell({
     return map;
   }, {});
 
-  async function handleWizardSubmit(dto: CreateAccountDto, goalFundId?: string) {
+  async function handleWizardSubmit(
+    dto: CreateAccountDto,
+    goalFundId?: string,
+  ): Promise<AccountSummary | undefined> {
     const result = await onCreateAccount(dto);
     // If user linked a goal and the creation returned the new account, auto-allocate 100%
     if (goalFundId && onSaveAllocations && result && 'id' in result) {
@@ -172,6 +175,7 @@ export function AccountsShell({
         { accountId: result.id, type: 'PERCENTAGE', value: 1, priority: 0 },
       ]);
     }
+    return result;
   }
 
   const netWorth = computeNetWorth(

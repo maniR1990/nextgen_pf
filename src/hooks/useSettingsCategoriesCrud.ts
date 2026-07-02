@@ -4,6 +4,7 @@ import type { CategoryHierarchyCrudHandlers } from '@/components/common/Category
 import type { CategoryHierarchyNodeJson } from '@/components/common/CategoryHierarchy/schemas';
 import { useToast } from '@/components/common/ToastProvider/useToast';
 import { toCategoryFlowType } from '@/constants/categories';
+import type { CategoryFlowTypeSlug } from '@/constants/categories';
 import {
   SETTINGS_TOAST_CREATE_ERROR,
   SETTINGS_TOAST_CREATE_SUCCESS,
@@ -65,7 +66,7 @@ export function useSettingsCategoriesCrud() {
 
       try {
         const payload = isRootGroup
-          ? { name, type: toCategoryFlowType(groupType) }
+          ? { name, type: toCategoryFlowType(groupType as CategoryFlowTypeSlug) }
           : { name, parentId };
         await apiPostV1<CategoryTreeNode>('/api/v1/categories', payload);
         toast.success(SETTINGS_TOAST_CREATE_SUCCESS, { description: name });

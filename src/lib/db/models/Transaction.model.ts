@@ -1,4 +1,4 @@
 /**
  * Spec placeholder — schema lives in prisma/schema.prisma.
  */
-export type { Transaction } from '@prisma/client';
+export type { FinanceTransaction as Transaction } from '@prisma/client';

@@ -39,7 +39,7 @@ export interface ModalProps {
   /** When true, modal fills the viewport (100vw × 100vh) */
   isFullScreen?: boolean;
   /** Controls modal width — 'lg' uses a wider max-width */
-  size?: 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg';
   /** Element to restore focus to on close; defaults to previously focused element */
   triggerRef?: RefObject<HTMLElement | null>;
   closeOnBackdropClick?: boolean;
@@ -54,7 +54,7 @@ export function modalClassName({
   className = '',
 }: {
   isFullScreen?: boolean;
-  size?: 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg';
   isVisible?: boolean;
   className?: string;
 }) {

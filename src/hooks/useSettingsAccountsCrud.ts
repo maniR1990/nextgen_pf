@@ -69,7 +69,7 @@ export function useSettingsAccountsCrud() {
           await apiPostV1('/api/v1/accounts', {
             name,
             groupId: parentId,
-            type: defaultAccountType(groupType),
+            type: defaultAccountType(groupType as 'asset' | 'liability'),
           });
         }
         toast.success(SETTINGS_ACCOUNT_TOAST_CREATE_SUCCESS, { description: name });

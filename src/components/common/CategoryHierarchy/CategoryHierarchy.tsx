@@ -6,6 +6,7 @@ import {
   type CategoryHierarchyCrudHandlers,
   CategoryHierarchyTreeNode,
 } from './CategoryHierarchyTreeNode';
+import type { HierarchyRootType } from '@/constants/category-hierarchy';
 import { getDefaultRootType } from './lib/resolveCategoryIcon';
 import type { CategoryHierarchyConfigJson, CategoryHierarchyNodeJson } from './schemas';
 
@@ -198,7 +199,7 @@ export function CategoryHierarchy({
           <ul className="cat-hierarchy__tree" role="tree" aria-label={config.ariaLabel}>
             {displayNodes.map((node) => {
               const variant = config.variant ?? 'category';
-              const groupType = node.type ?? getDefaultRootType(variant);
+              const groupType = (node.type ?? getDefaultRootType(variant)) as HierarchyRootType;
 
               return (
                 <CategoryHierarchyTreeNode

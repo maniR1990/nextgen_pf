@@ -3,7 +3,7 @@
 import { Icon } from '@/components/ui/Icon';
 import type { HierarchyCrudMode } from '@/constants/settings';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
-import type { CategoryHierarchyNodeJson } from '../schemas';
+import type { CategoryHierarchyNodeJson } from './schemas';
 import type { CategoryHierarchyRowAction } from './CategoryHierarchyRowActions';
 import { CategoryHierarchyRowActions } from './CategoryHierarchyRowActions';
 

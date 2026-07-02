@@ -26,7 +26,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  typedRoutes: true,
+  experimental: { typedRoutes: false },
   transpilePackages: ['@tremor/react', 'recharts'],
   serverExternalPackages: ['@prisma/client', '.prisma/client'],
   async headers() {

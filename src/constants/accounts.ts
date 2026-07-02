@@ -471,7 +471,7 @@ export const ACCOUNT_LIABILITY_TYPES = ACCOUNT_TYPES.filter(
 );
 
 export const ACCOUNT_TAX_BENEFIT_TYPES = ACCOUNT_TYPES.filter(
-  (type) => ACCOUNT_TYPE_META[type].taxBenefit === true,
+  (type) => (ACCOUNT_TYPE_META[type] as Record<string, unknown>).taxBenefit === true,
 );
 
 /** Account types that represent deployed capital — their entire balance belongs to a goal. */

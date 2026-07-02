@@ -3,7 +3,7 @@
 import { Icon } from '@/components/ui/Icon';
 import { MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { CategoryHierarchyNodeJson } from '../schemas';
+import type { CategoryHierarchyNodeJson } from './schemas';
 
 export interface CategoryHierarchyRowAction {
   id: 'edit' | 'delete' | 'add-child';

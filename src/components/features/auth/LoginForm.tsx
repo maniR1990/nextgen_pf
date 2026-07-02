@@ -56,7 +56,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push(callbackUrl ?? ROUTES.DASHBOARD);
+    router.push((callbackUrl ?? ROUTES.DASHBOARD) as never);
   }
 
   async function resendVerification() {
