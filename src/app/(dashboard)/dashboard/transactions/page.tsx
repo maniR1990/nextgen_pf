@@ -1,4 +1,5 @@
 import { TransactionList } from './_components/TransactionList.client';
+import { Suspense } from 'react';
 
 export const metadata = {
   title: 'Transactions | PersonalFi',
@@ -8,5 +9,9 @@ export const metadata = {
 // fetched client-side by TransactionDialog when the modal first opens.
 // This makes the page render instantly — no DB round-trips before first byte.
 export default function TransactionsPage() {
-  return <TransactionList />;
+  return (
+    <Suspense>
+      <TransactionList />
+    </Suspense>
+  );
 }
