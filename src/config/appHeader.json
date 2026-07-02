@@ -88,10 +88,10 @@
   "mobile": {
     "tabBar": [
       { "id": "home", "label": "Home", "icon": "home", "href": "/dashboard" },
-      { "id": "budget", "label": "Budget", "icon": "bar-chart", "href": "/dashboard/budget" },
+      { "id": "transactions", "label": "Transactions", "icon": "receipt-text", "href": "/dashboard/transactions" },
       { "id": "fab", "label": "", "icon": "plus", "isFab": true },
-      { "id": "goals", "label": "Goals", "icon": "target", "href": "/dashboard/goals" },
-      { "id": "profile", "label": "Profile", "icon": "user", "href": "/dashboard/profile" }
+      { "id": "budget", "label": "Budget", "icon": "bar-chart", "href": "/dashboard/budget" },
+      { "id": "settings", "label": "Settings", "icon": "settings", "href": "/dashboard/settings" }
     ],
     "fabRadial": {
       "radiusPx": 80,
