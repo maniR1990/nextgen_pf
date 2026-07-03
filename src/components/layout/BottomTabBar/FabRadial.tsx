@@ -1,6 +1,13 @@
 'use client';
 
 import type { FabRadialConfig } from '@/lib/schemas/appHeader';
+import {
+  ArrowDownLeft,
+  ArrowLeftRight,
+  ArrowUpRight,
+  TrendingUp,
+  X,
+} from 'lucide-react';
 
 interface FabRadialProps {
   config: FabRadialConfig;
@@ -9,25 +16,18 @@ interface FabRadialProps {
   onClose: () => void;
 }
 
-// Spread 4 actions over 180° arc above the FAB (left arc: 90°→270° in CSS coords)
-function calcPosition(index: number, total: number, radiusPx: number) {
-  const start = 225; // degrees — lower-left
-  const end = -45; // degrees — lower-right (going counter-clockwise)
-  const spread = 180;
-  const step = total > 1 ? spread / (total - 1) : 0;
-  const angle = ((start - step * index) * Math.PI) / 180;
-  return {
-    x: Math.round(Math.cos(angle) * radiusPx),
-    y: Math.round(Math.sin(angle) * radiusPx),
-  };
-}
+const ACTION_ICON: Record<string, React.ReactNode> = {
+  'arrow-down-left': <ArrowDownLeft size={22} />,
+  'arrow-up-right': <ArrowUpRight size={22} />,
+  'arrow-left-right': <ArrowLeftRight size={22} />,
+  'trending-up': <TrendingUp size={22} />,
+};
 
 const COLOR_CLASS: Record<string, string> = {
-  error: 'fab-action--error',
-  success: 'fab-action--success',
-  info: 'fab-action--info',
-  purple: 'fab-action--purple',
-  warning: 'fab-action--warning',
+  error: 'fab-sheet__action--error',
+  success: 'fab-sheet__action--success',
+  info: 'fab-sheet__action--info',
+  purple: 'fab-sheet__action--purple',
 };
 
 export function FabRadial({ config, open, onAction, onClose }: FabRadialProps) {
@@ -41,27 +41,36 @@ export function FabRadial({ config, open, onAction, onClose }: FabRadialProps) {
         onClick={onClose}
         style={{ animationDuration: `${config.animationMs}ms` }}
       />
-      <div className="fab-radial" role="menu" aria-label="Quick log actions">
-        {config.actions.map((action, i) => {
-          const { x, y } = calcPosition(i, config.actions.length, config.radiusPx);
-          return (
+      <div className="fab-sheet" role="dialog" aria-modal="true" aria-label="Log transaction">
+        <div className="fab-sheet__header">
+          <span className="fab-sheet__title">Log transaction</span>
+          <button
+            type="button"
+            className="fab-sheet__close"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="fab-sheet__grid">
+          {config.actions.map((action) => (
             <button
               key={action.id}
               type="button"
-              role="menuitem"
-              className={['fab-action', COLOR_CLASS[action.color] ?? ''].join(' ')}
-              style={{
-                transform: `translate(${x}px, ${-y}px)`,
-                transitionDelay: `${(i * config.animationMs) / (config.actions.length * 2)}ms`,
-              }}
+              className={['fab-sheet__action', COLOR_CLASS[action.color] ?? ''].join(' ')}
               onClick={() => onAction(action.transactionType)}
-              aria-label={action.label}
             >
-              <span className="fab-action__label">{action.label}</span>
-              {action.subtitle && <span className="fab-action__subtitle">{action.subtitle}</span>}
+              <span className="fab-sheet__action-icon">
+                {ACTION_ICON[action.icon]}
+              </span>
+              <span className="fab-sheet__action-label">{action.label}</span>
+              {action.subtitle && (
+                <span className="fab-sheet__action-subtitle">{action.subtitle}</span>
+              )}
             </button>
-          );
-        })}
+          ))}
+        </div>
       </div>
     </>
   );
