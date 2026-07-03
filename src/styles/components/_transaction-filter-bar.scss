@@ -177,3 +177,76 @@
     }
   }
 }
+
+// ─── Mobile (< 640px) compact filter bar ─────────────────────────────────────
+@include m.respond-below(sm) {
+  .tx-filter-bar {
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3) var(--space-1);
+    background: var(--color-bg);
+  }
+
+  // Chips: horizontal scroll pills, no wrapping box
+  .tx-filter-bar__chips {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    background: transparent;
+    border: none;
+    padding: 0;
+    gap: var(--space-2);
+  }
+
+  .tx-filter-bar__chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tx-filter-bar__chip {
+    flex-shrink: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-size: 0.72rem;
+    padding: var(--space-1) var(--space-3);
+    background: var(--color-bg-surface);
+
+    &--active {
+      background: var(--color-brand);
+      color: var(--color-on-brand);
+      border-color: var(--color-brand);
+      box-shadow: none;
+    }
+  }
+
+  // Controls: single compact no-wrap row
+  .tx-filter-bar__controls {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: var(--space-2);
+  }
+
+  .tx-filter-bar__controls::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tx-filter-bar__control {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    padding: var(--space-1) var(--space-2);
+    min-height: 32px;
+    gap: var(--space-1);
+  }
+
+  // Truncate account name on mobile
+  .tx-filter-bar__select {
+    font-size: 0.72rem;
+    min-width: 0;
+    max-width: 100px;
+  }
+
+  // Sort: icon only on mobile
+  .tx-filter-bar__sort-text {
+    display: none;
+  }
+}

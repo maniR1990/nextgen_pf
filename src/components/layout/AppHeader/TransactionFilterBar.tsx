@@ -132,7 +132,9 @@ export function TransactionFilterBar() {
           aria-label={`Sort by date ${filters.sort === TRANSACTION_SORT.DATE_DESC ? 'newest first' : 'oldest first'}`}
         >
           <ArrowDownUp size={14} aria-hidden className="tx-filter-bar__control-icon" />
-          Date {filters.sort === TRANSACTION_SORT.DATE_DESC ? '↓' : '↑'}
+          <span className="tx-filter-bar__sort-text">
+            Date {filters.sort === TRANSACTION_SORT.DATE_DESC ? '↓' : '↑'}
+          </span>
         </button>
       </div>
     </div>
