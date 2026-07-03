@@ -633,6 +633,108 @@
   }
 }
 
+// ─── Mobile (< 640px) add-transaction overrides ─────────────────────────────
+
+@media (max-width: 640px) {
+  .add-tx-modal {
+    gap: var(--space-2);
+
+    &__top-grid {
+      gap: var(--space-2);
+      padding-bottom: var(--space-2);
+    }
+
+    // Amount input: larger and more prominent on mobile
+    .amount-input__control {
+      min-height: 52px;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .amount-input__prefix {
+      font-size: 1.25rem;
+    }
+
+    // Quick-amount chips: single horizontal scroll row on mobile
+    .amount-input__chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: var(--space-2);
+      margin-top: var(--space-1-5);
+      padding-bottom: var(--space-0-5);
+
+      &::-webkit-scrollbar { display: none; }
+    }
+
+    .amount-input__chip {
+      flex-shrink: 0;
+    }
+
+    // TypeSelector: each group's chips scroll horizontally, no wrapping
+    .type-selector {
+      gap: var(--space-1-5);
+    }
+
+    .type-selector__group {
+      gap: var(--space-1);
+    }
+
+    .type-selector__group-label {
+      font-size: 9px;
+    }
+
+    .type-selector__chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: var(--space-1-5);
+
+      &::-webkit-scrollbar { display: none; }
+    }
+
+    .type-selector__chip {
+      flex-shrink: 0;
+      padding: var(--space-1-5) var(--space-2-5);
+      font-size: 0.72rem;
+    }
+
+    // Key fields: keep 2-col for amount+date, stack account+method
+    &__key-fields {
+      gap: var(--space-1-5);
+    }
+
+    &__key-pair {
+      grid-template-columns: 1fr;
+    }
+
+    // Toggle chips on mobile: horizontal scroll
+    .tx-form__toggle-chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar { display: none; }
+    }
+
+    .tx-form__toggle-chip {
+      flex-shrink: 0;
+    }
+
+    // Compact form rows on mobile
+    .tx-form__row {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .tx-form__row--2 {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+}
+
 // ─── Type-specific form wrappers ────────────────────────────────────────────
 
 .tx-form {

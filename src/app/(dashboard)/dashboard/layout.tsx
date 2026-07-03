@@ -11,6 +11,7 @@ import rawHeaderConfig from '@/config/appHeader.json';
 import { useAppHeaderData } from '@/hooks/useAppHeaderData';
 import { AppFooterConfigSchema } from '@/lib/schemas/appFooter';
 import { AppHeaderConfigSchema } from '@/lib/schemas/appHeader';
+import type { TxType } from '@/constants/finance';
 import { Suspense, useState } from 'react';
 
 const headerConfig = AppHeaderConfigSchema.parse(rawHeaderConfig);
@@ -39,6 +40,7 @@ const FALLBACK_DATA = {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data } = useAppHeaderData();
   const [txOpen, setTxOpen] = useState(false);
+  const [fabTxType, setFabTxType] = useState<TxType>('EXPENSE');
   const liveData = data ?? FALLBACK_DATA;
 
   return (
@@ -63,9 +65,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }}
       />
 
-      <BottomTabBar config={headerConfig.mobile} onFabAction={() => setTxOpen(true)} />
+      <BottomTabBar
+        config={headerConfig.mobile}
+        onFabAction={(type) => {
+          setFabTxType(type as TxType);
+          setTxOpen(true);
+        }}
+      />
 
-      <TransactionDialog open={txOpen} onClose={() => setTxOpen(false)} />
+      <TransactionDialog
+        open={txOpen}
+        onClose={() => {
+          setTxOpen(false);
+          setFabTxType('EXPENSE');
+        }}
+        prefillValues={{ type: fabTxType }}
+      />
 
       <Suspense>
         <NavigationProgress />

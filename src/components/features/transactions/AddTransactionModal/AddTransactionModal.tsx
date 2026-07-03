@@ -127,7 +127,11 @@ export function AddTransactionModal({
       prefill(prefillValues);
       prefillAppliedFor.current = editId;
     } else if (!editId) {
-      reset();
+      if (prefillValues && Object.keys(prefillValues).length > 0) {
+        prefill(prefillValues);
+      } else {
+        reset();
+      }
       prefillAppliedFor.current = null;
     }
   }, [open, editId, prefillValues, prefill, reset]);
