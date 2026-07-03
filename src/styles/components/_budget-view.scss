@@ -1080,79 +1080,156 @@ $rem-over:       #dc2626;
   }
 }
 
-// ── Mobile ≤ 520px: 2-column layout, show mobile-stats condensed row ──────────
+// ── Mobile ≤ 520px: card-list data table — name | remaining | pace ────────────
 @media (max-width: 520px) {
-  $grid-xs: 1fr 100px; // CATEGORY | PLANNED
+  // 3-column grid: name (flex) | value (auto) | badge (auto)
+  // 3 rows: [data row] [sub-line] [progress bar]
+  $grid-xs: 1fr auto auto;
 
-  // ─ Grid: 2 columns + allow auto rows for mobile-stats ─
-  .budget-view__table-head,
+  // ─ Hide table header entirely on mobile — list layout needs no column labels ─
+  .budget-view__table-head { display: none; }
+
   .budget-group__header,
   .budget-row {
     grid-template-columns: $grid-xs;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
+    align-items: start; // rows stack naturally from top
   }
 
-  // ─ Table header: hide everything except CATEGORY and PLANNED ─
-  .budget-view__th--num:not(.budget-view__th--planned),
-  .budget-view__th--pace,
-  .budget-view__th--lastmo,
-  .budget-view__th--actions { display: none; }
-
-  // ─ Row cells: hide data columns on mobile ─
-  .budget-row__actual-cell,
-  .budget-row__remaining-cell,
-  .budget-row__pace-cell,
-  .budget-row__lastmo-cell,
-  .budget-row__actions-cell { display: none; }
-
-  // ─ Group header: hide data columns ─
-  .budget-group__num:not(.budget-group__num--planned),
-  .budget-group__pace-cell,
+  // ─ Group: hide planned, actual, lastmo, actions — show remaining + pace ─────
+  .budget-group__num--planned,
+  .budget-group__num--actual,
   .budget-group__lastmo,
   .budget-group__actions-spacer { display: none; }
 
-  // ─ Mobile-stats: show as a full-width 2nd row ─
-  .budget-row__mobile-stats {
+  .budget-group__num--rem {
+    display: inline-flex;
+    justify-content: flex-end;
+    padding-right: 6px;
+    font-size: 13px;
+  }
+
+  .budget-group__pace-cell {
     display: flex;
-    flex-wrap: wrap;
+    justify-content: flex-end;
+    padding-right: 10px;
+  }
+
+  // ─ Category parent rows: hide planned+actual+lastmo+actions; show rem+pace ──
+  .budget-row--parent {
+    .budget-row__planned-cell,
+    .budget-row__actual-cell,
+    .budget-row__lastmo-cell,
+    .budget-row__actions-cell { display: none; }
+
+    .budget-row__remaining-cell {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding-right: 6px;
+    }
+
+    .budget-row__pace-cell {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding-right: 10px;
+    }
+  }
+
+  // ─ Leaf rows: hide everything except actual ────────────────────────────────
+  .budget-row--leaf {
+    .budget-row__planned-cell,
+    .budget-row__remaining-cell,
+    .budget-row__pace-cell,
+    .budget-row__lastmo-cell,
+    .budget-row__actions-cell { display: none; }
+
+    .budget-row__actual-cell {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      grid-column: 2 / -1; // span value + badge cols
+      padding-right: 10px;
+    }
+  }
+
+  // ─ Mobile sub-line: full-width 2nd row ─────────────────────────────────────
+  .budget-row__mobile-stats,
+  .budget-group__mobile-stats {
+    display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
     grid-column: 1 / -1;
-    padding: 2px 12px 6px 36px; // indent matches name cell
-    font-size: 11.5px;
-    color: var(--color-text-secondary);
+    font-size: 11px;
+    color: var(--color-text-muted);
+  }
+
+  .budget-row__mobile-stats {
+    padding: 1px 10px 2px 36px;
   }
 
   .budget-group__mobile-stats {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    grid-column: 1 / -1;
-    padding: 2px 12px 6px 32px;
-    font-size: 11px;
-    color: var(--color-text-secondary);
+    padding: 1px 10px 2px 30px;
     font-weight: 500;
   }
 
-  // ─ Remaining color classes for mobile-stats ─
-  .budget-row__ms-rem {
-    &--good    { color: $rem-good; font-weight: 600; }
-    &--warn    { color: $rem-warn; font-weight: 600; }
-    &--over    { color: $rem-over; font-weight: 600; }
-    &--invest  { color: #b45309;   font-weight: 600; }
-    &--muted   { color: var(--color-text-muted); }
+  // "planned X · spent Y" left cluster
+  .budget-row__ms-detail,
+  .budget-group__ms-detail {
+    display: flex;
+    align-items: center;
+    gap: 0;
   }
 
-  .budget-group__ms-rem {
-    &--good { color: $rem-good; }
-    &--bad  { color: $rem-over; }
-    &--muted { color: var(--color-text-muted); }
+  .budget-row__ms-planned,
+  .budget-group__ms-planned {
+    color: var(--color-text-muted);
+    &::after { content: ' · '; white-space: pre; }
   }
 
-  // Dot separator between items
-  .budget-row__ms-spent::after,
-  .budget-group__ms-spent::after { content: ' ·'; color: var(--color-text-muted); }
+  .budget-row__ms-spent,
+  .budget-group__ms-spent {
+    color: var(--color-text-secondary);
+  }
+
+  // Percentage on the right
+  .budget-row__ms-pct,
+  .budget-group__ms-pct {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    margin-left: auto;
+    padding-left: 8px;
+  }
+
+  // ─ Progress bar: full-width 3rd row ───────────────────────────────────────
+  .budget-group__mobile-progress,
+  .budget-row__mobile-progress {
+    display: block;
+    grid-column: 1 / -1;
+    height: 3px;
+    background: var(--color-border);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 3px 10px 4px 12px;
+
+    &::after {
+      content: '';
+      display: block;
+      height: 100%;
+      width: var(--bar-pct, 0%);
+      background: var(--bar-color, #{$planned-color});
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+  }
+
+  // Leaf rows don't need sub-line or progress bar (no planned budget at item level)
+  .budget-row--leaf {
+    .budget-row__mobile-stats { display: none; }
+    .budget-row__mobile-progress { display: none; }
+  }
 
   // ─ Toolbar: two compact rows ─────────────────────────────────────
   // Row 1: month nav | chips (horizontal scroll)
@@ -1160,20 +1237,39 @@ $rem-over:       #dc2626;
   .budget-view__toolbar {
     flex-wrap: wrap;
     gap: 6px;
-    padding: 10px 12px 6px;
+    // No horizontal padding — shell already provides 16px; removing these
+    // 12px prevents the toolbar content from indenting past the summary card.
+    padding: 8px 0 6px;
 
-    // Month nav: row 1, left
-    .budget-view__month-wrap { order: 0; flex-shrink: 0; }
+    // Row 1: month nav + chips
+    // ::after at order 2 = zero-height flex item that fills full width,
+    //   acting as a hard line-break so search + actions always start row 2.
+    // Row 2: search (flex:1) + auto-fill (compact, right)
 
-    // Chips: row 1, scrollable pills beside month nav
+    &::after {
+      content: '';
+      order: 2;
+      width: 100%;
+      height: 0;
+      flex-shrink: 0;
+    }
+
+    .budget-view__month-wrap {
+      order: 0;
+      flex: 0 0 auto;
+    }
+
     .budget-view__chips {
       order: 1;
-      flex: 1;
+      flex: 1 1 auto;
+      min-width: 0;
       overflow-x: auto;
       flex-wrap: nowrap;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
       gap: 5px;
+      -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
+      mask-image: linear-gradient(to right, black 80%, transparent 100%);
 
       &::-webkit-scrollbar { display: none; }
 
@@ -1184,39 +1280,47 @@ $rem-over:       #dc2626;
       }
     }
 
-    // Search: row 2, full width
+    // Row 2: search grows to fill space, auto-fill stays compact on the right
     .budget-view__search {
-      order: 2;
-      width: 100%;
-      flex: none;
+      order: 3;
+      flex: 1 1 0;
+      min-width: 0;
+      width: auto;
     }
 
-    // Auto-fill: row 2, after search — compact
     .budget-view__actions {
       order: 3;
-      width: 100%;
-      gap: 4px;
+      flex: 0 0 auto;
+      width: auto;
+      gap: 0;
 
       .btn:last-child { display: none; }
 
       .btn:first-child {
-        font-size: 11px;
-        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 500;
+        // Match search input height: padding-top/bottom = 6px (same as search)
+        padding: 6px 10px;
+        white-space: nowrap;
+        color: var(--color-text-muted);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        line-height: 1.3;
       }
     }
   }
 
-  // ─ Summary bar: compact 2-col grid ─────────────────────────────
-  // Layout:  [Net Cash Flow]  [Day N/31]
-  //          [Income]         [Spent]
-  //          [Payments due ——————————→ ₹16,913 ›]
+  // ─ Summary bar: compact minimalist card ─────────────────────────
+  // Row 1: [+₹2.5L  Net Cash Flow]  [Day 3/31  ██░░░]
+  // Row 2: [Income  ₹2.5L        ]  [Spent  ₹1,434  ]
+  // Row 3: [Payments due  ₹16,913  • 1 soon  • 3 upcoming  ›]
   .budget-summary {
     grid-template-columns: 1fr 1fr;
     gap: 0;
     padding: 0;
     overflow: hidden;
 
-    // Reset per-card box styles applied at ≤ 680px
+    // Reset per-card box styles from ≤ 680px
     &__card {
       background: transparent;
       border: none;
@@ -1225,66 +1329,71 @@ $rem-over:       #dc2626;
       &--net { border-left: none; }
     }
 
-    &__value { font-size: 16px; }
-
-    // Net (hero): col 1, row 1
+    // ── Row 1 left: Net Cash Flow (hero, minimal) ──────────────────
     &__card--net {
       grid-column: 1;
       grid-row: 1;
-      padding: 12px 8px 12px 14px;
+      padding: 10px 6px 10px 12px;
       border-bottom: 1px solid var(--color-border);
 
-      .budget-summary__value { font-size: 20px; }
-      .budget-summary__sub { font-size: 10px; margin-top: 1px; }
+      .budget-summary__label { font-size: 9px; margin-bottom: 1px; }
+      .budget-summary__value { font-size: 20px; line-height: 1.15; }
+      // Hide "income − expenses" text — saves a full line of height
+      .budget-summary__sub { display: none; }
     }
 
-    // Income (1st .budget-summary__card sibling): col 1, row 2
+    // ── Row 2 left: Income — stacked, equal to Spent ──────────────
     & > .budget-summary__card:first-child {
       grid-column: 1;
       grid-row: 2;
-      padding: 10px 8px 10px 14px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      padding: 8px 6px 8px 12px;
       border-right: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+
+      .budget-summary__label { font-size: 9px; white-space: nowrap; }
+      .budget-summary__value { font-size: 13px; font-weight: 700; }
+      .budget-summary__sub { display: none; }
     }
 
-    // Spent (3rd child, after first divider): col 2, row 2
+    // ── Row 2 right: Spent — identical structure to Income ─────────
     & > .budget-summary__card:nth-child(3) {
       grid-column: 2;
       grid-row: 2;
-      padding: 10px 14px 10px 12px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      padding: 8px 12px 8px 8px;
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+
+      .budget-summary__label { font-size: 9px; white-space: nowrap; }
+      .budget-summary__value { font-size: 13px; font-weight: 700; }
+      .budget-summary__sub { display: none; }
     }
 
-    // Payments due: full-width horizontal row, auto-placed row 3
+    // ── Row 3: Payments due — full-width tap row ───────────────────
     &__card--pay {
       grid-column: 1 / -1;
       flex-direction: row;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 14px;
+      padding: 8px 12px;
       border-left: none;
-      border-top: 1px solid var(--color-border);
+      border-top: none;
       border-radius: 0;
       background: transparent;
-      gap: 8px;
+      gap: 6px;
 
-      .budget-summary__label {
-        font-size: 11px;
-        display: flex;
-        align-items: center;
-      }
-
-      .budget-summary__value--pay { font-size: 17px; font-weight: 700; }
-
-      // Status chips visible beside the label
-      .budget-summary__pay-chips {
-        flex: 1;
-        margin: 0;
-      }
-
-      // "income − expenses" sub line hidden (chips remain via .budget-summary__pay-chips)
+      .budget-summary__label { font-size: 9px; display: flex; align-items: center; }
+      .budget-summary__value--pay { font-size: 15px; font-weight: 700; }
+      .budget-summary__pay-chips { flex: 1; gap: 4px; }
       .budget-summary__sub:not(.budget-summary__pay-chips) { display: none; }
     }
 
-    // Day: col 2, row 1 — beside Net
+    // ── Row 1 right: Day progress — no border-bottom (Spent has border-top) ──
     &__day {
       grid-column: 2;
       grid-row: 1;
@@ -1292,43 +1401,104 @@ $rem-over:       #dc2626;
       flex-direction: column;
       align-items: flex-end;
       justify-content: center;
-      padding: 12px 14px 12px 6px;
-      border-bottom: 1px solid var(--color-border);
+      padding: 10px 12px 10px 4px;
       background: transparent;
       border-radius: 0;
-      gap: 5px;
+      gap: 4px;
     }
 
-    &__day-label { font-size: 10px; }
-    &__day-bar { width: 80px; }
+    &__day-label { font-size: 9px; }
+    &__day-bar { width: 64px; height: 3px; }
   }
 
-  // ─ Row sizing: tighter on mobile ─
-  .budget-row {
-    min-height: 38px;
+  // ─ Page rhythm ───────────────────────────────────────────────────
+  .budget-view { gap: 10px; }
+  .budget-view__body { gap: 6px; }
 
-    &__name-cell { padding-left: 10px; font-size: 13px; }
-    &__planned-cell { padding-right: 8px; }
-    &__name { font-size: 13px; }
+  // ─ Group card: lean on mobile — no shadow, smaller radius ────────
+  .budget-group {
+    border-radius: 8px;
+    box-shadow: none;
   }
 
+  // ─ Group header: auto-height from 3-row grid, tight padding ──────
   .budget-group__header {
-    min-height: 40px;
-    padding: 0 10px;
+    height: auto;        // override desktop fixed 36px
+    min-height: unset;
+    padding: 8px 10px 0; // top breathing room; progress bar adds bottom space
+    align-items: start;  // rows stack from top
+    border-left-width: 3px;
   }
 
-  .budget-group__name-cell {
+  // Group name chip: tighter
+  .budget-group__name { font-size: 11px; letter-spacing: 0.05em; }
+  .budget-group__count {
+    font-size: 10px;
+    padding: 1px 5px;
+  }
+
+  // Remaining value: compact right-column
+  .budget-group__num--rem {
     font-size: 12.5px;
+    padding-right: 4px;
+    padding-top: 1px; // optical alignment with name baseline
   }
 
-  // ─ Table header: compact on mobile ─
-  .budget-view__table-head {
-    padding: 6px 0;
-
-    .budget-view__th { font-size: 10px; }
+  // Pace badge: compact on mobile
+  .budget-group__pace-cell { padding-right: 8px; padding-top: 1px; }
+  .budget-group__pace {
+    padding: 2px 7px;
+    font-size: 10.5px;
   }
 
-  // ─ Month picker: make dropdown anchored correctly ─
+  // ─ Category rows: content-height, tight padding ───────────────────
+  .budget-row {
+    min-height: unset;
+    padding: 6px 10px 0; // progress bar / sub-line adds bottom space
+
+    // Smaller name text on mobile
+    &__name { font-size: 12.5px; }
+    &__name-cell { gap: 4px; }
+
+    // Amount cells: compact
+    &__amount { font-size: 12px; }
+    &__rem    { font-size: 12px; }
+  }
+
+  // Depth indentation: tighter on narrow viewport
+  .budget-row--depth-2 .budget-row__name-cell { padding-left: 14px; }
+  .budget-row--depth-3 .budget-row__name-cell { padding-left: 24px; }
+
+  // ─ Leaf rows: even more minimal ────────────────────────────────────
+  .budget-row--leaf {
+    padding: 5px 10px;   // no sub-line / progress → normal padding
+
+    .budget-row__name { font-size: 12px; color: var(--color-text-secondary); }
+    .budget-row__amount { font-size: 12px; }
+  }
+
+  // ─ Sub-line: aligned with name, no wasted space ────────────────────
+  .budget-row__mobile-stats  { padding: 1px 8px 4px 22px; }
+  .budget-group__mobile-stats { padding: 1px 8px 4px 20px; }
+
+  // Sub-line text: slightly smaller
+  .budget-row__ms-planned,
+  .budget-group__ms-planned,
+  .budget-row__ms-spent,
+  .budget-group__ms-spent  { font-size: 10.5px; }
+
+  .budget-row__ms-pct,
+  .budget-group__ms-pct    { font-size: 10px; font-weight: 700; }
+
+  // ─ Progress bar: flush edge-to-edge, ultra-thin ────────────────────
+  .budget-group__mobile-progress,
+  .budget-row__mobile-progress {
+    height: 2px;
+    margin: 3px 0 0; // flush left + right; tiny top gap from sub-line
+    border-radius: 0; // flush = no rounded ends at the edges
+  }
+
+  // ─ Month picker dropdown anchor ────────────────────────────────────
   .budget-view__month-dropdown {
     right: auto;
     left: 50%;

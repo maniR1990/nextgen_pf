@@ -225,12 +225,12 @@ export function BudgetGroupRow({
         </span>
 
         {/* Col 3 — Actual */}
-        <span className="budget-group__num">
+        <span className="budget-group__num budget-group__num--actual">
           {group.actual > 0 ? formatINR(group.actual) : '—'}
         </span>
 
         {/* Col 4 — Remaining */}
-        <span className={`budget-group__num budget-group__num${remClass}`}>
+        <span className={`budget-group__num budget-group__num--rem budget-group__num${remClass}`}>
           {hasPlanned
             ? remaining >= 0
               ? formatINR(remaining)
@@ -273,19 +273,37 @@ export function BudgetGroupRow({
         {/* Col 7 — Actions spacer */}
         <span className="budget-group__actions-spacer" />
 
-        {/* Mobile-only: condensed second-line stats */}
+        {/* Mobile-only: sub-line "planned X · spent Y" + pct */}
         <span className="budget-group__mobile-stats">
-          {group.actual > 0 && (
-            <span className="budget-group__ms-spent">{formatINR(group.actual)} spent</span>
-          )}
+          <span className="budget-group__ms-detail">
+            {hasPlanned && (
+              <span className="budget-group__ms-planned">planned {formatINR(group.planned)}</span>
+            )}
+            {group.actual > 0 && (
+              <span className="budget-group__ms-spent">spent {formatINR(group.actual)}</span>
+            )}
+          </span>
           {hasPlanned && group.actual > 0 && (
-            <span className={`budget-group__ms-rem budget-group__ms-rem${remClass}`}>
-              {remaining >= 0
-                ? `· ${formatINR(remaining)} left`
-                : `· ${formatINR(Math.abs(remaining))} over`}
+            <span className="budget-group__ms-pct">
+              {Math.round((group.actual / group.planned) * 100)}%
             </span>
           )}
         </span>
+
+        {/* Mobile-only: thin progress bar */}
+        {hasPlanned && (
+          <span
+            className="budget-group__mobile-progress"
+            style={{
+              '--bar-pct': `${Math.min(Math.round((group.actual / group.planned) * 100), 100)}%`,
+              '--bar-color': group.actual / group.planned > 1
+                ? '#dc2626'
+                : group.actual / group.planned >= 0.9
+                  ? '#d97706'
+                  : isIncome ? '#16a34a' : '#3b82f6',
+            } as React.CSSProperties}
+          />
+        )}
       </button>
 
       {isExpanded && (

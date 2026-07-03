@@ -592,24 +592,37 @@ export function BudgetCategoryRow({
           )}
         </div>
 
-        {/* Mobile-only: condensed second-line stats — hidden on desktop via CSS */}
+        {/* Mobile-only: sub-line "planned X · spent Y" + pct */}
         <div className="budget-row__mobile-stats">
-          {hasActual && (
-            <span className="budget-row__ms-spent">{formatINR(node.actual)} spent</span>
-          )}
-          {node.planned > 0 && (
-            <span className={`budget-row__ms-rem budget-row__ms-rem${remMod}`}>
-              {remaining >= 0
-                ? `${formatINR(remaining)} left`
-                : `${formatINR(Math.abs(remaining))} over`}
-            </span>
-          )}
-          {paceBadge && !isParent && (
-            <span className={`budget-row__pace budget-row__pace--${paceBadge.status}`}>
-              {paceBadge.label}
+          <span className="budget-row__ms-detail">
+            {node.planned > 0 && (
+              <span className="budget-row__ms-planned">planned {formatINR(node.planned)}</span>
+            )}
+            {hasActual && (
+              <span className="budget-row__ms-spent">spent {formatINR(node.actual)}</span>
+            )}
+          </span>
+          {node.planned > 0 && hasActual && (
+            <span className="budget-row__ms-pct">
+              {Math.round(node.progressPct)}%
             </span>
           )}
         </div>
+
+        {/* Mobile-only: thin progress bar */}
+        {node.planned > 0 && (
+          <div
+            className="budget-row__mobile-progress"
+            style={{
+              '--bar-pct': `${Math.min(node.progressPct, 100)}%`,
+              '--bar-color': node.progressPct > 100
+                ? '#dc2626'
+                : node.progressPct >= 90
+                  ? '#d97706'
+                  : isIncome ? '#16a34a' : '#16a34a',
+            } as React.CSSProperties}
+          />
+        )}
       </div>
 
       {/* Children */}
