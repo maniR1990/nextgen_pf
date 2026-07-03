@@ -162,7 +162,7 @@ export function BudgetGroupRow({
   onRename,
   onDelete,
 }: Props) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
 
   const isIncome = group.type === 'INCOME';

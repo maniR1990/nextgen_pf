@@ -253,7 +253,7 @@ export function BudgetCategoryRow({
   onRename,
   onDelete,
 }: Props) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [editingPlanned, setEditP] = useState(false);
   const [draftPlanned, setDraftP] = useState('');

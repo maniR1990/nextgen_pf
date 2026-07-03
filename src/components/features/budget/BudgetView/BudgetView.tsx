@@ -12,7 +12,7 @@ import {
   useSeedRecurring,
   useUpdateBudgetPlan,
 } from '@/hooks/useBudgetSummary';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Search } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsDown, ChevronsUp, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BudgetGroupRow } from '../BudgetGroupRow/BudgetGroupRow';
 
@@ -237,7 +237,7 @@ export function BudgetView() {
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
-  const [allCollapsed, setAllCol] = useState(false);
+  const [allCollapsed, setAllCol] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -393,6 +393,19 @@ export function BudgetView() {
           ))}
         </div>
 
+        {/* Expand / Collapse all — chip in Row 1 on mobile, inline on desktop */}
+        <button
+          type="button"
+          className="budget-view__expand-btn"
+          onClick={() => setAllCol((v) => !v)}
+          aria-label={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
+        >
+          {allCollapsed ? <ChevronsDown size={13} aria-hidden /> : <ChevronsUp size={13} aria-hidden />}
+          <span className="budget-view__expand-label">
+            {allCollapsed ? 'Expand all' : 'Collapse all'}
+          </span>
+        </button>
+
         {/* Month nav */}
         <div className="budget-view__month-wrap" ref={pickerRef}>
           <button
@@ -447,13 +460,6 @@ export function BudgetView() {
             title="Copies all recurring planned amounts from the previous month into this month."
           >
             {isSeeding ? '↻ Filling…' : '↻ Auto-fill recurring'}
-          </button>
-          <button
-            type="button"
-            className="btn btn--sm btn--ghost"
-            onClick={() => setAllCol((v) => !v)}
-          >
-            {allCollapsed ? 'Expand all' : 'Collapse all'}
           </button>
         </div>
       </div>
