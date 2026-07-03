@@ -171,5 +171,9 @@
     @include m.respond-below(md) {
       padding: var(--space-3);
     }
+
+    @include m.respond-below(sm) {
+      padding: var(--space-2) 0 var(--space-8);
+    }
   }
 }

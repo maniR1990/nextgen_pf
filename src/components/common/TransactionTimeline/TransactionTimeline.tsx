@@ -126,7 +126,7 @@ export function TransactionTimeline({
             </>
           )}
           <div className="tx-timeline__summary-divider" />
-          <div className="tx-timeline__summary-item">
+          <div className="tx-timeline__summary-item tx-timeline__summary-item--net">
             <span className="tx-timeline__summary-label">Net</span>
             <span
               className={`tx-timeline__summary-value tx-timeline__summary-value--${summary.net >= 0 ? 'credit' : 'debit'}`}

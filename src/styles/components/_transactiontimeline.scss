@@ -3,6 +3,11 @@
 .tx-timeline {
   @include m.flex-col($gap: var(--space-3));
 
+  // Override Tailwind p-8 on mobile so cards stretch to page edges
+  @include m.respond-below(sm) {
+    padding: var(--space-3) 0 !important;
+  }
+
   // Header: title + optional Add button
   &__header {
     @include m.flex-between;
@@ -34,6 +39,16 @@
     &:focus-visible { @include m.focus-ring; }
   }
 
+  // On mobile, give non-card elements breathing room
+  @include m.respond-below(sm) {
+    &__summary,
+    &__filters,
+    &__load-more {
+      margin-left: var(--space-3);
+      margin-right: var(--space-3);
+    }
+  }
+
   // Optional summary bar
   &__summary {
     display: flex;
@@ -42,18 +57,51 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     overflow: hidden;
+
+    @include m.respond-below(sm) {
+      flex-wrap: wrap;
+      border-radius: var(--radius-md);
+    }
   }
 
   &__summary-item {
     @include m.flex-col($gap: var(--space-1));
     flex: 1;
     padding: var(--space-3);
+
+    @include m.respond-below(sm) {
+      flex: 0 0 50%;
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--color-border);
+
+      &:nth-last-child(-n+2) { border-bottom: none; }
+
+      // Right border to divide the two columns
+      &:nth-child(4n+1) { border-right: 1px solid var(--color-border); }
+    }
+  }
+
+  &__summary-item--net {
+    @include m.respond-below(sm) {
+      background: color-mix(in srgb, var(--color-brand) 5%, transparent);
+
+      .tx-timeline__summary-label {
+        font-weight: var(--font-variation-semibold);
+        color: var(--color-text);
+      }
+
+      .tx-timeline__summary-value {
+        font-size: var(--font-size-base);
+      }
+    }
   }
 
   &__summary-divider {
     width: 1px;
     background: var(--color-border);
     flex-shrink: 0;
+
+    @include m.respond-below(sm) { display: none; }
   }
 
   &__summary-label {
@@ -164,7 +212,7 @@
   &__mobile-header {
     @include m.flex-between;
     align-items: center;
-    padding: var(--space-2) 0 var(--space-2);
+    padding: var(--space-2) var(--space-3);
     position: sticky;
     top: 0;
     background: var(--color-bg);
@@ -196,6 +244,17 @@
   // Independent transaction cards within a date group
   &__cards-list {
     @include m.flex-col($gap: var(--space-2));
+
+    @include m.respond-below(sm) {
+      gap: 1px;
+      background: var(--color-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+
+      .tx-timeline__card {
+        background: var(--color-bg-surface);
+      }
+    }
   }
 
   &__card {
@@ -208,6 +267,14 @@
     border-left: 3px solid var(--color-border);
     border-radius: var(--radius-md);
     transition: background var(--transition-fast);
+
+    @include m.respond-below(sm) {
+      border-radius: 0;
+      border-left-width: 3px;
+      border-right: none;
+      padding: var(--space-3) var(--space-4);
+      margin: 0;
+    }
 
     &--credit  { border-left-color: var(--color-success); }
     &--debit   { border-left-color: var(--color-error); }
