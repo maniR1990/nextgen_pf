@@ -3,9 +3,11 @@
 .tx-timeline {
   @include m.flex-col($gap: var(--space-3));
 
-  // Override Tailwind p-8 on mobile so cards stretch to page edges
+  // Override Tailwind p-8 on mobile so cards stretch to page edges.
+  // Zero here, not space-3 — the parent .tx-page__content already supplies
+  // the mobile inset, so any padding added on top of that double-stacks it.
   @include m.respond-below(sm) {
-    padding: var(--space-3) 0 !important;
+    padding: 0 !important;
   }
 
   // Header: title + optional Add button
@@ -83,7 +85,8 @@
 
   &__summary-item--net {
     @include m.respond-below(sm) {
-      background: color-mix(in srgb, var(--color-brand) 5%, transparent);
+      background: color-mix(in srgb, var(--color-brand) 8%, var(--color-bg-surface));
+      box-shadow: inset 3px 0 0 var(--color-brand);
 
       .tx-timeline__summary-label {
         font-weight: var(--font-variation-semibold);
@@ -105,6 +108,9 @@
   }
 
   &__summary-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
   }
@@ -116,6 +122,22 @@
     &--credit   { color: var(--color-success); }
     &--debit    { color: var(--color-error); }
     &--neutral  { color: var(--color-text-muted); }
+  }
+
+  &__summary-mask-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: color var(--transition-fast), background var(--transition-fast);
+
+    &:hover { color: var(--color-text); background: var(--color-bg-hover); }
+    &:focus-visible { @include m.focus-ring; }
   }
 
   // Filter tabs

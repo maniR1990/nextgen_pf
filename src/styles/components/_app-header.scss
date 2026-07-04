@@ -311,21 +311,25 @@
 }
 
 .main-nav__log-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1-5) var(--space-3);
-  background: var(--color-brand);
-  color: var(--color-on-brand);
-  border: none;
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background var(--transition-fast);
+  display: none;
 
-  &:hover { background: var(--color-brand-hover); }
-  &:focus-visible { @include m.focus-ring; }
+  @include m.respond-to(md) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1-5) var(--space-3);
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+    border: none;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+
+    &:hover { background: var(--color-brand-hover); }
+    &:focus-visible { @include m.focus-ring; }
+  }
 }
 
 .main-nav__avatar-wrap {

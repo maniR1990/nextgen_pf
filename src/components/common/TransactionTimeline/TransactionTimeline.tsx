@@ -1,8 +1,8 @@
 'use client';
 
 import { format, parseISO } from 'date-fns';
-import { Pencil, Trash2 } from 'lucide-react';
-import { useMemo } from 'react';
+import { Eye, EyeOff, Pencil, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 export interface TimelineTransaction {
   id: string;
@@ -65,6 +65,7 @@ export function TransactionTimeline({
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
+  const [masked, setMasked] = useState(true);
   const summary = useMemo(() => {
     let totalIncome = 0;
     let totalExpense = 0;
@@ -102,9 +103,19 @@ export function TransactionTimeline({
       {showSummary && groups.length > 0 && (
         <div className="tx-timeline__summary">
           <div className="tx-timeline__summary-item">
-            <span className="tx-timeline__summary-label">Income</span>
+            <span className="tx-timeline__summary-label">
+              Income
+              <button
+                type="button"
+                className="tx-timeline__summary-mask-toggle"
+                onClick={() => setMasked((v) => !v)}
+                aria-label={masked ? 'Show amounts' : 'Hide amounts'}
+              >
+                {masked ? <Eye size={11} /> : <EyeOff size={11} />}
+              </button>
+            </span>
             <span className="tx-timeline__summary-value tx-timeline__summary-value--credit">
-              +₹{summary.totalIncome.toLocaleString('en-IN')}
+              {masked ? '••••••' : `+₹${summary.totalIncome.toLocaleString('en-IN')}`}
             </span>
           </div>
           <div className="tx-timeline__summary-divider" />
@@ -127,13 +138,25 @@ export function TransactionTimeline({
           )}
           <div className="tx-timeline__summary-divider" />
           <div className="tx-timeline__summary-item tx-timeline__summary-item--net">
-            <span className="tx-timeline__summary-label">Net</span>
+            <span className="tx-timeline__summary-label">
+              Net
+              <button
+                type="button"
+                className="tx-timeline__summary-mask-toggle"
+                onClick={() => setMasked((v) => !v)}
+                aria-label={masked ? 'Show amounts' : 'Hide amounts'}
+              >
+                {masked ? <Eye size={11} /> : <EyeOff size={11} />}
+              </button>
+            </span>
             <span
               className={`tx-timeline__summary-value tx-timeline__summary-value--${summary.net >= 0 ? 'credit' : 'debit'}`}
             >
-              {summary.net >= 0
-                ? `+₹${summary.net.toLocaleString('en-IN')}`
-                : `−₹${Math.abs(summary.net).toLocaleString('en-IN')}`}
+              {masked
+                ? '••••••'
+                : summary.net >= 0
+                  ? `+₹${summary.net.toLocaleString('en-IN')}`
+                  : `−₹${Math.abs(summary.net).toLocaleString('en-IN')}`}
             </span>
           </div>
         </div>

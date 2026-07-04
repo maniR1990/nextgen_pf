@@ -46,6 +46,30 @@
     font-variant-numeric: tabular-nums;
   }
 
+  &__card--net &__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__mask-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+
+    &:hover {
+      color: var(--color-text-primary);
+      background: var(--color-bg-hover, rgba(0, 0, 0, 0.04));
+    }
+  }
+
   &__divider {
     width: 1px;
     height: 40px;
@@ -760,6 +784,25 @@ $rem-over:       #dc2626;
       border: none; cursor: pointer; font-family: inherit;
       &:hover { background: #dcfce7; }
     }
+
+    // Ghost affordance for the unset state — mirrors "+ Set budget"'s muted, low-emphasis
+    // treatment so an empty due date doesn't compete visually with a set one.
+    &--due-unset {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      background: transparent;
+      border: 1px dashed var(--color-border);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      font-family: inherit;
+
+      &:hover { color: var(--color-text-secondary); border-color: var(--color-text-muted); }
+    }
+
+    // Mobile-only trigger — desktop already has the hover-reveal action icon for this;
+    // showing both would be redundant chrome on a pointer-driven layout.
+    &--due-mobile { display: none; }
   }
 
 
@@ -1135,7 +1178,8 @@ $rem-over:       #dc2626;
 // ── Mobile ≤ 520px: card-list data table — name | remaining | pace ────────────
 @media (max-width: 520px) {
   // 3-column grid: name (flex) | value (auto) | badge (auto)
-  // 3 rows: [data row] [sub-line] [progress bar]
+  // Up to 4 rows: [data row] [collapsed toggle] [expanded detail] [progress bar] —
+  // the latter two only render once a leaf row's toggle is tapped open.
   $grid-xs: 1fr auto auto;
 
   // ─ Hide table header entirely on mobile — list layout needs no column labels ─
@@ -1144,10 +1188,10 @@ $rem-over:       #dc2626;
   .budget-group__header,
   .budget-row {
     grid-template-columns: $grid-xs;
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto auto auto auto;
     // Center within row 1 so name and value share a baseline even when one cell is taller
-    // (e.g. a min-height touch target) — rows 2/3 (sub-line, bar) are single-occupant, so
-    // centering vs. top-aligning them is visually identical; they still stack top-to-bottom.
+    // (e.g. a min-height touch target) — the sub-rows are single-occupant, so centering vs.
+    // top-aligning them is visually identical; they still stack top-to-bottom.
     align-items: center;
   }
 
@@ -1276,6 +1320,30 @@ $rem-over:       #dc2626;
     color: var(--color-text-muted);
     margin-left: auto;
     padding-left: 8px;
+  }
+
+  // ─ Leaf-row collapsed default: one tappable line — "amount left" + caret. The
+  // spent amount, percentage, and progress bar (below) only render once tapped open,
+  // so the list reads as one signal per row instead of three stacked at once.
+  .budget-row__mobile-stats-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    grid-column: 1 / -1;
+    padding: 1px 10px 2px 36px;
+    border: none;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .budget-row__ms-caret {
+    color: var(--color-text-muted);
+    transition: transform 0.18s;
+    flex-shrink: 0;
+
+    &--open { transform: rotate(90deg); }
   }
 
   // ─ Progress bar: full-width 3rd row ───────────────────────────────────────
@@ -1564,6 +1632,7 @@ $rem-over:       #dc2626;
     padding: 6px 10px; // symmetric — most rows are single-line now (parents, untouched leaves)
 
     // Rows that DO render a sub-line/progress bar supply their own bottom spacing instead
+    &:has(> .budget-row__mobile-stats-toggle),
     &:has(> .budget-row__mobile-stats),
     &:has(> .budget-row__mobile-progress) {
       padding-bottom: 0;
@@ -1589,7 +1658,17 @@ $rem-over:       #dc2626;
     .budget-row__amount { font-size: 12px; }
   }
 
+  // ─ Due-date trigger: only surface exists on mobile (desktop's is the hover action icon) ──
+  .budget-row__badge--due-mobile {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 1px 4px;
+    font-size: 9px;
+  }
+
   // ─ Sub-line: aligned with name, no wasted space ────────────────────
+  .budget-row__mobile-stats-toggle { padding: 1px 8px 2px 22px; }
   .budget-row__mobile-stats  { padding: 1px 8px 4px 22px; }
   .budget-group__mobile-stats { padding: 1px 8px 4px 20px; }
 

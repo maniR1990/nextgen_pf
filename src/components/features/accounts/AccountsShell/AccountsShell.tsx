@@ -115,7 +115,8 @@ export function AccountsShell({
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   // null = mixed (each group uses its own default), true = all collapsed, false = all expanded
-  const [collapseOverride, setCollapseOverride] = useState<boolean | null>(null);
+  // Defaults to collapsed on load (desktop + mobile share this state).
+  const [collapseOverride, setCollapseOverride] = useState<boolean | null>(true);
   const allCollapsed = collapseOverride === true;
 
   // Group modals

@@ -254,6 +254,7 @@ export function BudgetCategoryRow({
   onDelete,
 }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [editingPlanned, setEditP] = useState(false);
   const [draftPlanned, setDraftP] = useState('');
@@ -384,11 +385,40 @@ export function BudgetCategoryRow({
               ⚡
             </span>
           )}
-          {!isParent && node.dueDay && (
-            <span className="budget-row__badge budget-row__badge--due" title="Due date">
-              Due {node.dueDay}
-              {ordinal(node.dueDay)}
-            </span>
+          {/* Desktop shows due date via the hover-reveal action icon (below); that action
+              row is hidden on mobile to keep leaf rows compact, so mobile gets its own
+              always-visible, always-tappable trigger here instead — otherwise there'd be
+              no way to set a due date from a phone at all. */}
+          {!isParent && node.level > 0 && (
+            <DayOfMonthPicker
+              value={node.dueDay}
+              onChange={(day) => void onUpdate(node.id, { dueDay: day })}
+              monthLabel={new Date().toLocaleString('default', { month: 'long' })}
+              trigger={({ ref }) =>
+                node.dueDay ? (
+                  <button
+                    ref={ref}
+                    type="button"
+                    className="budget-row__badge budget-row__badge--due budget-row__badge--due-mobile"
+                    title={`Due on the ${node.dueDay}${ordinal(node.dueDay)} — tap to change`}
+                  >
+                    <CalendarClock size={9} aria-hidden />
+                    {node.dueDay}
+                    {ordinal(node.dueDay)}
+                  </button>
+                ) : (
+                  <button
+                    ref={ref}
+                    type="button"
+                    className="budget-row__badge budget-row__badge--due-unset budget-row__badge--due-mobile"
+                    title="Set a due date"
+                    aria-label="Set a due date"
+                  >
+                    <CalendarClock size={9} aria-hidden />
+                  </button>
+                )
+              }
+            />
           )}
         </div>
 
@@ -618,21 +648,38 @@ export function BudgetCategoryRow({
           )}
         </div>
 
-        {/* Mobile-only sub-line: leaf rows with recorded spend only — "spent X · remaining Y". Mid-tier
-            rollups get their one-line summary from the remaining-cell above; untouched leaves (no
-            actual yet) stay a single line (name + editable planned) with nothing below to report. */}
+        {/* Mobile-only sub-line: leaf rows with recorded spend only. Collapsed by default to
+            one clean signal — "remaining" (matches the parent-rollup treatment) — with the
+            spent amount, percentage, and progress bar tucked behind a tap so the list doesn't
+            read as three stacked stats per row. */}
         {!isParent && hasActual && (
+          <button
+            type="button"
+            className="budget-row__mobile-stats-toggle"
+            onClick={() => setStatsOpen((v) => !v)}
+            aria-expanded={statsOpen}
+            aria-label={statsOpen ? 'Hide spend details' : 'Show spend details'}
+          >
+            <span
+              className={`budget-row__ms-rem budget-row__ms-rem${node.planned > 0 ? remMod : '--muted'}`}
+            >
+              {node.planned > 0
+                ? remaining >= 0
+                  ? `${formatINR(remaining)} left`
+                  : `${formatINR(Math.abs(remaining))} over`
+                : `spent ${formatINR(node.actual)}`}
+            </span>
+            <ChevronRight
+              size={12}
+              className={`budget-row__ms-caret${statsOpen ? ' budget-row__ms-caret--open' : ''}`}
+            />
+          </button>
+        )}
+
+        {!isParent && hasActual && statsOpen && (
           <div className="budget-row__mobile-stats">
             <span className="budget-row__ms-detail">
               <span className="budget-row__ms-spent">spent {formatINR(node.actual)}</span>
-              {node.planned > 0 && (
-                <span className={`budget-row__ms-rem budget-row__ms-rem${remMod}`}>
-                  {' · '}
-                  {remaining >= 0
-                    ? `${formatINR(remaining)} left`
-                    : `${formatINR(Math.abs(remaining))} over`}
-                </span>
-              )}
             </span>
             {node.planned > 0 && (
               <span className="budget-row__ms-pct">
@@ -642,8 +689,8 @@ export function BudgetCategoryRow({
           </div>
         )}
 
-        {/* Mobile-only: thin progress bar — leaf rows with recorded spend only */}
-        {!isParent && hasActual && node.planned > 0 && (
+        {/* Mobile-only: thin progress bar — leaf rows with recorded spend only, shown once expanded */}
+        {!isParent && hasActual && node.planned > 0 && statsOpen && (
           <div
             className="budget-row__mobile-progress"
             style={{

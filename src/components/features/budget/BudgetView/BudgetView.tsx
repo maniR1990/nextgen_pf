@@ -12,7 +12,17 @@ import {
   useSeedRecurring,
   useUpdateBudgetPlan,
 } from '@/hooks/useBudgetSummary';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsDown, ChevronsUp, Search } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronsDown,
+  ChevronsUp,
+  Eye,
+  EyeOff,
+  Search,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BudgetGroupRow } from '../BudgetGroupRow/BudgetGroupRow';
 
@@ -72,7 +82,7 @@ function ColHeader({
 // ── #1 Month summary bar ───────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  if (Math.abs(n) >= 1_00_000) return `₹${(Math.abs(n) / 1_00_000).toFixed(1)}L`;
+  if (Math.abs(n) >= 1_00_000) return `₹${(Math.abs(n) / 1_00_000).toFixed(2)}L`;
   if (Math.abs(n) >= 1_000) return `₹${Math.abs(n).toLocaleString('en-IN')}`;
   return `₹${Math.abs(n)}`;
 }
@@ -116,6 +126,7 @@ function SummaryBar({
   payOpen,
   onPayToggle,
 }: SummaryBarProps) {
+  const [masked, setMasked] = useState(true);
   const netPositive = net >= 0;
   const expPct = expPlanned > 0 ? Math.round((expActual / expPlanned) * 100) : null;
 
@@ -132,9 +143,9 @@ function SummaryBar({
       <div className="budget-summary__card">
         <span className="budget-summary__label">Income earned</span>
         <span className="budget-summary__value budget-summary__value--income">
-          {incomeActual > 0 ? fmt(incomeActual) : '₹0'}
+          {masked ? '••••••' : incomeActual > 0 ? fmt(incomeActual) : '₹0'}
         </span>
-        {incomePlanned > 0 && (
+        {incomePlanned > 0 && !masked && (
           <span className="budget-summary__sub">of {fmt(incomePlanned)} planned</span>
         )}
       </div>
@@ -156,14 +167,23 @@ function SummaryBar({
 
       {/* Net */}
       <div className="budget-summary__card budget-summary__card--net">
-        <span className="budget-summary__label">Net cash flow</span>
+        <span className="budget-summary__label">
+          Net cash flow
+          <button
+            type="button"
+            className="budget-summary__mask-toggle"
+            onClick={() => setMasked((v) => !v)}
+            aria-label={masked ? 'Show amounts' : 'Hide amounts'}
+          >
+            {masked ? <Eye size={11} /> : <EyeOff size={11} />}
+          </button>
+        </span>
         <span
           className={`budget-summary__value budget-summary__value--net${netPositive ? '--pos' : '--neg'}`}
         >
-          {net >= 0 ? '+' : '−'}
-          {fmt(Math.abs(net))}
+          {masked ? '••••••' : `${net >= 0 ? '+' : '−'}${fmt(Math.abs(net))}`}
         </span>
-        <span className="budget-summary__sub">income − expenses</span>
+        {!masked && <span className="budget-summary__sub">income − expenses</span>}
       </div>
 
       {/* Payments due — 4th card, click to expand dropdown */}
