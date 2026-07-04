@@ -50,10 +50,10 @@
     font-size: 11px;
     font-weight: 500;
 
-    &--overdue  { background: color-mix(in srgb, #dc2626 10%, transparent); color: #dc2626; }
-    &--soon     { background: color-mix(in srgb, #d97706 10%, transparent); color: #d97706; }
-    &--upcoming { background: color-mix(in srgb, #3b82f6 10%, transparent); color: #3b82f6; }
-    &--paid     { background: color-mix(in srgb, #16a34a 10%, transparent); color: #16a34a; }
+    &--overdue  { background: color-mix(in srgb, var(--color-error) 10%, transparent); color: var(--color-error); }
+    &--soon     { background: color-mix(in srgb, var(--color-warning) 10%, transparent); color: var(--color-warning); }
+    &--upcoming { background: color-mix(in srgb, var(--color-info) 10%, transparent); color: var(--color-info); }
+    &--paid     { background: color-mix(in srgb, var(--color-success) 10%, transparent); color: var(--color-success); }
   }
 
   &__chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
@@ -125,24 +125,27 @@
 
     &--today &__tl-day,
     &--today .psp__tl-day {
-      color: var(--color-primary, #3b82f6);
+      // Was var(--color-primary, #3b82f6) — --color-primary is never defined anywhere in
+      // the app, so this always silently fell through to the hex fallback. --color-brand
+      // is the real token.
+      color: var(--color-brand);
       font-weight: 700;
     }
 
     // Highlight today column subtly
     &--today {
-      background: color-mix(in srgb, var(--color-primary, #3b82f6) 6%, transparent);
+      background: color-mix(in srgb, var(--color-brand) 6%, transparent);
       border-radius: 4px;
     }
 
     // Selected column — stronger highlight
     &--sel {
-      background: color-mix(in srgb, var(--color-primary, #3b82f6) 12%, transparent);
+      background: color-mix(in srgb, var(--color-brand) 12%, transparent);
     }
   }
 
   &__tl-day {
-    font-size: 8px;
+    font-size: 9px;
     font-variant-numeric: tabular-nums;
     color: var(--color-text-muted);
     line-height: 1;
@@ -211,7 +214,7 @@
     flex-shrink: 0;
     font-size: 10px;
     font-weight: 600;
-    color: var(--color-primary, #3b82f6);
+    color: var(--color-brand);
     background: none;
     border: none;
     cursor: pointer;
@@ -220,7 +223,7 @@
     white-space: nowrap;
     align-self: flex-start;
     margin-top: 2px;
-    &:hover { background: color-mix(in srgb, var(--color-primary, #3b82f6) 8%, transparent); }
+    &:hover { background: color-mix(in srgb, var(--color-brand) 8%, transparent); }
   }
 
   // ── List ─────────────────────────────────────────────────────────────────
@@ -231,7 +234,7 @@
   }
 
   &__item {
-    &--paying { background: color-mix(in srgb, #3b82f6 3%, var(--color-bg-surface)); }
+    &--paying { background: color-mix(in srgb, var(--color-brand) 3%, var(--color-bg-surface)); }
   }
 
   &__row {
@@ -291,18 +294,18 @@
     border-radius: 20px;
     white-space: nowrap;
 
-    &--overdue  { background: color-mix(in srgb, #dc2626 12%, transparent); color: #dc2626; }
-    &--soon     { background: color-mix(in srgb, #d97706 12%, transparent); color: #d97706; }
-    &--upcoming { background: color-mix(in srgb, #3b82f6 12%, transparent); color: #3b82f6; }
-    &--paid     { background: color-mix(in srgb, #16a34a 12%, transparent); color: #16a34a; }
+    &--overdue  { background: color-mix(in srgb, var(--color-error) 12%, transparent); color: var(--color-error); }
+    &--soon     { background: color-mix(in srgb, var(--color-warning) 12%, transparent); color: var(--color-warning); }
+    &--upcoming { background: color-mix(in srgb, var(--color-info) 12%, transparent); color: var(--color-info); }
+    &--paid     { background: color-mix(in srgb, var(--color-success) 12%, transparent); color: var(--color-success); }
   }
 
   // Pay button — always in DOM; invisible until row is hovered
   &__row-pay {
     font-size: 11px;
     font-weight: 600;
-    color: #3b82f6;
-    background: color-mix(in srgb, #3b82f6 10%, transparent);
+    color: var(--color-brand);
+    background: color-mix(in srgb, var(--color-brand) 10%, transparent);
     border: none;
     border-radius: 6px;
     padding: 3px 8px;
@@ -320,19 +323,19 @@
     &--on { opacity: 1; }
 
     &--on {
-      background: color-mix(in srgb, #3b82f6 15%, transparent);
-      color: #3b82f6;
+      background: color-mix(in srgb, var(--color-brand) 15%, transparent);
+      color: var(--color-brand);
     }
 
-    &:hover { background: #3b82f6; color: #fff; }
+    &:hover { background: var(--color-brand); color: var(--color-on-brand); }
   }
 
   // Undo button — appears on paid rows logged in this session
   &__row-undo {
     font-size: 10px;
     font-weight: 600;
-    color: #d97706;
-    background: color-mix(in srgb, #d97706 10%, transparent);
+    color: var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning) 10%, transparent);
     border: none;
     border-radius: 6px;
     padding: 3px 7px;
@@ -344,7 +347,9 @@
     white-space: nowrap;
     transition: background 0.12s, color 0.12s;
 
-    &:hover { background: #d97706; color: #fff; }
+    // --color-on-warning is dark text (gray-900) in this app's tokens, not white — the
+    // previous hardcoded #fff here would have failed contrast against the warning color.
+    &:hover { background: var(--color-warning); color: var(--color-on-warning); }
     &:disabled { opacity: 0.5; cursor: not-allowed; }
   }
 
@@ -422,8 +427,8 @@
     background-position: right 8px center;
     transition: border-color 0.12s;
 
-    &:focus { outline: none; border-color: #3b82f6; }
-    &:hover { border-color: color-mix(in srgb, #3b82f6 50%, var(--color-border)); }
+    &:focus { outline: none; border-color: var(--color-brand); }
+    &:hover { border-color: color-mix(in srgb, var(--color-brand) 50%, var(--color-border)); }
   }
 
   // Type toggle — compact
@@ -451,8 +456,8 @@
     &:hover { background: var(--color-bg-hover, rgba(0 0 0 / 0.04)); color: var(--color-text); }
 
     &--on {
-      background: #3b82f6;
-      color: #fff;
+      background: var(--color-brand);
+      color: var(--color-on-brand);
     }
   }
 
@@ -465,7 +470,7 @@
     border-radius: 6px;
     overflow: hidden;
     transition: border-color 0.12s;
-    &:focus-within { border-color: #3b82f6; }
+    &:focus-within { border-color: var(--color-brand); }
   }
 
   &__qp-sym {
@@ -523,16 +528,16 @@
     padding: 0 14px;
     border-radius: 6px;
     border: none;
-    background: #3b82f6;
+    background: var(--color-brand);
     font-size: 11px;
     font-weight: 600;
-    color: #fff;
+    color: var(--color-on-brand);
     cursor: pointer;
     height: 30px;
     white-space: nowrap;
     font-family: inherit;
     transition: background 0.12s, opacity 0.12s;
-    &:hover:not(:disabled) { background: #2563eb; }
+    &:hover:not(:disabled) { background: var(--color-brand-hover); }
     &:disabled { opacity: 0.45; cursor: not-allowed; }
   }
 
@@ -558,7 +563,7 @@
     &__chip-lbl { display: none; } // show dot + count only; save space
 
     &__tl-wrap { padding: 10px 12px 6px; }
-    &__tl-day { font-size: 7px; }
+    &__tl-day { font-size: 8.5px; }
 
     &__list { padding: 2px 0 4px; }
 
@@ -566,6 +571,30 @@
       padding: 5px 10px 5px 12px;
       gap: 6px;
     }
+
+    // Quick Pay: this range (521-680px) previously fell through to the base desktop
+    // flex-wrap layout untouched — From (flex: 1 1 120px, free to grow) could wrap onto
+    // its own line while Type/Amount/Actions wrapped to a second line beneath it, and
+    // the mismatched heights across that wrap is what produced the large, uneven gap.
+    // Explicit pairing removes the guesswork: From/To/Actions each take a full row,
+    // Type + Amount share one row — same fix mobile uses below, just introduced earlier
+    // instead of leaving a gap in the responsive coverage.
+    &__qp-row { flex-wrap: wrap; }
+
+    &__qp-field {
+      flex: 1 1 100%;
+      width: 100%;
+
+      &--type,
+      &--amt {
+        flex: 1 1 calc(50% - 4px);
+        width: auto;
+      }
+
+      &--actions { flex: 1 1 100%; width: 100%; margin-left: 0; }
+    }
+
+    &__qp-arrow { display: none; } // From/To no longer sit inline; labels carry the meaning
   }
 }
 
@@ -587,8 +616,9 @@
     // Show chip labels again since they wrap naturally
     &__chip-lbl { display: inline; }
 
-    // Timeline: tighter on mobile
-    &__tl-day { font-size: 6.5px; }
+    // Timeline: tighter on mobile — still legible since most days no longer show a
+    // number at all (axis-style labeling, see Timeline component)
+    &__tl-day { font-size: 8px; }
     &__tl-dot { width: 6px; height: 6px; }
     &__tl-legend { gap: 8px; }
     &__tl-legend-item { font-size: 8px; }
@@ -620,74 +650,75 @@
     &__row-name { font-size: 12px; }
     &__row-amt { font-size: 12px; }
 
-    // Quick Pay: stack fields vertically
+    // Quick Pay: same From-full / Type+Amount-paired / Actions-full layout introduced at
+    // ≤680px above — compact touch targets (32-34px), tight enough to be dense without
+    // dropping below a comfortable tap size.
     &__qp {
-      padding: 10px 12px 14px;
-      gap: 10px;
+      padding: 8px 10px 10px;
+      gap: 8px;
     }
 
-    &__qp-row {
-      flex-direction: column;
-      gap: 10px;
-    }
+    &__qp-row { gap: 8px; }
 
     &__qp-field {
-      width: 100%;
+      gap: 3px;
 
-      &--amt { flex: unset; width: 100%; }
-      &--actions { margin-left: 0; width: 100%; }
+      &--type,
+      &--amt { flex: 1 1 calc(50% - 4px); }
     }
 
     &__qp-select {
       max-width: 100%;
       width: 100%;
-      height: 36px;
-      font-size: 13px;
-    }
-
-    &__qp-arrow {
-      display: none; // "From → To" arrow hidden; labels carry the meaning
+      height: 32px;
+      padding: 0 22px 0 8px;
+      font-size: 12.5px;
     }
 
     &__qp-types {
       width: 100%;
-      height: 36px;
+      height: 32px;
     }
 
     &__qp-type {
       flex: 1;
+      padding: 0 8px;
       font-size: 12px;
     }
 
-    &__qp-amt-wrap { height: 36px; width: 100%; }
+    &__qp-amt-wrap { height: 32px; width: 100%; }
 
-    &__qp-sym { font-size: 13px; }
+    &__qp-sym { padding: 0 6px; font-size: 12.5px; }
 
     &__qp-amt {
-      font-size: 14px;
+      padding: 0 6px;
+      font-size: 13px;
       width: 100%;
     }
 
     &__qp-btns {
       width: 100%;
-      height: 38px;
+      height: 34px;
+      gap: 5px;
     }
 
     &__qp-cancel {
-      height: 38px;
+      height: 34px;
+      padding: 0 10px;
       font-size: 12px;
     }
 
     &__qp-pay {
       flex: 1;
-      height: 38px;
-      font-size: 13px;
+      height: 34px;
+      padding: 0 12px;
+      font-size: 12.5px;
       font-weight: 700;
     }
 
     &__qp-summary {
-      font-size: 12px;
-      line-height: 1.5;
+      font-size: 11.5px;
+      line-height: 1.35;
     }
   }
 }

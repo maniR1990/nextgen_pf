@@ -20,11 +20,13 @@ import {
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
+// Semantic tokens, not literal hex — matches the rest of the app's light/dark theming
+// instead of freezing these four colors to their light-mode values.
 const STATUS_HEX: Record<PaymentStatus, string> = {
-  overdue: '#dc2626',
-  soon: '#d97706',
-  upcoming: '#3b82f6',
-  paid: '#16a34a',
+  overdue: 'var(--color-error)',
+  soon: 'var(--color-warning)',
+  upcoming: 'var(--color-info)',
+  paid: 'var(--color-success)',
 };
 
 const STATUS_LABELS: Record<PaymentStatus, string> = {
@@ -84,12 +86,18 @@ function Timeline({ items, todayDay, statusOf, selectedDay, onDayClick }: Timeli
           const dot = dotMap.get(d);
           const isToday = d === todayDay;
           const isSelected = selectedDay === d;
+          // Axis-style labeling, not every-day: with 31 always-visible numbers the font
+          // has to shrink to ~6.5px to fit, which is illegible. Labeling only the days
+          // that matter (today, selected, has a payment) plus every-5th as an orientation
+          // tick — the same pattern chart X-axes use — frees enough room to size the
+          // labels that DO show at an actually-readable size.
+          const showLabel = dot != null || isToday || isSelected || d === 1 || d % 5 === 0;
           return (
             <div
               key={d}
               className={`psp__tl-cell${isToday ? ' psp__tl-cell--today' : ''}${isSelected ? ' psp__tl-cell--sel' : ''}`}
             >
-              <span className="psp__tl-day">{d}</span>
+              <span className="psp__tl-day">{showLabel ? d : ''}</span>
               {dot ? (
                 <>
                   {dot.count > 1 && <span className="psp__tl-dot-count">{dot.count}</span>}

@@ -77,11 +77,13 @@ function fmt(n: number) {
   return `₹${Math.abs(n)}`;
 }
 
+// Semantic tokens, not literal hex — mirrors PaymentSchedulePanel's STATUS_HEX so both
+// stay theme-aware instead of two independently-drifting hardcoded hex maps.
 const STATUS_HEX_SUMMARY: Record<PaymentStatus, string> = {
-  overdue: '#dc2626',
-  soon: '#d97706',
-  upcoming: '#3b82f6',
-  paid: '#16a34a',
+  overdue: 'var(--color-error)',
+  soon: 'var(--color-warning)',
+  upcoming: 'var(--color-info)',
+  paid: 'var(--color-success)',
 };
 
 interface PaymentSummaryInfo {
@@ -122,7 +124,7 @@ function SummaryBar({
   else if (paceCtx.isFuture) dayLabel = 'Upcoming';
   else dayLabel = `Day ${paceCtx.daysElapsed} of ${paceCtx.daysInMonth}`;
 
-  const worstColor = payInfo?.worstStatus ? STATUS_HEX_SUMMARY[payInfo.worstStatus] : '#3b82f6';
+  const worstColor = payInfo?.worstStatus ? STATUS_HEX_SUMMARY[payInfo.worstStatus] : 'var(--color-info)';
 
   return (
     <div className={`budget-summary${payOpen ? ' budget-summary--pay-open' : ''}`}>
@@ -367,100 +369,130 @@ export function BudgetView() {
 
   return (
     <div className="budget-view">
-      {/* ── Toolbar ── */}
+      {/* ── Toolbar ──
+          Two groups so mobile can lay each out independently (they need different column
+          widths — "Auto-fill recurring" is wider than "Expand all", so they can't share a
+          grid track). display: contents on desktop keeps every child a direct flex item of
+          .budget-view__toolbar, i.e. pixel-identical to before this split. */}
       <div className="budget-view__toolbar">
-        <div className="budget-view__search">
-          <Search size={14} className="budget-view__search-icon" aria-hidden />
-          <input
-            type="text"
-            className="budget-view__search-input"
-            placeholder="Find category…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+        <div className="budget-view__toolbar-row1">
+          <div className="budget-view__chips">
+            {(['all', 'recurring', 'unplanned'] as Filter[]).map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={`budget-view__chip${filter === f ? ' budget-view__chip--active' : ''}`}
+                onClick={() => setFilter(f)}
+                aria-label={
+                  f === 'all'
+                    ? 'Show all categories'
+                    : f === 'recurring'
+                      ? 'Filter: recurring only'
+                      : 'Filter: unplanned only'
+                }
+              >
+                {f === 'all' ? (
+                  'All'
+                ) : (
+                  <>
+                    <span aria-hidden="true">{f === 'recurring' ? '↻' : '⚡'}</span>{' '}
+                    <span className="budget-view__chip-label">
+                      {f === 'recurring' ? 'Recurring' : 'Unplanned'}
+                    </span>
+                  </>
+                )}
+              </button>
+            ))}
+          </div>
 
-        <div className="budget-view__chips">
-          {(['all', 'recurring', 'unplanned'] as Filter[]).map((f) => (
-            <button
-              key={f}
-              type="button"
-              className={`budget-view__chip${filter === f ? ' budget-view__chip--active' : ''}`}
-              onClick={() => setFilter(f)}
-            >
-              {f === 'all' ? 'All' : f === 'recurring' ? '↻ Recurring' : '⚡ Unplanned'}
-            </button>
-          ))}
-        </div>
-
-        {/* Expand / Collapse all — chip in Row 1 on mobile, inline on desktop */}
-        <button
-          type="button"
-          className="budget-view__expand-btn"
-          onClick={() => setAllCol((v) => !v)}
-          aria-label={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
-        >
-          {allCollapsed ? <ChevronsDown size={13} aria-hidden /> : <ChevronsUp size={13} aria-hidden />}
-          <span className="budget-view__expand-label">
-            {allCollapsed ? 'Expand all' : 'Collapse all'}
-          </span>
-        </button>
-
-        {/* Month nav */}
-        <div className="budget-view__month-wrap" ref={pickerRef}>
+          {/* Expand / Collapse all — chip in Row 1 on mobile, inline on desktop */}
           <button
             type="button"
-            className="budget-view__month-nav-btn"
-            onClick={() => shiftMonth(-1)}
-            aria-label="Previous month"
+            className="budget-view__expand-btn"
+            onClick={() => setAllCol((v) => !v)}
+            aria-label={allCollapsed ? 'Expand all categories' : 'Collapse all categories'}
           >
-            <ChevronLeft size={14} />
-          </button>
-          <button
-            type="button"
-            className="budget-view__month-label"
-            onClick={() => setPickerOpen((v) => !v)}
-            aria-expanded={pickerOpen}
-            aria-haspopup="dialog"
-          >
-            {monthLabel}
-            <span className="budget-view__month-caret" aria-hidden>
-              ▾
+            {allCollapsed ? <ChevronsDown size={13} aria-hidden /> : <ChevronsUp size={13} aria-hidden />}
+            <span className="budget-view__expand-label">
+              {allCollapsed ? 'Expand all' : 'Collapse all'}
             </span>
           </button>
-          <button
-            type="button"
-            className="budget-view__month-nav-btn"
-            onClick={() => shiftMonth(1)}
-            aria-label="Next month"
-          >
-            <ChevronRight size={14} />
-          </button>
-          {pickerOpen && (
-            <div className="budget-view__month-dropdown" role="dialog" aria-label="Pick a month">
-              <MonthPicker
-                value={{ year, month }}
-                clearable={false}
-                onChange={({ year: y, month: m }) => {
-                  setYear(y);
-                  setMonth(m);
-                  setPickerOpen(false);
-                }}
-              />
-            </div>
-          )}
+
+          {/* Month nav */}
+          <div className="budget-view__month-wrap" ref={pickerRef}>
+            <button
+              type="button"
+              className="budget-view__month-nav-btn"
+              onClick={() => shiftMonth(-1)}
+              aria-label="Previous month"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button
+              type="button"
+              className="budget-view__month-label"
+              onClick={() => setPickerOpen((v) => !v)}
+              aria-expanded={pickerOpen}
+              aria-haspopup="dialog"
+            >
+              {monthLabel}
+              <span className="budget-view__month-caret" aria-hidden>
+                ▾
+              </span>
+            </button>
+            <button
+              type="button"
+              className="budget-view__month-nav-btn"
+              onClick={() => shiftMonth(1)}
+              aria-label="Next month"
+            >
+              <ChevronRight size={14} />
+            </button>
+            {pickerOpen && (
+              <div className="budget-view__month-dropdown" role="dialog" aria-label="Pick a month">
+                <MonthPicker
+                  value={{ year, month }}
+                  clearable={false}
+                  onChange={({ year: y, month: m }) => {
+                    setYear(y);
+                    setMonth(m);
+                    setPickerOpen(false);
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="budget-view__actions">
-          <button
-            type="button"
-            className="btn btn--sm btn--ghost"
-            onClick={() => seed()}
-            disabled={isSeeding}
-            title="Copies all recurring planned amounts from the previous month into this month."
-          >
-            {isSeeding ? '↻ Filling…' : '↻ Auto-fill recurring'}
-          </button>
+        <div className="budget-view__toolbar-row2">
+          <div className="budget-view__search">
+            <Search size={14} className="budget-view__search-icon" aria-hidden />
+            <input
+              type="text"
+              className="budget-view__search-input"
+              placeholder="Find category…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="budget-view__actions">
+            <button
+              type="button"
+              className="btn btn--sm btn--ghost"
+              onClick={() => seed()}
+              disabled={isSeeding}
+              title="Copies all recurring planned amounts from the previous month into this month."
+            >
+              {isSeeding ? (
+                '↻ Filling…'
+              ) : (
+                <>
+                  ↻ Auto-fill<span className="budget-view__autofill-suffix"> recurring</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 

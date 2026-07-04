@@ -219,9 +219,19 @@ $rem-over:       #dc2626;
     flex-wrap: wrap;
   }
 
+  // Row1/row2 groupings only matter on mobile (see media query) — on desktop they're
+  // invisible to layout, so every child still behaves as a direct flex item of
+  // .budget-view__toolbar. The explicit order values below restore the original visual
+  // sequence (search, chips, expand-btn, month-wrap, actions) despite the new DOM grouping.
+  &__toolbar-row1,
+  &__toolbar-row2 {
+    display: contents;
+  }
+
   &__search {
     position: relative;
     flex: 0 0 200px;
+    order: 0;
 
     &-icon {
       position: absolute;
@@ -250,6 +260,7 @@ $rem-over:       #dc2626;
   &__chips {
     display: flex;
     gap: 6px;
+    order: 1;
   }
 
   &__chip {
@@ -271,6 +282,7 @@ $rem-over:       #dc2626;
   &__month-wrap {
     position: relative;
     margin-left: auto;
+    order: 3;
     display: flex;
     align-items: center;
     border: 1px solid var(--color-border);
@@ -327,13 +339,14 @@ $rem-over:       #dc2626;
     box-shadow: 0 8px 32px rgba(0,0,0,.12);
   }
 
-  &__actions { display: flex; gap: 8px; }
+  &__actions { display: flex; gap: 8px; order: 4; }
 
   // Expand/collapse all — desktop: inline button; mobile: chip in Row 1
   &__expand-btn {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    order: 2;
     padding: 4px 11px;
     border: 1px solid var(--color-border);
     border-radius: 8px;
@@ -806,6 +819,15 @@ $rem-over:       #dc2626;
     }
   }
 
+  // Persistent edit affordance for touch (no :hover on mobile) — shown ≤520px only
+  &__planned-edit-hint {
+    display: none;
+    margin-left: 4px;
+    vertical-align: -1px;
+    color: $planned-color;
+    opacity: 0.55;
+  }
+
   &__inline-input {
     width: 80px;
     text-align: right;
@@ -865,7 +887,13 @@ $rem-over:       #dc2626;
     &--muted   { color: var(--color-text-muted); font-weight: 400; }
     // #6 Investment: gap to goal — amber (still to invest)
     &--invest  { color: #b45309; font-weight: 600; }
+
+    // Mobile-only compact rollup line (pace-aware) vs. the desktop-only plain figure —
+    // toggled together in the ≤520px breakpoint, see below.
+    &--mobile { display: none; }
   }
+
+  &__rem-pace-suffix { font-weight: 500; }
 
   // Col 5: Pace
   &__pace-cell {
@@ -1117,7 +1145,10 @@ $rem-over:       #dc2626;
   .budget-row {
     grid-template-columns: $grid-xs;
     grid-template-rows: auto auto auto;
-    align-items: start; // rows stack naturally from top
+    // Center within row 1 so name and value share a baseline even when one cell is taller
+    // (e.g. a min-height touch target) — rows 2/3 (sub-line, bar) are single-occupant, so
+    // centering vs. top-aligning them is visually identical; they still stack top-to-bottom.
+    align-items: center;
   }
 
   // ─ Group: hide planned, actual, lastmo, actions — show remaining + pace ─────
@@ -1139,43 +1170,51 @@ $rem-over:       #dc2626;
     padding-right: 10px;
   }
 
-  // ─ Category parent rows: hide planned+actual+lastmo+actions; show rem+pace ──
+  // ─ Category parent rows (any depth): one compact line — name + pace-aware remaining.
+  // No pill, no sub-line, no progress bar — mid-tier rollups don't need the full-card
+  // treatment the top-level group already gives you; see budget-row__rem--mobile below.
   .budget-row--parent {
     .budget-row__planned-cell,
     .budget-row__actual-cell,
     .budget-row__lastmo-cell,
-    .budget-row__actions-cell { display: none; }
+    .budget-row__actions-cell,
+    .budget-row__pace-cell,
+    .budget-row__mobile-stats,
+    .budget-row__mobile-progress { display: none; }
 
     .budget-row__remaining-cell {
       display: flex;
       justify-content: flex-end;
       align-items: center;
-      padding-right: 6px;
-    }
-
-    .budget-row__pace-cell {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
+      grid-column: 2 / -1; // reclaim the column the pace pill used to occupy
       padding-right: 10px;
     }
+
+    .budget-row__rem--desktop { display: none; }
+    .budget-row__rem--mobile  { display: inline; }
   }
 
-  // ─ Leaf rows: hide everything except actual ────────────────────────────────
+  // ─ Leaf rows: name + editable planned amount; spent/remaining move to sub-line ──
   .budget-row--leaf {
-    .budget-row__planned-cell,
+    .budget-row__actual-cell,
     .budget-row__remaining-cell,
     .budget-row__pace-cell,
     .budget-row__lastmo-cell,
     .budget-row__actions-cell { display: none; }
 
-    .budget-row__actual-cell {
+    .budget-row__planned-cell {
       display: flex;
       justify-content: flex-end;
       align-items: center;
       grid-column: 2 / -1; // span value + badge cols
       padding-right: 10px;
+      // No explicit min-height — stretching just this cell taller than the name next to it
+      // is what caused the row to balloon to ~53px and knocked "+ Set budget" out of line
+      // with the category name. Row padding (6px top/bottom) + text already gives ~31-32px,
+      // matching every other compact single-line row (parent rollups included).
     }
+
+    .budget-row__planned-edit-hint { display: inline-flex; }
   }
 
   // ─ Mobile sub-line: full-width 2nd row ─────────────────────────────────────
@@ -1206,7 +1245,8 @@ $rem-over:       #dc2626;
     gap: 0;
   }
 
-  .budget-row__ms-planned,
+  // Group-level only now — category rows no longer show a "planned" sub-line (see
+  // budget-row--parent above: mid-tier rollups get one compact line, not a full sub-line).
   .budget-group__ms-planned {
     color: var(--color-text-muted);
     &::after { content: ' · '; white-space: pre; }
@@ -1215,6 +1255,17 @@ $rem-over:       #dc2626;
   .budget-row__ms-spent,
   .budget-group__ms-spent {
     color: var(--color-text-secondary);
+  }
+
+  // Leaf-only: remaining/over amount, traffic-light colored (mirrors desktop __rem)
+  .budget-row__ms-rem {
+    font-weight: 500;
+
+    &--good   { color: $rem-good; }
+    &--warn   { color: $rem-warn; }
+    &--over   { color: $rem-over; }
+    &--muted  { color: var(--color-text-muted); font-weight: 400; }
+    &--invest { color: #b45309; }
   }
 
   // Percentage on the right
@@ -1249,79 +1300,112 @@ $rem-over:       #dc2626;
     }
   }
 
-  // Leaf rows don't need sub-line or progress bar (no planned budget at item level)
-  .budget-row--leaf {
-    .budget-row__mobile-stats { display: none; }
-    .budget-row__mobile-progress { display: none; }
+  // ─ Toolbar: two independent rows ─────────────────────────────────
+  // Row 1 (chips | month nav | expand-all) and row 2 (search | auto-fill) don't share
+  // column tracks — "Auto-fill recurring" is wider than "Expand all", so forcing both
+  // rows into one grid let the wider button overflow into the search box. Each row now
+  // sizes itself; row 1 is a symmetric 3-column grid so the month selector — the single
+  // control that determines what the whole page is showing — sits at the true center
+  // instead of being stranded on one edge with dead space next to it.
+  .budget-view__toolbar {
+    display: flex;
+    flex-direction: column;
+    // One consistent 8px rhythm (top padding, row1↔row2 gap, bottom padding) instead of
+    // three slightly different values (was 8 / 6 / 6) — equal spacing reads as designed,
+    // uneven spacing reads as accidental even when the difference is only a couple of px.
+    row-gap: 8px;
+    padding: 8px 0;
   }
 
-  // ─ Toolbar: two compact rows ─────────────────────────────────────
-  // Row 1: month nav | chips (horizontal scroll)
-  // Row 2: search (flex) | auto-fill (compact)
-  .budget-view__toolbar {
-    flex-wrap: wrap;
-    gap: 6px;
-    // No horizontal padding — shell already provides 16px; removing these
-    // 12px prevents the toolbar content from indenting past the summary card.
-    padding: 8px 0 6px;
-
-    // Row 1: month nav + chips
-    // ::after at order 2 = zero-height flex item that fills full width,
-    //   acting as a hard line-break so search + actions always start row 2.
-    // Row 2: search (flex:1) + auto-fill (compact, right)
-
-    &::after {
-      content: '';
-      order: 2;
-      width: 100%;
-      height: 0;
-      flex-shrink: 0;
-    }
+  .budget-view__toolbar-row1 {
+    display: grid;
+    // minmax(0, 1fr), not bare 1fr — a bare 1fr track has an implicit content-based
+    // minimum, so "Expand all"'s intrinsic width would win space away from the chips
+    // column instead of the two staying equal.
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 8px;
 
     .budget-view__month-wrap {
-      order: 0;
-      flex: 0 0 auto;
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: center;
+      margin: 0; // override the desktop-only margin-left: auto that pushed it off-center
     }
 
+    // "Recurring"/"Unplanned" are icon-only on mobile, active or not — selection is shown
+    // by the existing blue fill instead of an expanding label. Expanding the label only
+    // on the active state was tried first, but the chips column is tied to the month
+    // selector's centering (~89px), and "↻ Recurring" alone needs ~85px — as soon as a
+    // real filter (not the default "All") became active, the row overflowed and the third
+    // chip scrolled out of view with no visible hint it existed. Constant width in every
+    // state is what actually guarantees nothing is ever cut off.
     .budget-view__chips {
-      order: 1;
-      flex: 1 1 auto;
+      grid-column: 1;
+      grid-row: 1;
       min-width: 0;
+      gap: 4px;
+      // Safety net only — every chip is a fixed, small icon size now, so this should
+      // never actually need to scroll. No fade mask: a hard edge under real scroll beats
+      // a permanent gradient that looks broken when nothing was actually cut off.
       overflow-x: auto;
-      flex-wrap: nowrap;
-      -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
-      gap: 5px;
-      -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
-      mask-image: linear-gradient(to right, black 80%, transparent 100%);
-
       &::-webkit-scrollbar { display: none; }
 
       .budget-view__chip {
         flex-shrink: 0;
-        padding: 3px 10px;
+        padding: 4px 9px;
         font-size: 11px;
+
+        .budget-view__chip-label { display: none; }
+
+        &:not(:first-child) { padding: 4px 8px; }
       }
     }
 
-    // Row 2: search grows to fill space, auto-fill stays compact on the right
+    // Icon-only on mobile — same touch target, no truncated label to fade out
+    .budget-view__expand-btn {
+      grid-column: 3;
+      grid-row: 1;
+      justify-self: end;
+      padding: 5px;
+      border-radius: 999px;
+      color: var(--color-text-muted);
+      border-color: var(--color-border);
+
+      .budget-view__expand-label { display: none; }
+    }
+  }
+
+  .budget-view__toolbar-row2 {
+    display: flex;
+    // stretch, not center — this is what actually guarantees the button matches the
+    // search input's height exactly, instead of two separately-guessed pixel values
+    // drifting apart the next time either one's font-size or padding changes.
+    align-items: stretch;
+    gap: 8px;
+
     .budget-view__search {
-      order: 3;
       flex: 1 1 0;
       min-width: 0;
       width: auto;
     }
 
     .budget-view__actions {
-      order: 3;
       flex: 0 0 auto;
       width: auto;
       gap: 0;
 
       .btn {
+        // The shared .btn component floors min-height at --touch-target-min (44px) below
+        // the "lg" breakpoint — appropriate for most buttons, but this one sits directly
+        // beside a ~33px search input, so the mismatch was structural, not a padding tweak.
+        --btn-min-height: 0;
+        min-height: 0;
+        height: auto;
         font-size: 12px;
         font-weight: 500;
-        padding: 6px 10px;
+        padding: 0 10px;
         white-space: nowrap;
         color: var(--color-text-muted);
         border: 1px solid var(--color-border);
@@ -1330,17 +1414,7 @@ $rem-over:       #dc2626;
       }
     }
 
-    // Expand/collapse: chip in Row 1 after filter chips
-    .budget-view__expand-btn {
-      order: 1;
-      flex: 0 0 auto;
-      padding: 3px 9px;
-      font-size: 11px;
-      border-radius: 999px;
-      color: var(--color-text-muted);
-      border-color: var(--color-border);
-      gap: 4px;
-    }
+    .budget-view__autofill-suffix { display: none; }
   }
 
   // ─ Summary bar: compact minimalist card ─────────────────────────
@@ -1444,9 +1518,9 @@ $rem-over:       #dc2626;
     &__day-bar { width: 64px; height: 3px; }
   }
 
-  // ─ Page rhythm ───────────────────────────────────────────────────
-  .budget-view { gap: 10px; }
-  .budget-view__body { gap: 6px; }
+  // ─ Page rhythm — one consistent 8px vertical rhythm end to end ───
+  .budget-view { gap: 8px; }
+  .budget-view__body { gap: 8px; }
 
   // ─ Group card: lean on mobile — no shadow, smaller radius ────────
   .budget-group {
@@ -1487,7 +1561,13 @@ $rem-over:       #dc2626;
   // ─ Category rows: content-height, tight padding ───────────────────
   .budget-row {
     min-height: unset;
-    padding: 6px 10px 0; // progress bar / sub-line adds bottom space
+    padding: 6px 10px; // symmetric — most rows are single-line now (parents, untouched leaves)
+
+    // Rows that DO render a sub-line/progress bar supply their own bottom spacing instead
+    &:has(> .budget-row__mobile-stats),
+    &:has(> .budget-row__mobile-progress) {
+      padding-bottom: 0;
+    }
 
     // Smaller name text on mobile
     &__name { font-size: 12.5px; }
@@ -1498,14 +1578,13 @@ $rem-over:       #dc2626;
     &__rem    { font-size: 12px; }
   }
 
-  // Depth indentation: tighter on narrow viewport
-  .budget-row--depth-2 .budget-row__name-cell { padding-left: 14px; }
-  .budget-row--depth-3 .budget-row__name-cell { padding-left: 24px; }
+  // Depth indentation: tighter on narrow viewport, capped at 2 steps — depth-3+ names would
+  // otherwise get squeezed by ever-deeper padding on a screen this narrow (375px).
+  .budget-row--depth-2 .budget-row__name-cell,
+  .budget-row--depth-3 .budget-row__name-cell { padding-left: 14px; }
 
-  // ─ Leaf rows: even more minimal ────────────────────────────────────
+  // ─ Leaf rows: name + editable planned, same content-height rhythm as parents ──
   .budget-row--leaf {
-    padding: 5px 10px;   // no sub-line / progress → normal padding
-
     .budget-row__name { font-size: 12px; color: var(--color-text-secondary); }
     .budget-row__amount { font-size: 12px; }
   }
@@ -1515,10 +1594,10 @@ $rem-over:       #dc2626;
   .budget-group__mobile-stats { padding: 1px 8px 4px 20px; }
 
   // Sub-line text: slightly smaller
-  .budget-row__ms-planned,
   .budget-group__ms-planned,
   .budget-row__ms-spent,
-  .budget-group__ms-spent  { font-size: 10.5px; }
+  .budget-group__ms-spent,
+  .budget-row__ms-rem      { font-size: 10.5px; }
 
   .budget-row__ms-pct,
   .budget-group__ms-pct    { font-size: 10px; font-weight: 700; }

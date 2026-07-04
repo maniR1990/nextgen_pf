@@ -289,8 +289,12 @@ export function BudgetCategoryRow({
 
   async function commitEdit(moveNext = false) {
     setEditP(false);
-    const v = Number(draftPlanned);
-    if (!Number.isNaN(v) && v >= 0 && v !== node.planned) await onUpdate(node.id, { planned: v });
+    const trimmed = draftPlanned.trim();
+    // Empty input on blur/Escape should not silently zero out an existing budget.
+    if (trimmed !== '') {
+      const v = Number(trimmed);
+      if (!Number.isNaN(v) && v >= 0 && v !== node.planned) await onUpdate(node.id, { planned: v });
+    }
     // #4 Keyboard Tab: move to next editable planned cell
     if (moveNext) focusNextPlannedCell(node.id);
   }
@@ -424,6 +428,7 @@ export function BudgetCategoryRow({
                 ref={inputRef}
                 className="budget-row__inline-input"
                 type="number"
+                inputMode="numeric"
                 min="0"
                 value={draftPlanned}
                 onChange={(e) => setDraftP(e.target.value)}
@@ -445,7 +450,10 @@ export function BudgetCategoryRow({
             ) : (
               <span className="budget-row__amount budget-row__amount--planned">
                 {node.planned > 0 ? (
-                  formatINR(node.planned)
+                  <>
+                    {formatINR(node.planned)}
+                    <Pencil size={10} className="budget-row__planned-edit-hint" aria-hidden="true" />
+                  </>
                 ) : (
                   <span className="budget-row__amount--placeholder">+ Set budget</span>
                 )}
@@ -466,11 +474,29 @@ export function BudgetCategoryRow({
         {/* ── Col 4: Remaining ── */}
         <div className="budget-row__remaining-cell">
           {node.planned > 0 ? (
-            <span
-              className={`budget-row__rem budget-row__rem${remMod}${isParent ? ' budget-row__rem--rollup' : ''}`}
-            >
-              {remaining >= 0 ? formatINR(remaining) : `−${formatINR(Math.abs(remaining))}`}
-            </span>
+            <>
+              <span
+                className={`budget-row__rem budget-row__rem--desktop budget-row__rem${remMod}${isParent ? ' budget-row__rem--rollup' : ''}`}
+              >
+                {remaining >= 0 ? formatINR(remaining) : `−${formatINR(Math.abs(remaining))}`}
+              </span>
+              {/* Mobile-only compact line for mid-tier rollups: one signal, pace overrides remaining
+                  when pace is trending worse (a leading indicator beats a lagging one). */}
+              {isParent && (
+                <span
+                  className={`budget-row__rem budget-row__rem--mobile budget-row__rem${
+                    paceBadge && (paceBadge.status === 'warn' || paceBadge.status === 'over')
+                      ? `--${paceBadge.status}`
+                      : remMod
+                  }`}
+                >
+                  {remaining >= 0 ? `${formatINR(remaining)} left` : `${formatINR(Math.abs(remaining))} over`}
+                  {paceBadge && (paceBadge.status === 'warn' || paceBadge.status === 'over') && (
+                    <span className="budget-row__rem-pace-suffix"> · pace {paceBadge.status}</span>
+                  )}
+                </span>
+              )}
+            </>
           ) : (
             <span className="budget-row__rem budget-row__rem--muted">—</span>
           )}
@@ -592,25 +618,32 @@ export function BudgetCategoryRow({
           )}
         </div>
 
-        {/* Mobile-only: sub-line "planned X · spent Y" + pct */}
-        <div className="budget-row__mobile-stats">
-          <span className="budget-row__ms-detail">
-            {node.planned > 0 && (
-              <span className="budget-row__ms-planned">planned {formatINR(node.planned)}</span>
-            )}
-            {hasActual && (
+        {/* Mobile-only sub-line: leaf rows with recorded spend only — "spent X · remaining Y". Mid-tier
+            rollups get their one-line summary from the remaining-cell above; untouched leaves (no
+            actual yet) stay a single line (name + editable planned) with nothing below to report. */}
+        {!isParent && hasActual && (
+          <div className="budget-row__mobile-stats">
+            <span className="budget-row__ms-detail">
               <span className="budget-row__ms-spent">spent {formatINR(node.actual)}</span>
-            )}
-          </span>
-          {node.planned > 0 && hasActual && (
-            <span className="budget-row__ms-pct">
-              {Math.round(node.progressPct)}%
+              {node.planned > 0 && (
+                <span className={`budget-row__ms-rem budget-row__ms-rem${remMod}`}>
+                  {' · '}
+                  {remaining >= 0
+                    ? `${formatINR(remaining)} left`
+                    : `${formatINR(Math.abs(remaining))} over`}
+                </span>
+              )}
             </span>
-          )}
-        </div>
+            {node.planned > 0 && (
+              <span className="budget-row__ms-pct">
+                {Math.round(node.progressPct)}%
+              </span>
+            )}
+          </div>
+        )}
 
-        {/* Mobile-only: thin progress bar */}
-        {node.planned > 0 && (
+        {/* Mobile-only: thin progress bar — leaf rows with recorded spend only */}
+        {!isParent && hasActual && node.planned > 0 && (
           <div
             className="budget-row__mobile-progress"
             style={{
