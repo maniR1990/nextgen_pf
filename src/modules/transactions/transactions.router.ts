@@ -8,6 +8,7 @@ import {
   CreateTransactionSchema,
   ListTransactionsQuerySchema,
   PatchTransactionSchema,
+  PeriodSummaryQuerySchema,
 } from './transactions.schema';
 import { TransactionService } from './transactions.service';
 
@@ -103,6 +104,31 @@ export const v1ListTransactions = compose(withAuth())(async (req, ctx) => {
     });
   } catch (err) {
     log.error('v1ListTransactions', { err });
+    if (isApiError(err)) return v1FromApiError(err);
+    throw err;
+  }
+});
+
+export const v1GetTransactionsSummary = compose(withAuth())(async (req, ctx) => {
+  try {
+    const url = new URL(req.url);
+    const parsed = PeriodSummaryQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+    if (!parsed.success)
+      return v1FromApiError({
+        message: 'Invalid query params',
+        status: 422,
+        code: 'VALIDATION_ERROR',
+      });
+
+    const summary = await TransactionService.getPeriodSummary(
+      ctx.session!.id,
+      parsed.data.budgetPeriodYear,
+      parsed.data.budgetPeriodMonth,
+    );
+
+    return v1Ok(summary);
+  } catch (err) {
+    log.error('v1GetTransactionsSummary', { err });
     if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }

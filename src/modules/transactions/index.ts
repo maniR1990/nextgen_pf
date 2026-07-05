@@ -5,6 +5,7 @@ export {
   handleGetTransactions,
   handleCheckDuplicates,
   v1ListTransactions,
+  v1GetTransactionsSummary,
   v1CreateTransaction,
   v1GetTransaction,
   v1PatchTransaction,

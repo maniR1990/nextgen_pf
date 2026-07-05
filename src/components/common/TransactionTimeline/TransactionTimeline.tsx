@@ -26,6 +26,13 @@ export interface TimelineGroup {
   transactions: TimelineTransaction[];
 }
 
+export interface TimelineSummary {
+  totalIncome: number;
+  totalExpense: number;
+  totalTransfers: number;
+  net: number;
+}
+
 export interface TransactionTimelineProps {
   groups: TimelineGroup[];
   onLoadMore?: () => void;
@@ -35,6 +42,10 @@ export interface TransactionTimelineProps {
   onEditClick?: (id: string) => void;
   onDeleteClick?: (id: string) => void;
   showSummary?: boolean;
+  /** Whole-period totals from the server. Falls back to summing `groups` (i.e. only the
+   *  rows currently loaded/paginated) when omitted — which under-counts once a period has
+   *  more transactions than a single page, so callers with a real period should pass this. */
+  summary?: TimelineSummary;
 }
 
 function formatAmount(tx: TimelineTransaction) {
@@ -61,12 +72,13 @@ export function TransactionTimeline({
   onEditClick,
   onDeleteClick,
   showSummary = false,
+  summary: summaryProp,
 }: TransactionTimelineProps) {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
   const [masked, setMasked] = useState(true);
-  const summary = useMemo(() => {
+  const computedSummary = useMemo(() => {
     let totalIncome = 0;
     let totalExpense = 0;
     let totalTransfers = 0;
@@ -79,6 +91,7 @@ export function TransactionTimeline({
     }
     return { totalIncome, totalExpense, totalTransfers, net: totalIncome - totalExpense };
   }, [groups]);
+  const summary = summaryProp ?? computedSummary;
 
   if (loading) {
     return (

@@ -19,6 +19,9 @@ export const queryKeys = {
     list: (filters: TransactionListFilters) =>
       [...queryKeys.transactions.lists(), filters] as const,
     detail: (id: string) => [TRANSACTIONS_ROOT, 'detail', id] as const,
+    summaries: () => [...queryKeys.transactions.all, 'summary'] as const,
+    summary: (year: number, month: number) =>
+      [...queryKeys.transactions.summaries(), year, month] as const,
   },
   paymentSources: {
     all: ['payment-sources'] as const,

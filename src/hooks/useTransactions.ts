@@ -89,6 +89,7 @@ function invalidateAfterWrite(
   opts: { id?: string; isTransfer?: boolean },
 ) {
   void qc.invalidateQueries({ queryKey: queryKeys.transactions.lists() });
+  void qc.invalidateQueries({ queryKey: queryKeys.transactions.summaries() });
   void qc.invalidateQueries({ queryKey: queryKeys.budget.all });
   if (opts.id) {
     void qc.invalidateQueries({ queryKey: queryKeys.transactions.detail(opts.id) });
@@ -183,6 +184,7 @@ export function useVoidTransaction() {
     onSuccess: (_data, id) => {
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.detail(id) });
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.lists() });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactions.summaries() });
       void qc.invalidateQueries({ queryKey: queryKeys.budget.all });
       toast.success('Transaction voided');
     },

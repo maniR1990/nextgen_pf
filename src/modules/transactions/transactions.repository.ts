@@ -76,11 +76,17 @@ export const TransactionRepository = {
       ...(search && { merchant: { contains: search, mode: 'insensitive' as const } }),
     };
 
+    const dir = sort === 'date_asc' ? 'asc' : 'desc';
+
     return prisma.financeTransaction.findMany({
       where,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      orderBy: { date: sort === 'date_asc' ? 'asc' : 'desc' },
+      // `date` alone isn't unique — many rows share the same calendar day (time-of-day is
+      // stripped). Without a tiebreaker, ties have no guaranteed order across pages, so a
+      // same-day row can silently land on a page past the cursor and never surface in the
+      // paginated list. `id` as a secondary key makes the sort — and cursor pagination — stable.
+      orderBy: [{ date: dir }, { id: dir }],
       include: TX_INCLUDE,
     });
   },
@@ -165,6 +171,21 @@ export const TransactionRepository = {
         budgetPeriodMonth: month,
         status: { not: 'VOID' },
         ...(categoryId && { categoryId }),
+      },
+      _sum: { amount: true },
+    }),
+
+  // Whole-period totals by type — used for the Income/Expense/Transferred/Net summary card.
+  // Must NOT be derived from a paginated list: any period with more rows than the page size
+  // would silently under-count until every page is loaded.
+  sumByTypeForPeriod: (userId: string, year: number, month: number) =>
+    prisma.financeTransaction.groupBy({
+      by: ['type'],
+      where: {
+        userId,
+        budgetPeriodYear: year,
+        budgetPeriodMonth: month,
+        status: { not: 'VOID' },
       },
       _sum: { amount: true },
     }),

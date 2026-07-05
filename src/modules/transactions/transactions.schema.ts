@@ -191,6 +191,11 @@ export const ListTransactionsQuerySchema = z.object({
   sort: z.enum(['date_desc', 'date_asc']).default('date_desc'),
 });
 
+export const PeriodSummaryQuerySchema = z.object({
+  budgetPeriodYear: z.coerce.number().int().min(2020).max(2100),
+  budgetPeriodMonth: z.coerce.number().int().min(1).max(12),
+});
+
 // ── PATCH (full update — all fields optional) ─────────────────────────────────
 
 export const PatchTransactionSchema = z.object({

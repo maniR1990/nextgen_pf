@@ -7,6 +7,7 @@ import { useTransactionFilters } from '@/hooks/useTransactionFilters';
 import { useDeleteTransaction, useTransactionDetail } from '@/hooks/useTransactions';
 import { groupTransactionsByDate } from '@/lib/utils/transactionTimeline';
 import { useTransactionsList } from '@/modules/transactions/hooks/useTransactionsList';
+import { useTransactionsSummary } from '@/modules/transactions/hooks/useTransactionsSummary';
 import type { TransactionFormValues } from '@/store/transactionFormStore';
 import { ReceiptText, RefreshCw } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
@@ -73,6 +74,7 @@ export function TransactionList({ initialOptions }: TransactionListProps = {}) {
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useTransactionsList(filters);
+  const { data: periodSummary } = useTransactionsSummary(filters.year, filters.month);
 
   // Fetch the selected transaction for edit — cached by id, no raw fetch needed
   const { data: editTxRaw, isLoading: isLoadingEdit } = useTransactionDetail(editId ?? '');
@@ -131,6 +133,7 @@ export function TransactionList({ initialOptions }: TransactionListProps = {}) {
           loading={isFetchingNextPage}
           onLoadMore={() => fetchNextPage()}
           showSummary
+          summary={periodSummary}
           onEditClick={handleEditClick}
           onDeleteClick={handleDeleteClick}
         />
