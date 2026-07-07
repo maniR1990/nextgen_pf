@@ -1677,17 +1677,19 @@ $rem-over:       #dc2626;
     font-size: 9px;
   }
 
-  // ─ Sub-line: aligned with name, no wasted space. Depth-aware so a depth-3 row's own
-  // "amount left" line shifts by the same extra step as its name above it — otherwise this
-  // line stays at a fixed indent while the name it belongs to moves, drifting out of
-  // alignment with itself on the one row where depth actually varies (depth-3, e.g. milk).
-  .budget-row__mobile-stats-toggle { padding: 1px 8px 2px 22px; }
-  .budget-row__mobile-stats  { padding: 1px 8px 4px 22px; }
+  // ─ Sub-line: aligned with the name text above it, not just the row's edge. The name's
+  // real start position is row-padding(10) + name-cell padding(14 at depth-2) + the
+  // leaf-indent spacer(12) + the name-cell's flex gap(4) = 40px — the toggle/detail lines
+  // have no leading spacer of their own, so they need padding-left 30 (+10 row padding =
+  // 40) to actually land under the name, not a smaller value that only looked plausible.
+  // Depth-3 shifts by the same +10 step as its name-cell (24 vs 14) → 40 (+10 row = 50px).
+  .budget-row__mobile-stats-toggle { padding: 1px 8px 2px 30px; }
+  .budget-row__mobile-stats  { padding: 1px 8px 4px 30px; }
   .budget-group__mobile-stats { padding: 1px 8px 4px 20px; }
 
   .budget-row--depth-3 {
     .budget-row__mobile-stats-toggle,
-    .budget-row__mobile-stats { padding-left: 32px; }
+    .budget-row__mobile-stats { padding-left: 40px; }
   }
 
   // Sub-line text: slightly smaller
@@ -1699,13 +1701,21 @@ $rem-over:       #dc2626;
   .budget-row__ms-pct,
   .budget-group__ms-pct    { font-size: 10px; font-weight: 700; }
 
-  // ─ Progress bar: flush edge-to-edge, ultra-thin ────────────────────
-  .budget-group__mobile-progress,
+  // ─ Progress bar: aligned under the sub-line above it, not flush to the row's raw
+  // edge — flush-left made the bar read as a disconnected strip below an indented line
+  // of text instead of belonging to that same row's detail. Margins match each sub-line's
+  // own left padding exactly (group: 20px; leaf: 30px, +10 more at depth-3).
+  .budget-group__mobile-progress {
+    height: 2px;
+    margin: 3px 10px 0 20px;
+    border-radius: 999px;
+  }
   .budget-row__mobile-progress {
     height: 2px;
-    margin: 3px 0 0; // flush left + right; tiny top gap from sub-line
-    border-radius: 0; // flush = no rounded ends at the edges
+    margin: 3px 10px 0 30px;
+    border-radius: 999px;
   }
+  .budget-row--depth-3 .budget-row__mobile-progress { margin-left: 40px; }
 
   // ─ Month picker dropdown anchor ────────────────────────────────────
   .budget-view__month-dropdown {
