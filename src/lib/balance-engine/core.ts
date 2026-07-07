@@ -31,12 +31,15 @@ export const BALANCE_IMPACT: Record<TxType, BalanceImpact> = {
 
   // Outflows — money leaves the account
   EXPENSE: 'debit',
-  INVESTMENT: 'debit',
   SINKING_DEPOSIT: 'debit',
 
   // Movements — money leaves one account and enters another
   TRANSFER: 'transfer',
   ATM_WITHDRAWAL: 'transfer', // bank → cash wallet / ATM buffer account
+  // bank/wallet → investment holding account (demat, mutual fund folio, PPF, etc.).
+  // getBalanceDeltas degrades this to a plain debit when no toAccountId is given, so
+  // existing investment transactions logged without a destination account are unaffected.
+  INVESTMENT: 'transfer',
 
   // No cash movement — discounts or points applied at point of sale
   COUPON_REDEMPTION: 'none',

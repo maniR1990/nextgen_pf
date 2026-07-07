@@ -16,16 +16,23 @@ function computeGroupPace(actual: number, planned: number, ctx: PaceContext, isI
   // No planned budget = no reference to pace against; show nothing.
   if (planned === 0 || actual === 0 || ctx.isFuture || ctx.daysElapsed === 0) return null;
   if (ctx.isPast) return { status: 'past', label: 'Month done' };
-  const pace = Math.round((actual / ctx.daysElapsed) * ctx.daysInMonth);
+
+  const dailyRate = Math.round(actual / ctx.daysElapsed);
+  const pace = Math.round(dailyRate * ctx.daysInMonth);
+  // "≈" marks this as a projection, not a real total — see BudgetCategoryRow's
+  // computePace for the full rationale (same pattern, group-level rollup here).
+  const label = `≈${formatINR(pace)}`;
+  const tooltip = `Spending ${formatINR(dailyRate)}/day → projected ${formatINR(pace)} by day ${ctx.daysInMonth}`;
+
   const ratio = pace / planned;
   if (isIncome) {
     if (ratio >= 1) return { status: 'good', label: 'On track' };
-    if (ratio >= 0.8) return { status: 'warn', label: formatINR(pace) };
-    return { status: 'over', label: formatINR(pace) };
+    if (ratio >= 0.8) return { status: 'warn', label, tooltip };
+    return { status: 'over', label, tooltip };
   }
   if (ratio <= 1) return { status: 'good', label: 'On track' };
-  if (ratio <= 1.1) return { status: 'warn', label: formatINR(pace) };
-  return { status: 'over', label: formatINR(pace) };
+  if (ratio <= 1.1) return { status: 'warn', label, tooltip };
+  return { status: 'over', label, tooltip };
 }
 
 const GROUP_LABEL: Record<string, string> = {
@@ -241,7 +248,10 @@ export function BudgetGroupRow({
         {/* Col 5 — Pace */}
         <span className="budget-group__pace-cell">
           {paceBadge ? (
-            <span className={`budget-group__pace budget-group__pace--${paceBadge.status}`}>
+            <span
+              className={`budget-group__pace budget-group__pace--${paceBadge.status}`}
+              title={paceBadge.tooltip}
+            >
               {paceBadge.label}
             </span>
           ) : (

@@ -90,26 +90,25 @@ export const TransactionService = {
     return { rows: page, hasMore, nextCursor: hasMore ? page[page.length - 1].id : null, limit };
   },
 
-  // Whole-period Income/Expense/Transferred/Net — computed server-side over every matching
-  // row, not just whatever page(s) the client has paginated in. Same credit/debit/transfer
-  // classification the transaction timeline uses client-side (TX_TYPE_META.amountSign, plus
-  // TRANSFER as its own bucket), so the two stay in sync.
+  // Whole-period Income/Expense/Net — computed server-side over every matching row, not
+  // just whatever page(s) the client has paginated in. Same credit/debit classification
+  // the transaction timeline uses client-side (TX_TYPE_META.amountSign), so the two stay
+  // in sync. TRANSFER/ATM_WITHDRAWAL are neutral (money moving between the user's own
+  // accounts, not spent or earned) and are deliberately excluded from both buckets.
   async getPeriodSummary(userId: string, year: number, month: number) {
     const groups = await TransactionRepository.sumByTypeForPeriod(userId, year, month);
 
     let totalIncome = 0;
     let totalExpense = 0;
-    let totalTransfers = 0;
 
     for (const g of groups) {
       const amount = g._sum.amount ?? 0;
       const type = g.type as TxType;
-      if (type === 'TRANSFER') totalTransfers += amount;
-      else if (TX_TYPE_META[type]?.amountSign === 'credit') totalIncome += amount;
+      if (TX_TYPE_META[type]?.amountSign === 'credit') totalIncome += amount;
       else if (TX_TYPE_META[type]?.amountSign === 'debit') totalExpense += amount;
     }
 
-    return { totalIncome, totalExpense, totalTransfers, net: totalIncome - totalExpense };
+    return { totalIncome, totalExpense, net: totalIncome - totalExpense };
   },
 
   // ── Single ────────────────────────────────────────────────────────────────

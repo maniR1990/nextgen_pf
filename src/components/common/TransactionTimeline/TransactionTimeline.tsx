@@ -30,7 +30,6 @@ export interface TimelineGroup {
 export interface TimelineSummary {
   totalIncome: number;
   totalExpense: number;
-  totalTransfers: number;
   net: number;
 }
 
@@ -88,15 +87,13 @@ export function TransactionTimeline({
   const computedSummary = useMemo(() => {
     let totalIncome = 0;
     let totalExpense = 0;
-    let totalTransfers = 0;
     for (const g of groups) {
       for (const tx of g.transactions) {
-        if (tx.txType === 'TRANSFER') totalTransfers += tx.amount;
-        else if (tx.type === 'credit') totalIncome += tx.amount;
+        if (tx.type === 'credit') totalIncome += tx.amount;
         else if (tx.type === 'debit') totalExpense += tx.amount;
       }
     }
-    return { totalIncome, totalExpense, totalTransfers, net: totalIncome - totalExpense };
+    return { totalIncome, totalExpense, net: totalIncome - totalExpense };
   }, [groups]);
   const summary = summaryProp ?? computedSummary;
 
@@ -145,17 +142,6 @@ export function TransactionTimeline({
               −₹{summary.totalExpense.toLocaleString('en-IN')}
             </span>
           </div>
-          {summary.totalTransfers > 0 && (
-            <>
-              <div className="tx-timeline__summary-divider" />
-              <div className="tx-timeline__summary-item">
-                <span className="tx-timeline__summary-label">Transferred</span>
-                <span className="tx-timeline__summary-value tx-timeline__summary-value--neutral">
-                  ₹{summary.totalTransfers.toLocaleString('en-IN')}
-                </span>
-              </div>
-            </>
-          )}
           <div className="tx-timeline__summary-divider" />
           <div className="tx-timeline__summary-item tx-timeline__summary-item--net">
             <span className="tx-timeline__summary-label">

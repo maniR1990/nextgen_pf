@@ -175,9 +175,9 @@ export const TransactionRepository = {
       _sum: { amount: true },
     }),
 
-  // Whole-period totals by type — used for the Income/Expense/Transferred/Net summary card.
-  // Must NOT be derived from a paginated list: any period with more rows than the page size
-  // would silently under-count until every page is loaded.
+  // Whole-period totals by type — used for the Income/Expense/Net summary card. Must NOT
+  // be derived from a paginated list: any period with more rows than the page size would
+  // silently under-count until every page is loaded.
   sumByTypeForPeriod: (userId: string, year: number, month: number) =>
     prisma.financeTransaction.groupBy({
       by: ['type'],

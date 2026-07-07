@@ -7,7 +7,6 @@ import { useQuery } from '@tanstack/react-query';
 export interface TransactionsPeriodSummary {
   totalIncome: number;
   totalExpense: number;
-  totalTransfers: number;
   net: number;
 }
 

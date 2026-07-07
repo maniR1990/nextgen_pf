@@ -183,7 +183,13 @@ export function AddTransactionModal({
           />
         );
       case 'INVESTMENT':
-        return <InvestmentForm {...sharedFormProps} />;
+        return (
+          <InvestmentForm
+            {...sharedFormProps}
+            categoryGroups={categoryGroups}
+            onCreateCategory={onCreateCategory}
+          />
+        );
       case 'SINKING_DEPOSIT':
         return <SinkingDepositForm {...sharedFormProps} sinkingFunds={sinkingFunds} />;
       case 'INCOME':

@@ -1106,8 +1106,15 @@ $rem-over:       #dc2626;
 
   &__currency { font-size: 11px; color: var(--color-text-muted); margin-right: 2px; }
 
-  // Mobile-stats: hidden on desktop, shown via mobile breakpoints below
-  &__mobile-stats { display: none; }
+  // Mobile-only leaf-row elements: hidden on desktop by default, shown via the mobile
+  // breakpoint below. The toggle/progress-bar were missing this base rule (only
+  // .budget-row__mobile-stats had it), so at desktop widths — where the button's
+  // browser-default display applies — they rendered as stray, duplicate UI: the
+  // "amount over/left" line repeats what the Remaining column already shows, and the
+  // caret has nothing to disclose once every column is already visible inline.
+  &__mobile-stats,
+  &__mobile-stats-toggle,
+  &__mobile-progress { display: none; }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

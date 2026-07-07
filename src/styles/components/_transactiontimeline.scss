@@ -72,20 +72,22 @@
     flex: 1;
     padding: var(--space-3);
 
+    // Income | Expense sit side by side; Net (below) always gets its own full-width
+    // row — with Transfer removed there are only ever these three items now, so the
+    // layout is fixed rather than needing to adapt to an optional 4th card.
     @include m.respond-below(sm) {
       flex: 0 0 50%;
       padding: var(--space-2) var(--space-3);
       border-bottom: 1px solid var(--color-border);
 
-      &:nth-last-child(-n+2) { border-bottom: none; }
-
-      // Right border to divide the two columns
-      &:nth-child(4n+1) { border-right: 1px solid var(--color-border); }
+      &:first-child { border-right: 1px solid var(--color-border); }
     }
   }
 
   &__summary-item--net {
     @include m.respond-below(sm) {
+      flex: 0 0 100%;
+      border-bottom: none;
       background: color-mix(in srgb, var(--color-brand) 8%, var(--color-bg-surface));
       box-shadow: inset 3px 0 0 var(--color-brand);
 
@@ -122,7 +124,6 @@
     font-variant-numeric: tabular-nums;
     &--credit   { color: var(--color-success); }
     &--debit    { color: var(--color-error); }
-    &--neutral  { color: var(--color-text-muted); }
   }
 
   &__summary-mask-toggle {

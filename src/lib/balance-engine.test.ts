@@ -36,13 +36,15 @@ describe('BALANCE_IMPACT', () => {
 
   it('classifies every outflow type as debit', () => {
     expect(BALANCE_IMPACT.EXPENSE).toBe('debit');
-    expect(BALANCE_IMPACT.INVESTMENT).toBe('debit');
     expect(BALANCE_IMPACT.SINKING_DEPOSIT).toBe('debit');
   });
 
   it('classifies movement types as transfer', () => {
     expect(BALANCE_IMPACT.TRANSFER).toBe('transfer');
     expect(BALANCE_IMPACT.ATM_WITHDRAWAL).toBe('transfer');
+    // INVESTMENT moves money from a bank/wallet into a holding account (demat, MF
+    // folio, PPF, ...) rather than spending it — same shape as TRANSFER, not EXPENSE.
+    expect(BALANCE_IMPACT.INVESTMENT).toBe('transfer');
   });
 
   it('classifies redemption types as none', () => {
@@ -64,9 +66,19 @@ describe('getBalanceDeltas', () => {
     expect(d).toEqual({ kind: 'single', accountId: 'a1', delta: -200 });
   });
 
-  it('returns -amount single delta for INVESTMENT', () => {
+  it('degrades INVESTMENT without a destination account to a plain debit (backward-compat)', () => {
     const d = getBalanceDeltas({ type: 'INVESTMENT', amount: 10000, accountId: 'a1' });
     expect(d).toEqual({ kind: 'single', accountId: 'a1', delta: -10000 });
+  });
+
+  it('returns transfer delta for INVESTMENT with a destination account', () => {
+    const d = getBalanceDeltas({
+      type: 'INVESTMENT',
+      amount: 10000,
+      accountId: 'bank1',
+      toAccountId: 'demat1',
+    });
+    expect(d).toEqual({ kind: 'transfer', fromId: 'bank1', toId: 'demat1', amount: 10000 });
   });
 
   it('returns +amount single delta for REFUND', () => {
@@ -187,6 +199,25 @@ describe('computeLedgerBalance', () => {
     // Computing for 'a2' (the destination)
     const balance = await computeLedgerBalance(prisma as never, 'a2', 0);
     expect(balance).toBe(2000);
+  });
+
+  it('subtracts an INVESTMENT with no destination account (old-style, pre-destination-field data)', async () => {
+    vi.mocked(prisma.financeTransaction.findMany).mockResolvedValue([
+      { type: 'INVESTMENT', amount: 10000, accountId: 'a1', toAccountId: null },
+    ] as never);
+    const balance = await computeLedgerBalance(prisma as never, 'a1', 50000);
+    expect(balance).toBe(40000);
+  });
+
+  it('credits the destination account for an INVESTMENT with a destination set', async () => {
+    vi.mocked(prisma.financeTransaction.findMany).mockResolvedValue([
+      { type: 'INVESTMENT', amount: 10000, accountId: 'bank1', toAccountId: 'demat1' },
+    ] as never);
+    const sourceBalance = await computeLedgerBalance(prisma as never, 'bank1', 50000);
+    expect(sourceBalance).toBe(40000);
+
+    const destBalance = await computeLedgerBalance(prisma as never, 'demat1', 0);
+    expect(destBalance).toBe(10000);
   });
 
   it('ignores COUPON_REDEMPTION (no cash movement)', async () => {

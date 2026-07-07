@@ -137,6 +137,29 @@ describe('TransactionService.createTransaction — balance', () => {
     expect(toCall?.[0]).toMatchObject({ data: { balance: { increment: 2000 } } });
   });
 
+  it('credits the destination account for an INVESTMENT with toAccountId set', async () => {
+    mockPrismaTx.financeTransaction.create.mockResolvedValue({
+      ...baseTx,
+      type: 'INVESTMENT',
+      toAccountId: 'demat1',
+    });
+    await TransactionService.createTransaction({
+      ...baseDto,
+      type: 'INVESTMENT',
+      amount: 10000,
+      toAccountId: 'demat1',
+    });
+    const calls = mockPrismaTx.account.update.mock.calls;
+    const fromCall = calls.find(
+      (c: unknown[]) => (c[0] as { where: { id: string } }).where.id === 'acc1',
+    );
+    const toCall = calls.find(
+      (c: unknown[]) => (c[0] as { where: { id: string } }).where.id === 'demat1',
+    );
+    expect(fromCall?.[0]).toMatchObject({ data: { balance: { decrement: 10000 } } });
+    expect(toCall?.[0]).toMatchObject({ data: { balance: { increment: 10000 } } });
+  });
+
   it('does NOT touch account balance for COUPON_REDEMPTION', async () => {
     mockPrismaTx.financeTransaction.create.mockResolvedValue({
       ...baseTx,

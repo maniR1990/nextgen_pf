@@ -1,6 +1,7 @@
 'use client';
 
 import { DayOfMonthPicker } from '@/components/common/DayOfMonthPicker';
+import { CATEGORY_MAX_LEVEL } from '@/constants/categories';
 import type { BudgetCategoryNode } from '@/modules/budget-engine/budget-engine.types';
 import {
   CalendarClock,
@@ -57,24 +58,29 @@ function computePace(
   planned: number,
   ctx: PaceContext,
   isIncome: boolean,
-): { status: PaceStatus; label: string } | null {
+): { status: PaceStatus; label: string; tooltip?: string } | null {
   // No planned budget = no reference to pace against; show nothing.
   if (planned === 0 || actual === 0 || ctx.isFuture || ctx.daysElapsed === 0) return null;
   if (ctx.isPast || ctx.daysElapsed === ctx.daysInMonth)
     return { status: 'past', label: 'Month done' };
 
-  const pace = Math.round((actual / ctx.daysElapsed) * ctx.daysInMonth);
-  const label = formatINR(pace);
+  const dailyRate = Math.round(actual / ctx.daysElapsed);
+  const pace = Math.round(dailyRate * ctx.daysInMonth);
+  // "≈" marks this as a projection, not a real total — the bare rupee figure otherwise
+  // reads exactly like Planned/Actual/Remaining, which are all real amounts already spent
+  // or committed. The tooltip spells out the math behind it on demand.
+  const label = `≈${formatINR(pace)}`;
+  const tooltip = `Spending ${formatINR(dailyRate)}/day → projected ${formatINR(pace)} by day ${ctx.daysInMonth}`;
 
   const ratio = pace / planned;
   if (isIncome) {
     if (ratio >= 1) return { status: 'good', label: 'On track' };
-    if (ratio >= 0.8) return { status: 'warn', label };
-    return { status: 'over', label };
+    if (ratio >= 0.8) return { status: 'warn', label, tooltip };
+    return { status: 'over', label, tooltip };
   }
   if (ratio <= 1) return { status: 'good', label: 'On track' };
-  if (ratio <= 1.1) return { status: 'warn', label };
-  return { status: 'over', label };
+  if (ratio <= 1.1) return { status: 'warn', label, tooltip };
+  return { status: 'over', label, tooltip };
 }
 
 // #6 Investment semantics: remaining = "gap to goal" (positive = still to invest)
@@ -535,7 +541,10 @@ export function BudgetCategoryRow({
         {/* ── Col 5: Pace ── */}
         <div className="budget-row__pace-cell">
           {paceBadge ? (
-            <span className={`budget-row__pace budget-row__pace--${paceBadge.status}`}>
+            <span
+              className={`budget-row__pace budget-row__pace--${paceBadge.status}`}
+              title={paceBadge.tooltip}
+            >
               {paceBadge.label}
             </span>
           ) : (
@@ -595,7 +604,7 @@ export function BudgetCategoryRow({
               <Pencil size={11} />
             </button>
           )}
-          {onAddChild && depth < 2 && (
+          {onAddChild && depth < CATEGORY_MAX_LEVEL && (
             <button
               type="button"
               className="budget-row__icon-btn budget-row__icon-btn--add"
@@ -717,7 +726,7 @@ export function BudgetCategoryRow({
             paceCtx={paceCtx}
             pendingCategoryId={pendingCategoryId}
             onUpdate={onUpdate}
-            onAddChild={depth < 1 ? onAddChild : undefined}
+            onAddChild={depth < CATEGORY_MAX_LEVEL - 1 ? onAddChild : undefined}
             onRename={onRename}
             onDelete={onDelete}
             isAddingChild={isAddingChild}
