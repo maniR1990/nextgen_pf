@@ -1654,10 +1654,13 @@ $rem-over:       #dc2626;
     &__rem    { font-size: 12px; }
   }
 
-  // Depth indentation: tighter on narrow viewport, capped at 2 steps — depth-3+ names would
-  // otherwise get squeezed by ever-deeper padding on a screen this narrow (375px).
-  .budget-row--depth-2 .budget-row__name-cell,
-  .budget-row--depth-3 .budget-row__name-cell { padding-left: 14px; }
+  // Depth indentation: tighter on narrow viewport than desktop, but depth-3 still gets a
+  // modest extra step beyond depth-2 — not doubled all the way to desktop's values (that
+  // squeezes names on a 375px screen), but enough that a depth-3 item (e.g. "milk", nested
+  // under "Oil | Milk") reads as one level deeper than its depth-2 aunts (e.g. "Vegies")
+  // instead of a sibling at the same indent.
+  .budget-row--depth-2 .budget-row__name-cell { padding-left: 14px; }
+  .budget-row--depth-3 .budget-row__name-cell { padding-left: 24px; }
 
   // ─ Leaf rows: name + editable planned, same content-height rhythm as parents ──
   .budget-row--leaf {
@@ -1674,10 +1677,18 @@ $rem-over:       #dc2626;
     font-size: 9px;
   }
 
-  // ─ Sub-line: aligned with name, no wasted space ────────────────────
+  // ─ Sub-line: aligned with name, no wasted space. Depth-aware so a depth-3 row's own
+  // "amount left" line shifts by the same extra step as its name above it — otherwise this
+  // line stays at a fixed indent while the name it belongs to moves, drifting out of
+  // alignment with itself on the one row where depth actually varies (depth-3, e.g. milk).
   .budget-row__mobile-stats-toggle { padding: 1px 8px 2px 22px; }
   .budget-row__mobile-stats  { padding: 1px 8px 4px 22px; }
   .budget-group__mobile-stats { padding: 1px 8px 4px 20px; }
+
+  .budget-row--depth-3 {
+    .budget-row__mobile-stats-toggle,
+    .budget-row__mobile-stats { padding-left: 32px; }
+  }
 
   // Sub-line text: slightly smaller
   .budget-group__ms-planned,
