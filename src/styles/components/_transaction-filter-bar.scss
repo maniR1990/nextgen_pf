@@ -178,6 +178,37 @@
   }
 }
 
+// Pull-to-refresh indicator — mobile only. Touch gestures don't fire on desktop mouse
+// interaction so the hook never activates there, but the bar is hidden by breakpoint too
+// as a belt-and-braces guard (and so a stray trackpad touch-emulation event can't show it).
+.tx-pull-indicator {
+  display: none;
+
+  @include m.respond-below(sm) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    overflow: hidden;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-medium);
+    color: var(--color-text-muted);
+    transition: height 0.15s ease;
+  }
+
+  &__icon {
+    flex-shrink: 0;
+  }
+
+  &--refreshing &__icon {
+    animation: tx-pull-spin 0.7s linear infinite;
+  }
+}
+
+@keyframes tx-pull-spin {
+  to { transform: rotate(360deg); }
+}
+
 // ─── Mobile (< 640px) compact filter bar ─────────────────────────────────────
 @include m.respond-below(sm) {
   .tx-filter-bar {

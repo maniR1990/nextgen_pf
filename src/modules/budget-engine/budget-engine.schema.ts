@@ -13,12 +13,15 @@ export const UpdateCategoryPlannedSchema = z
     isRecurring: z.boolean().optional(),
     isUnplanned: z.boolean().optional(),
     dueDay: z.number().int().min(1).max(31).nullable().optional(),
+    settled: z.boolean().optional(),
+    settledTransactionId: z.string().min(1).nullable().optional(),
   })
   .refine(
     (d) =>
       d.planned !== undefined ||
       d.isRecurring !== undefined ||
       d.isUnplanned !== undefined ||
-      d.dueDay !== undefined,
+      d.dueDay !== undefined ||
+      d.settled !== undefined,
     { message: 'At least one field must be provided' },
   );

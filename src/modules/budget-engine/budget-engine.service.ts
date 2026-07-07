@@ -114,6 +114,8 @@ export const BudgetEngineService = {
         isRecurring: plan?.isRecurring ?? false,
         isUnplanned: plan?.isUnplanned ?? false,
         dueDay: plan?.dueDay ?? null,
+        isSettled: plan?.settledAt != null,
+        settledTransactionId: plan?.settledTransactionId ?? null,
         planned: plan?.plannedAmount ?? 0,
         actual: spendMap.get(cat.id) ?? 0,
         lastMonthActual: lastMonthSpendMap.get(cat.id) ?? 0,
@@ -227,6 +229,10 @@ export const BudgetEngineService = {
       isRecurring?: boolean;
       isUnplanned?: boolean;
       dueDay?: number | null;
+      /** true = mark this period's due item settled; false = clear settlement (undo). */
+      settled?: boolean;
+      /** Transaction that settled it, if any — omitted for a pure manual "mark as paid". */
+      settledTransactionId?: string | null;
     },
   ) {
     validatePeriod(year, month);
@@ -237,6 +243,19 @@ export const BudgetEngineService = {
       ...(data.isRecurring !== undefined && { isRecurring: data.isRecurring }),
       ...(data.isUnplanned !== undefined && { isUnplanned: data.isUnplanned }),
       ...(data.dueDay !== undefined && { dueDay: data.dueDay }),
+      // Every settlement made through this endpoint today is user-initiated (Quick Pay
+      // confirm, or the manual "mark as paid" toggle) — AUTO_MATCHED is reserved for a
+      // future background-reconciliation pass, not used yet.
+      ...(data.settled === true && {
+        settledAt: new Date(),
+        settledTransactionId: data.settledTransactionId ?? null,
+        settlementMode: 'MANUAL' as const,
+      }),
+      ...(data.settled === false && {
+        settledAt: null,
+        settledTransactionId: null,
+        settlementMode: null,
+      }),
     });
   },
 

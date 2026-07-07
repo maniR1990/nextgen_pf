@@ -16,3 +16,21 @@ expect.extend(toHaveNoViolations);
 if (typeof window !== 'undefined') {
   window.scrollTo = () => {};
 }
+
+// jsdom doesn't implement IntersectionObserver — needed by any infinite-scroll-style
+// sentinel (useInfiniteScroll and its consumers). Tests that need it to actually fire
+// intersection callbacks should install their own mock instance per-test instead.
+if (typeof window !== 'undefined' && typeof window.IntersectionObserver === 'undefined') {
+  class MockIntersectionObserver implements IntersectionObserver {
+    readonly root: Element | Document | null = null;
+    readonly rootMargin: string = '';
+    readonly thresholds: ReadonlyArray<number> = [];
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return [];
+    }
+  }
+  window.IntersectionObserver = MockIntersectionObserver;
+}

@@ -54,6 +54,9 @@ export const BudgetEngineRepository = {
         dueDay: true,
         carryOverEnabled: true,
         carryOverAmount: true,
+        settledAt: true,
+        settledTransactionId: true,
+        settlementMode: true,
       },
     }),
 
@@ -94,6 +97,9 @@ export const BudgetEngineRepository = {
       isUnplanned?: boolean;
       dueDay?: number | null;
       carryOverEnabled?: boolean;
+      settledAt?: Date | null;
+      settledTransactionId?: string | null;
+      settlementMode?: 'MANUAL' | 'AUTO_MATCHED' | null;
     },
   ) =>
     prisma.budget.upsert({
@@ -111,6 +117,11 @@ export const BudgetEngineRepository = {
         isUnplanned: data.isUnplanned ?? false,
         carryOverEnabled: data.carryOverEnabled ?? false,
         ...(data.dueDay !== undefined && { dueDay: data.dueDay }),
+        ...(data.settledAt !== undefined && { settledAt: data.settledAt }),
+        ...(data.settledTransactionId !== undefined && {
+          settledTransactionId: data.settledTransactionId,
+        }),
+        ...(data.settlementMode !== undefined && { settlementMode: data.settlementMode }),
       },
       update: {
         ...(data.plannedAmount !== undefined && { plannedAmount: data.plannedAmount }),
@@ -118,6 +129,11 @@ export const BudgetEngineRepository = {
         ...(data.isUnplanned !== undefined && { isUnplanned: data.isUnplanned }),
         ...(data.carryOverEnabled !== undefined && { carryOverEnabled: data.carryOverEnabled }),
         ...(data.dueDay !== undefined && { dueDay: data.dueDay }),
+        ...(data.settledAt !== undefined && { settledAt: data.settledAt }),
+        ...(data.settledTransactionId !== undefined && {
+          settledTransactionId: data.settledTransactionId,
+        }),
+        ...(data.settlementMode !== undefined && { settlementMode: data.settlementMode }),
       },
     }),
 

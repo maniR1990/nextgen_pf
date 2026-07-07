@@ -45,7 +45,8 @@
   @include m.respond-below(sm) {
     &__summary,
     &__filters,
-    &__load-more {
+    &__load-status,
+    &__end {
       margin-left: var(--space-3);
       margin-right: var(--space-3);
     }
@@ -210,6 +211,20 @@
     color: var(--color-brand);
     white-space: nowrap;
     text-align: center;
+  }
+
+  // Desktop per-day total — parity with the mobile sticky header's total, just stacked
+  // under the date instead of alongside it (the desktop column is vertical, not a row).
+  &__date-total {
+    font-family: var(--font-family-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    margin-top: 2px;
+
+    &--credit { color: var(--color-success); }
+    &--debit  { color: var(--color-error); }
   }
 
   // Per-group track line — only spans the height of its own cards
@@ -432,25 +447,28 @@
     &--neutral { color: var(--color-text-muted); }
   }
 
-  // Load older link
-  &__load-more {
-    display: block;
-    width: 100%;
+  // Invisible trigger for infinite scroll — sized so IntersectionObserver has something
+  // to observe, but shows nothing itself (the status text below communicates state).
+  &__sentinel {
+    height: 1px;
+  }
+
+  &__load-status,
+  &__end {
     padding: var(--space-3);
     font-size: var(--font-size-sm);
+    text-align: center;
+    color: var(--color-text-muted);
+  }
+
+  &__load-status {
     font-weight: var(--font-variation-medium);
     font-style: italic;
-    font-family: inherit;
-    color: var(--color-text-muted);
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-align: center;
-    transition: color var(--transition-fast);
+  }
 
-    &:hover { color: var(--color-brand); }
-    &:focus-visible { @include m.focus-ring; }
-    &:disabled { opacity: 0.55; cursor: not-allowed; }
+  &__end {
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.02em;
   }
 
   // Loading skeleton

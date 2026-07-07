@@ -9,6 +9,10 @@ export interface DuePaymentItem {
   amount: number;
   dueDay: number;
   paid: boolean;
+  /** True when `paid` came from an explicit settlement record rather than the
+   *  actual>=planned heuristic — drives whether "Undo" is available and meaningful. */
+  isSettled: boolean;
+  settledTransactionId: string | null;
   color: string | null;
   icon: string | null;
 }
@@ -22,7 +26,13 @@ function collect(nodes: BudgetCategoryNode[], out: DuePaymentItem[]) {
         name: n.name,
         amount: n.planned,
         dueDay: n.dueDay,
-        paid: n.planned > 0 && n.actual >= n.planned,
+        // An explicit settlement always wins — it's the only signal that's correct
+        // regardless of the settling transaction's type (e.g. a TRANSFER, which never
+        // rolls up into `actual`). The actual>=planned check is the fallback for items
+        // that were never explicitly settled but happen to look paid by spend alone.
+        paid: n.isSettled || (n.planned > 0 && n.actual >= n.planned),
+        isSettled: n.isSettled,
+        settledTransactionId: n.settledTransactionId,
         color: n.color,
         icon: n.icon,
       });

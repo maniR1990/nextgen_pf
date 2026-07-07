@@ -2,8 +2,9 @@
 
 import { FormField } from '@/components/common/FormField';
 import { Check, ChevronDown } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { SelectHTMLAttributes } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface SelectOption {
   value: string;
@@ -51,34 +52,52 @@ export function SelectField({
 
   function openDropdown() {
     if (disabled) return;
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    const maxH = 240;
-
-    const openUpward = spaceBelow < maxH && spaceAbove > spaceBelow;
-
-    setDropdownStyle(
-      openUpward
-        ? {
-            position: 'fixed',
-            left: rect.left,
-            width: rect.width,
-            bottom: window.innerHeight - rect.top,
-            maxHeight: Math.min(spaceAbove - 8, maxH),
-          }
-        : {
-            position: 'fixed',
-            left: rect.left,
-            width: rect.width,
-            top: rect.bottom,
-            maxHeight: Math.min(spaceBelow - 8, maxH),
-          },
-    );
     setOpen(true);
   }
+
+  // Re-measure on open and whenever the trigger might move — an ancestor scrolling (e.g.
+  // a modal's scrollable body) or the viewport resizing. The dropdown itself is portaled
+  // to document.body (see render below) so position:fixed here is always viewport-relative,
+  // never accidentally re-anchored to a transformed ancestor (a modal's enter animation
+  // sets `transform` on its panel, which — even at translateY(0) — makes that panel the
+  // containing block for any non-portaled fixed-position descendant).
+  useLayoutEffect(() => {
+    if (!open) return;
+    const measure = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const maxH = 240;
+      const openUpward = spaceBelow < maxH && spaceAbove > spaceBelow;
+
+      setDropdownStyle(
+        openUpward
+          ? {
+              position: 'fixed',
+              left: rect.left,
+              width: rect.width,
+              bottom: window.innerHeight - rect.top,
+              maxHeight: Math.min(spaceAbove - 8, maxH),
+            }
+          : {
+              position: 'fixed',
+              left: rect.left,
+              width: rect.width,
+              top: rect.bottom,
+              maxHeight: Math.min(spaceBelow - 8, maxH),
+            },
+      );
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
+    };
+  }, [open]);
 
   function select(optValue: string) {
     if (onChange) {
@@ -168,41 +187,45 @@ export function SelectField({
           />
         </button>
 
-        {/* Portal-style fixed dropdown — escapes overflow:auto clipping */}
-        {open && (
-          <ul
-            ref={listRef}
-            id={`${selectId}-list`}
-            role="listbox"
-            aria-label={label}
-            className="select-field__dropdown"
-            style={dropdownStyle}
-          >
-            {allOptions.map((opt) => (
-              <li
-                key={opt.value}
-                role="option"
-                aria-selected={opt.value === value}
-                aria-disabled={opt.disabled}
-                className={[
-                  'select-field__option',
-                  opt.value === value && 'select-field__option--selected',
-                  opt.disabled && 'select-field__option--disabled',
-                  !opt.value && 'select-field__option--placeholder',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                onMouseDown={(e) => {
-                  e.preventDefault(); // prevent blur before click
-                  if (!opt.disabled) select(opt.value);
-                }}
-              >
-                {opt.label}
-                {opt.value === value && <Check size={14} aria-hidden />}
-              </li>
-            ))}
-          </ul>
-        )}
+        {/* Portaled to document.body — escapes both overflow:auto clipping AND any
+            transformed ancestor (a modal's enter animation, most commonly), either of
+            which would otherwise break position:fixed's viewport-relative positioning. */}
+        {open &&
+          createPortal(
+            <ul
+              ref={listRef}
+              id={`${selectId}-list`}
+              role="listbox"
+              aria-label={label}
+              className="select-field__dropdown"
+              style={dropdownStyle}
+            >
+              {allOptions.map((opt) => (
+                <li
+                  key={opt.value}
+                  role="option"
+                  aria-selected={opt.value === value}
+                  aria-disabled={opt.disabled}
+                  className={[
+                    'select-field__option',
+                    opt.value === value && 'select-field__option--selected',
+                    opt.disabled && 'select-field__option--disabled',
+                    !opt.value && 'select-field__option--placeholder',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onMouseDown={(e) => {
+                    e.preventDefault(); // prevent blur before click
+                    if (!opt.disabled) select(opt.value);
+                  }}
+                >
+                  {opt.label}
+                  {opt.value === value && <Check size={14} aria-hidden />}
+                </li>
+              ))}
+            </ul>,
+            document.body,
+          )}
       </div>
     </FormField>
   );

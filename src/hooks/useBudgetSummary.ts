@@ -10,7 +10,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-type PlanPatch = { planned?: number; isRecurring?: boolean; isUnplanned?: boolean };
+type PlanPatch = {
+  planned?: number;
+  isRecurring?: boolean;
+  isUnplanned?: boolean;
+  /** true = mark settled (optionally with settledTransactionId); false = clear (undo). */
+  settled?: boolean;
+  settledTransactionId?: string | null;
+};
 
 /** Recursively find-and-patch a node in the category tree, recomputing its own metrics. */
 function patchNodeInTree(
@@ -33,6 +40,11 @@ function patchNodeInTree(
         progressPct,
         isRecurring: patch.isRecurring ?? node.isRecurring,
         isUnplanned: patch.isUnplanned ?? node.isUnplanned,
+        isSettled: patch.settled ?? node.isSettled,
+        settledTransactionId:
+          patch.settled === undefined
+            ? node.settledTransactionId
+            : (patch.settledTransactionId ?? null),
       };
     }
     if (node.children.length > 0) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useToast } from '@/components/common/ToastProvider/useToast';
+import { useUpdateBudgetPlan } from '@/hooks/useBudgetSummary';
 import { useCreateTransaction, useVoidTransaction } from '@/hooks/useTransactions';
 import { apiGetV1 } from '@/lib/query/fetcher';
 import { queryKeys } from '@/lib/query/queryKeys';
@@ -143,6 +144,10 @@ interface QuickPayProps {
   sources: PaymentSourceOption[];
   onCancel: () => void;
   onSuccess: (txId: string) => void;
+  /** Settle without logging any transaction — e.g. paid through a channel this app
+   *  doesn't track, or already reconciled elsewhere. */
+  onMarkPaidOnly: () => void;
+  markingPaid: boolean;
 }
 
 function fmt(n: number): string {
@@ -163,7 +168,17 @@ function payMethod(src: PaymentSourceOption) {
   }
 }
 
-function QuickPay({ item, year, month, todayDay, sources, onCancel, onSuccess }: QuickPayProps) {
+function QuickPay({
+  item,
+  year,
+  month,
+  todayDay,
+  sources,
+  onCancel,
+  onSuccess,
+  onMarkPaidOnly,
+  markingPaid,
+}: QuickPayProps) {
   const [fromId, setFromId] = useState(sources[0]?.id ?? '');
   const [toId, setToId] = useState('');
   const [txType, setTxType] = useState<'EXPENSE' | 'TRANSFER'>('EXPENSE');
@@ -325,6 +340,17 @@ function QuickPay({ item, year, month, todayDay, sources, onCancel, onSuccess }:
           )}
         </p>
       )}
+
+      {/* Fallback for payments made outside the app (already reconciled elsewhere,
+          paid via a channel this app doesn't track, etc.) — settles without a transaction. */}
+      <button
+        type="button"
+        className="psp__qp-mark-paid"
+        onClick={onMarkPaidOnly}
+        disabled={isPending || markingPaid}
+      >
+        {markingPaid ? 'Marking as paid…' : "Already paid this — just mark it, don't log a transaction"}
+      </button>
     </div>
   );
 }
@@ -360,10 +386,9 @@ export const PaymentSchedulePanel = memo(function PaymentSchedulePanel({
   });
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
-  // categoryId → transactionId for payments made in this session (enables undo)
-  const [quickPaidTxns, setQuickPaidTxns] = useState<Map<string, string>>(new Map());
 
   const { mutateAsync: voidTx, isPending: isVoiding } = useVoidTransaction();
+  const updatePlan = useUpdateBudgetPlan(year, month);
 
   useEffect(() => {
     try {
@@ -502,18 +527,20 @@ export const PaymentSchedulePanel = memo(function PaymentSchedulePanel({
                         : null;
 
               const isPaying = payingId === item.id;
-              const quickTxId = quickPaidTxns.get(item.id);
-              const canUndo = status === 'paid' && Boolean(quickTxId);
+              // Server-driven, not session-local — survives a refresh, and covers both a
+              // Quick Pay-linked settlement and a pure manual "mark as paid" alike.
+              const canUndo = item.isSettled;
 
               function handleUndo() {
-                if (!quickTxId) return;
-                void voidTx(quickTxId).then(() => {
-                  setQuickPaidTxns((prev) => {
-                    const next = new Map(prev);
-                    next.delete(item.id);
-                    return next;
+                // Unsettle first — that's the correctness-critical part (item goes back to
+                // due/overdue). Voiding the linked transaction, if any, is secondary cleanup;
+                // if it fails, the item is still correctly showing as unpaid rather than
+                // silently staying marked paid.
+                void updatePlan
+                  .mutateAsync({ categoryId: item.id, data: { settled: false } })
+                  .then(() => {
+                    if (item.settledTransactionId) void voidTx(item.settledTransactionId);
                   });
-                });
               }
 
               return (
@@ -568,9 +595,18 @@ export const PaymentSchedulePanel = memo(function PaymentSchedulePanel({
                       sources={sources}
                       onCancel={() => setPayingId(null)}
                       onSuccess={(txId) => {
-                        setQuickPaidTxns((prev) => new Map(prev).set(item.id, txId));
+                        void updatePlan.mutateAsync({
+                          categoryId: item.id,
+                          data: { settled: true, settledTransactionId: txId },
+                        });
                         setPayingId(null);
                       }}
+                      onMarkPaidOnly={() => {
+                        void updatePlan
+                          .mutateAsync({ categoryId: item.id, data: { settled: true } })
+                          .then(() => setPayingId(null));
+                      }}
+                      markingPaid={updatePlan.isPending}
                     />
                   )}
                 </li>

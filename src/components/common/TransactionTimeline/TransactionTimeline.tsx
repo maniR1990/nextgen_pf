@@ -1,5 +1,6 @@
 'use client';
 
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { format, parseISO } from 'date-fns';
 import { Eye, EyeOff, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -37,7 +38,11 @@ export interface TransactionTimelineProps {
   groups: TimelineGroup[];
   onLoadMore?: () => void;
   hasMore?: boolean;
+  /** First-load skeleton — replaces the whole list. Not for pagination; see `loadingMore`. */
   loading?: boolean;
+  /** Next-page fetch in flight — shows an inline status below the already-rendered list
+   *  instead of replacing it (which `loading` would do). */
+  loadingMore?: boolean;
   onTransactionClick?: (id: string) => void;
   onEditClick?: (id: string) => void;
   onDeleteClick?: (id: string) => void;
@@ -68,6 +73,7 @@ export function TransactionTimeline({
   onLoadMore,
   hasMore = false,
   loading = false,
+  loadingMore = false,
   onTransactionClick,
   onEditClick,
   onDeleteClick,
@@ -78,6 +84,7 @@ export function TransactionTimeline({
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
   const [masked, setMasked] = useState(true);
+  const sentinelRef = useInfiniteScroll(onLoadMore ?? (() => {}), hasMore);
   const computedSummary = useMemo(() => {
     let totalIncome = 0;
     let totalExpense = 0;
@@ -196,6 +203,11 @@ export function TransactionTimeline({
                 <time className="tx-timeline__date" dateTime={group.date}>
                   {dateLabel}
                 </time>
+                <span
+                  className={`tx-timeline__date-total tx-timeline__date-total--${total.positive ? 'credit' : 'debit'}`}
+                >
+                  {total.label}
+                </span>
                 <div className="tx-timeline__date-track" aria-hidden />
               </div>
 
@@ -300,15 +312,19 @@ export function TransactionTimeline({
         })}
       </div>
 
-      {hasMore && (
-        <button
-          type="button"
-          className="tx-timeline__load-more"
-          onClick={onLoadMore}
-          aria-label="Load more transactions"
-        >
-          Load older transactions...
-        </button>
+      {/* Scrolling this sentinel into view triggers the next page — no click needed. */}
+      {hasMore && <div ref={sentinelRef} className="tx-timeline__sentinel" aria-hidden="true" />}
+
+      {loadingMore && (
+        <div className="tx-timeline__load-status" role="status" aria-live="polite">
+          Loading more transactions…
+        </div>
+      )}
+
+      {!hasMore && !loadingMore && groups.length > 0 && (
+        <div className="tx-timeline__end" role="status">
+          You&apos;ve reached the end · No more transactions
+        </div>
       )}
     </div>
   );

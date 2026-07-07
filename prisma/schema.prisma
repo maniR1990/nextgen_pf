@@ -1064,6 +1064,15 @@ model Budget {
 
   dueDay           Int?
 
+  // Settlement — records that this period's due item was paid, independent of whether
+  // the paying transaction's type/category matches the plan (e.g. a TRANSFER, which
+  // never rolls up into this category's `actual`). Null fields = not settled.
+  settledAt            DateTime?
+
+  settledTransactionId String?         @db.ObjectId
+
+  settlementMode       SettlementMode?
+
   createdAt        DateTime     @default(now())
 
   updatedAt        DateTime     @updatedAt
@@ -1755,6 +1764,16 @@ enum BudgetPeriod {
   MONTHLY
 
   ANNUAL
+
+}
+
+
+
+enum SettlementMode {
+
+  MANUAL
+
+  AUTO_MATCHED
 
 }
 

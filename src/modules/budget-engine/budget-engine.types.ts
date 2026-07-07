@@ -9,6 +9,12 @@ export interface BudgetCategoryNode {
   isUnplanned: boolean;
   /** Day of month (1–31) this item is typically due. null = no due date set. */
   dueDay: number | null;
+  /** True once this period's due item has been settled (paid), regardless of whether
+   *  the settling transaction's type/category rolls up into `actual` below — e.g. a
+   *  TRANSFER never does. Independent of the actual>=planned heuristic. */
+  isSettled: boolean;
+  /** The transaction that settled this period, if one was linked (Quick Pay). */
+  settledTransactionId: string | null;
   /** Rolled-up planned amount: sum of children if any, else own plan. */
   planned: number;
   /** Rolled-up actual spend for this period. */

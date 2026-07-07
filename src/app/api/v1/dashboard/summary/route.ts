@@ -18,7 +18,10 @@ function daysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate();
 }
 
-const OUTFLOW_TYPES = ['EXPENSE', 'INVESTMENT', 'SINKING_DEPOSIT', 'ATM_WITHDRAWAL'] as const;
+// ATM_WITHDRAWAL is deliberately excluded — it's a cash movement, not spend. Counting it
+// here would double the real expense once cash is actually paid out (also excluded in
+// reports/kpi and cashflow-report for the same reason).
+const OUTFLOW_TYPES = ['EXPENSE', 'INVESTMENT', 'SINKING_DEPOSIT'] as const;
 const INFLOW_TYPES = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND'] as const;
 
 // Cache the heavy DB work per userId for 30 seconds.

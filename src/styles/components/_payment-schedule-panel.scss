@@ -551,6 +551,26 @@
 
     strong { color: var(--color-text); font-weight: 600; }
   }
+
+  // Low-emphasis fallback — settle without logging a transaction. Deliberately quiet
+  // (plain link, not a button) so it doesn't compete with the primary "Pay" action.
+  &__qp-mark-paid {
+    display: block;
+    margin-top: 6px;
+    padding: 2px;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 10.5px;
+    color: var(--color-text-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    text-align: left;
+
+    &:hover:not(:disabled) { color: var(--color-text); }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+  }
 }
 
 // ── Responsive ────────────────────────────────────────────────────────────────

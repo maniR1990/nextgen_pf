@@ -3,6 +3,7 @@
 import { TransactionDialog } from '@/components/common/TransactionDialog';
 import type { FormOptions } from '@/components/common/TransactionDialog';
 import { TransactionTimeline } from '@/components/common/TransactionTimeline';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useTransactionFilters } from '@/hooks/useTransactionFilters';
 import { useDeleteTransaction, useTransactionDetail } from '@/hooks/useTransactions';
 import { groupTransactionsByDate } from '@/lib/utils/transactionTimeline';
@@ -75,6 +76,12 @@ export function TransactionList({ initialOptions }: TransactionListProps = {}) {
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useTransactionsList(filters);
   const { data: periodSummary } = useTransactionsSummary(filters.year, filters.month);
+  const { pullDistance, refreshing, isPulling } = usePullToRefresh(
+    async () => {
+      await refetch();
+    },
+    { disabled: isLoading },
+  );
 
   // Fetch the selected transaction for edit — cached by id, no raw fetch needed
   const { data: editTxRaw, isLoading: isLoadingEdit } = useTransactionDetail(editId ?? '');
@@ -104,6 +111,20 @@ export function TransactionList({ initialOptions }: TransactionListProps = {}) {
 
   return (
     <div className="tx-page__content">
+      {/* Mobile-only pull-to-refresh — height tracks the drag, collapses instantly once
+          released unless the threshold was met (see usePullToRefresh). */}
+      {(isPulling || refreshing) && (
+        <div
+          className={`tx-pull-indicator${refreshing ? ' tx-pull-indicator--refreshing' : ''}`}
+          style={{ height: refreshing ? 40 : pullDistance }}
+          role="status"
+          aria-live="polite"
+        >
+          <RefreshCw size={16} className="tx-pull-indicator__icon" aria-hidden />
+          {refreshing ? 'Refreshing…' : pullDistance >= 64 ? 'Release to refresh' : 'Pull to refresh'}
+        </div>
+      )}
+
       {isLoading && <TransactionTimeline groups={[]} loading />}
 
       {isError && (
@@ -130,7 +151,7 @@ export function TransactionList({ initialOptions }: TransactionListProps = {}) {
         <TransactionTimeline
           groups={groups}
           hasMore={hasNextPage}
-          loading={isFetchingNextPage}
+          loadingMore={isFetchingNextPage}
           onLoadMore={() => fetchNextPage()}
           showSummary
           summary={periodSummary}

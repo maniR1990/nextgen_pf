@@ -1,5 +1,4 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TransactionTimeline } from './TransactionTimeline';
 import type { TimelineGroup } from './TransactionTimeline';
@@ -85,23 +84,34 @@ describe('TransactionTimeline', () => {
     });
   });
 
-  describe('load more', () => {
-    it('renders load more button when hasMore=true', () => {
-      render(<TransactionTimeline groups={GROUPS} hasMore onLoadMore={vi.fn()} />);
-      expect(screen.getByRole('button', { name: /load more/i })).toBeInTheDocument();
+  describe('infinite scroll', () => {
+    it('renders a scroll sentinel when hasMore=true', () => {
+      const { container } = render(
+        <TransactionTimeline groups={GROUPS} hasMore onLoadMore={vi.fn()} />,
+      );
+      expect(container.querySelector('.tx-timeline__sentinel')).toBeInTheDocument();
     });
 
-    it('does not render load more button when hasMore=false', () => {
-      render(<TransactionTimeline groups={GROUPS} hasMore={false} onLoadMore={vi.fn()} />);
-      expect(screen.queryByRole('button', { name: /load more/i })).not.toBeInTheDocument();
+    it('does not render a sentinel when hasMore=false', () => {
+      const { container } = render(
+        <TransactionTimeline groups={GROUPS} hasMore={false} onLoadMore={vi.fn()} />,
+      );
+      expect(container.querySelector('.tx-timeline__sentinel')).not.toBeInTheDocument();
     });
 
-    it('calls onLoadMore when clicked', async () => {
-      const user = userEvent.setup();
-      const onLoadMore = vi.fn();
-      render(<TransactionTimeline groups={GROUPS} hasMore onLoadMore={onLoadMore} />);
-      await user.click(screen.getByRole('button', { name: /load more/i }));
-      expect(onLoadMore).toHaveBeenCalledOnce();
+    it('shows a loading status while fetching the next page', () => {
+      render(<TransactionTimeline groups={GROUPS} hasMore loadingMore onLoadMore={vi.fn()} />);
+      expect(screen.getByRole('status')).toHaveTextContent(/loading more/i);
+    });
+
+    it('shows an end-of-list message once there is nothing left to load', () => {
+      render(<TransactionTimeline groups={GROUPS} hasMore={false} />);
+      expect(screen.getByRole('status')).toHaveTextContent(/reached the end/i);
+    });
+
+    it('does not show the end-of-list message when the list is empty', () => {
+      render(<TransactionTimeline groups={[]} hasMore={false} />);
+      expect(screen.queryByText(/reached the end/i)).not.toBeInTheDocument();
     });
   });
 });
