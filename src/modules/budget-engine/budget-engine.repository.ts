@@ -2,12 +2,11 @@ import { prisma } from '@/lib/db/prisma';
 
 export const BudgetEngineRepository = {
   /**
-   * All non-archived categories visible to a user:
-   *   - User-owned categories (level 1+, created by the user)
-   *   - System categories (level 0 group nodes: Income / Expenses / Investments)
-   *
-   * MongoDB stores absent fields as missing, not null, so we filter archivedAt in JS
-   * the same way CategoriesRepository.findAccessible does.
+   * ALL categories visible to a user — both active and archived, `archivedAt`
+   * left intact. Archived rows aren't filtered out here: whether an archived
+   * category belongs in a given month's tree depends on the requested period
+   * (see BudgetEngineService.getMonthlySummary), so that decision is made by
+   * the caller, not baked into this raw fetch.
    */
   findCategoriesForUser: async (userId: string) => {
     const SELECT = {
@@ -20,7 +19,6 @@ export const BudgetEngineRepository = {
       icon: true,
       order: true,
       isSystem: true,
-      userId: true,
       archivedAt: true, // needed to filter in JS (MongoDB absent ≠ null)
     } as const;
 
@@ -29,10 +27,35 @@ export const BudgetEngineRepository = {
       prisma.category.findMany({ where: { userId: null, isSystem: true }, select: SELECT }),
     ]);
 
-    return [...userRows, ...systemRows]
-      .filter((r) => r.archivedAt == null)
-      .sort((a, b) => a.level - b.level || a.order - b.order)
-      .map(({ archivedAt: _drop, userId: _uid, ...rest }) => rest);
+    return [...userRows, ...systemRows].sort(
+      (a, b) => a.level - b.level || a.order - b.order,
+    );
+  },
+
+  /** Which of the given category IDs have a Budget plan or transactions in this exact period. */
+  findCategoriesWithActivityInPeriod: async (
+    userId: string,
+    categoryIds: string[],
+    year: number,
+    month: number,
+  ) => {
+    if (categoryIds.length === 0) return new Set<string>();
+    const [budgetRows, txRows] = await Promise.all([
+      prisma.budget.findMany({
+        where: { userId, period: 'MONTHLY', year, month, categoryId: { in: categoryIds } },
+        select: { categoryId: true },
+      }),
+      prisma.financeTransaction.groupBy({
+        by: ['categoryId'],
+        where: {
+          userId,
+          categoryId: { in: categoryIds },
+          budgetPeriodYear: year,
+          budgetPeriodMonth: month,
+        },
+      }),
+    ]);
+    return new Set([...budgetRows.map((r) => r.categoryId), ...txRows.map((r) => r.categoryId!)]);
   },
 
   /** Single category — checks user-owned first, then system categories. */

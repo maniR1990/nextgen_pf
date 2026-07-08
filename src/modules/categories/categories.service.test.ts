@@ -1,8 +1,4 @@
-import {
-  CategoryHasTransactionsError,
-  CategoryNotFoundError,
-  ConflictError,
-} from '@/lib/api/errors';
+import { CategoryNotFoundError, ConflictError } from '@/lib/api/errors';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CategoriesRepository } from './categories.repository';
 import { CategoriesService } from './categories.service';
@@ -82,25 +78,29 @@ describe('CategoriesService.create', () => {
 });
 
 describe('CategoriesService.delete', () => {
-  it('soft-archives when no transactions exist', async () => {
+  it('hard-deletes when the subtree has zero linked records anywhere', async () => {
     vi.mocked(CategoriesRepository.findById).mockResolvedValue(mockCategory);
-    vi.mocked(CategoriesRepository.countTransactions).mockResolvedValue(0);
     vi.mocked(CategoriesRepository.findAccessible).mockResolvedValue([mockGroup, mockCategory]);
+    vi.mocked(CategoriesRepository.countLinkedRecords).mockResolvedValue(0);
+    vi.mocked(CategoriesRepository.deleteMany).mockResolvedValue({ count: 1 } as never);
+
+    const result = await CategoriesService.delete('c1', userId);
+    expect(result).toEqual({ archived: false, deleted: true, id: 'c1' });
+    expect(CategoriesRepository.deleteMany).toHaveBeenCalledWith(['c1']);
+    expect(CategoriesRepository.archiveMany).not.toHaveBeenCalled();
+  });
+
+  it('archives instead of deleting when the subtree has any linked history, and never touches those records', async () => {
+    vi.mocked(CategoriesRepository.findById).mockResolvedValue(mockCategory);
+    vi.mocked(CategoriesRepository.findAccessible).mockResolvedValue([mockGroup, mockCategory]);
+    vi.mocked(CategoriesRepository.countLinkedRecords).mockResolvedValue(5);
     vi.mocked(CategoriesRepository.archiveMany).mockResolvedValue([]);
 
     const result = await CategoriesService.delete('c1', userId);
     expect(result.archived).toBe(true);
-    expect(CategoriesRepository.archiveMany).toHaveBeenCalled();
-  });
-
-  it('blocks delete when transactions exist', async () => {
-    vi.mocked(CategoriesRepository.findById).mockResolvedValue(mockCategory);
-    vi.mocked(CategoriesRepository.countTransactions).mockResolvedValue(5);
-    vi.mocked(CategoriesRepository.findAccessible).mockResolvedValue([mockGroup, mockCategory]);
-
-    await expect(CategoriesService.delete('c1', userId)).rejects.toThrow(
-      CategoryHasTransactionsError,
-    );
+    expect(result.deleted).toBe(false);
+    expect(CategoriesRepository.archiveMany).toHaveBeenCalledWith(['c1']);
+    expect(CategoriesRepository.deleteMany).not.toHaveBeenCalled();
   });
 });
 

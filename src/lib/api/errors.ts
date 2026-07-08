@@ -174,15 +174,6 @@ export class CategoryNotFoundError extends NotFoundError {
   }
 }
 
-export class CategoryHasTransactionsError extends ConflictError {
-  constructor(count: number) {
-    super(
-      `Cannot delete category with ${count} linked transaction(s). Reassign transactions first.`,
-    );
-    Object.assign(this, { code: 'CATEGORY_HAS_TRANSACTIONS' });
-  }
-}
-
 export class CategoryDepthExceededError extends ConflictError {
   constructor() {
     super('Category hierarchy cannot exceed 3 levels (group → category → subcategory)');

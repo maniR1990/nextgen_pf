@@ -83,6 +83,23 @@ export const CategoriesRepository = {
       where: { categoryId, OR: [{ voidedAt: null }, { voidedAt: { isSet: false } }] },
     }),
 
+  // Every model that carries a categoryId FK — used to decide whether a category
+  // (or subtree) is safe to hard-delete, or must be archived to preserve history.
+  // Includes voided transactions deliberately: a voided transaction is still history.
+  countLinkedRecords: async (categoryIds: string[]) => {
+    if (categoryIds.length === 0) return 0;
+    const where = { categoryId: { in: categoryIds } };
+    const [tx, budgets, overrides, events, recurring, aliases] = await Promise.all([
+      prisma.financeTransaction.count({ where }),
+      prisma.budget.count({ where }),
+      prisma.budgetOverride.count({ where }),
+      prisma.event.count({ where }),
+      prisma.recurringTemplate.count({ where }),
+      prisma.merchantAlias.count({ where }),
+    ]);
+    return tx + budgets + overrides + events + recurring + aliases;
+  },
+
   spendByCategoryIds: (userId: string, categoryIds: string[], year: number, month: number) => {
     if (categoryIds.length === 0) return Promise.resolve([]);
     return prisma.financeTransaction.groupBy({
@@ -151,11 +168,7 @@ export const CategoriesRepository = {
 
   delete: (id: string) => prisma.category.delete({ where: { id } }),
 
-  unsetTransactionCategory: (categoryId: string) =>
-    prisma.financeTransaction.updateMany({
-      where: { categoryId },
-      data: { categoryId: null },
-    }),
+  deleteMany: (ids: string[]) => prisma.category.deleteMany({ where: { id: { in: ids } } }),
 
   archive: (id: string) =>
     prisma.category.update({

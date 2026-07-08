@@ -24,6 +24,39 @@ type RawCategory = {
   isSystem: boolean;
 };
 
+type RawCategoryWithArchive = RawCategory & { archivedAt: Date | null };
+
+/**
+ * An archived category only belongs in a given month's tree if it has real
+ * history (a Budget plan or transactions) IN THAT EXACT month — otherwise
+ * archiving it would either resurrect it into months it never touched (in
+ * particular every future month) or, if left unfiltered entirely, vanish
+ * from months where it has genuine past data. Ancestors of a historically-
+ * active archived category are pulled in too (regardless of their own
+ * activity) so the tree-building step below never orphans it for lacking a
+ * parent — e.g. archiving a whole subtree together archives the parent too.
+ */
+function resolveVisibleCategories(
+  allCategories: RawCategoryWithArchive[],
+  activeInPeriod: Set<string>,
+): RawCategoryWithArchive[] {
+  const active = allCategories.filter((c) => c.archivedAt == null);
+  const archived = allCategories.filter((c) => c.archivedAt != null);
+  if (archived.length === 0 || activeInPeriod.size === 0) return active;
+
+  const byId = new Map(allCategories.map((c) => [c.id, c]));
+  const included = new Set<string>();
+  for (const id of activeInPeriod) {
+    let cur = byId.get(id);
+    while (cur && !included.has(cur.id)) {
+      included.add(cur.id);
+      cur = cur.parentId ? byId.get(cur.parentId) : undefined;
+    }
+  }
+
+  return [...active, ...archived.filter((c) => included.has(c.id))];
+}
+
 type InternalNode = BudgetCategoryNode & {
   parentId: string | null;
   _type: string;
@@ -80,10 +113,22 @@ export const BudgetEngineService = {
   ): Promise<BudgetSummaryResponse> {
     validatePeriod(year, month);
 
-    const [rawCategories, budgetPlans] = await Promise.all([
+    const [allCategories, budgetPlans] = await Promise.all([
       BudgetEngineRepository.findCategoriesForUser(userId),
       BudgetEngineRepository.findBudgetPlans(userId, year, month),
     ]);
+
+    const archivedIds = allCategories.filter((c) => c.archivedAt != null).map((c) => c.id);
+    const activeInPeriod =
+      archivedIds.length > 0
+        ? await BudgetEngineRepository.findCategoriesWithActivityInPeriod(
+            userId,
+            archivedIds,
+            year,
+            month,
+          )
+        : new Set<string>();
+    const rawCategories = resolveVisibleCategories(allCategories, activeInPeriod);
 
     const categoryIds = rawCategories.map((c) => c.id);
     const prevMonth = month === 1 ? 12 : month - 1;

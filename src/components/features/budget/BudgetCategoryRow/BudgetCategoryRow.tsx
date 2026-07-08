@@ -313,9 +313,8 @@ export function BudgetCategoryRow({
   }
 
   async function handleDelete() {
-    const msg = hasChildren
-      ? `Delete "${node.name}" and all its sub-items? Transactions will be un-categorised.`
-      : `Delete "${node.name}"? Transactions will be un-categorised.`;
+    const subject = hasChildren ? `"${node.name}" and all its sub-items` : `"${node.name}"`;
+    const msg = `Remove ${subject}? If there's existing budget or transaction history, it'll be archived instead — hidden from new activity, with all past data kept exactly as-is. Otherwise it's removed for good.`;
     if (!window.confirm(msg)) return;
     await onDelete(node.id);
   }

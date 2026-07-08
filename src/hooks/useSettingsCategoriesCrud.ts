@@ -6,6 +6,7 @@ import { useToast } from '@/components/common/ToastProvider/useToast';
 import { toCategoryFlowType } from '@/constants/categories';
 import type { CategoryFlowTypeSlug } from '@/constants/categories';
 import {
+  SETTINGS_TOAST_ARCHIVE_SUCCESS,
   SETTINGS_TOAST_CREATE_ERROR,
   SETTINGS_TOAST_CREATE_SUCCESS,
   SETTINGS_TOAST_DELETE_ERROR,
@@ -107,9 +108,19 @@ export function useSettingsCategoriesCrud() {
         return;
       }
 
+      const confirmed = window.confirm(
+        `Remove "${node.name}"? If it (or any sub-item) has budget or transaction history, it will be archived — hidden from new activity, with all past data kept exactly as-is. Otherwise it's removed for good.`,
+      );
+      if (!confirmed) return;
+
       try {
-        await apiDeleteV1<{ id: string }>(`/api/v1/categories/${node.id}`);
-        toast.success(SETTINGS_TOAST_DELETE_SUCCESS, { description: node.name });
+        const result = await apiDeleteV1<{ id: string; archived: boolean; deleted: boolean }>(
+          `/api/v1/categories/${node.id}`,
+        );
+        toast.success(
+          result.archived ? SETTINGS_TOAST_ARCHIVE_SUCCESS : SETTINGS_TOAST_DELETE_SUCCESS,
+          { description: node.name },
+        );
         await invalidate();
       } catch (err) {
         toast.error(getFetchErrorMessage(err, SETTINGS_TOAST_DELETE_ERROR), {

@@ -94,6 +94,63 @@ describe('BudgetEngineService.getMonthlySummary', () => {
     expect(leaf.settledTransactionId).toBeNull();
   });
 
+  it('includes an archived category in a past month where it has real history', async () => {
+    const ARCHIVED_CAT = { ...GROCERIES, id: 'cat-archived', archivedAt: new Date('2026-06-01') };
+    vi.mocked(BudgetEngineRepository.findCategoriesForUser).mockResolvedValue([
+      EXPENSE_GROUP,
+      ARCHIVED_CAT,
+    ] as never);
+    vi.mocked(BudgetEngineRepository.findBudgetPlans).mockResolvedValue([] as never);
+    vi.mocked(BudgetEngineRepository.findCategoriesWithActivityInPeriod).mockResolvedValue(
+      new Set(['cat-archived']) as never,
+    );
+    vi.mocked(BudgetEngineRepository.findSpendByCategory).mockResolvedValue([
+      { categoryId: 'cat-archived', _sum: { amount: 1200 } },
+    ] as never);
+
+    const result = await BudgetEngineService.getMonthlySummary('u1', 2026, 5);
+
+    expect(BudgetEngineRepository.findCategoriesWithActivityInPeriod).toHaveBeenCalledWith(
+      'u1',
+      ['cat-archived'],
+      2026,
+      5,
+    );
+    const leaf = result.groups[0]!.categories[0]!;
+    expect(leaf.id).toBe('cat-archived');
+    expect(leaf.actual).toBe(1200);
+  });
+
+  it('excludes an archived category from a month it has no history in (e.g. a future month)', async () => {
+    const ARCHIVED_CAT = { ...GROCERIES, id: 'cat-archived', archivedAt: new Date('2026-06-01') };
+    vi.mocked(BudgetEngineRepository.findCategoriesForUser).mockResolvedValue([
+      EXPENSE_GROUP,
+      ARCHIVED_CAT,
+    ] as never);
+    vi.mocked(BudgetEngineRepository.findBudgetPlans).mockResolvedValue([] as never);
+    vi.mocked(BudgetEngineRepository.findCategoriesWithActivityInPeriod).mockResolvedValue(
+      new Set() as never,
+    );
+    vi.mocked(BudgetEngineRepository.findSpendByCategory).mockResolvedValue([] as never);
+
+    const result = await BudgetEngineService.getMonthlySummary('u1', 2026, 8);
+
+    expect(result.groups[0]!.categories).toHaveLength(0);
+  });
+
+  it('skips the activity lookup entirely when there are no archived categories', async () => {
+    vi.mocked(BudgetEngineRepository.findCategoriesForUser).mockResolvedValue([
+      EXPENSE_GROUP,
+      GROCERIES,
+    ] as never);
+    vi.mocked(BudgetEngineRepository.findBudgetPlans).mockResolvedValue([] as never);
+    vi.mocked(BudgetEngineRepository.findSpendByCategory).mockResolvedValue([] as never);
+
+    await BudgetEngineService.getMonthlySummary('u1', 2024, 6);
+
+    expect(BudgetEngineRepository.findCategoriesWithActivityInPeriod).not.toHaveBeenCalled();
+  });
+
   it('throws BudgetPeriodInvalidError for year < 2020', async () => {
     await expect(BudgetEngineService.getMonthlySummary('u1', 2019, 6)).rejects.toThrow(
       BudgetPeriodInvalidError,

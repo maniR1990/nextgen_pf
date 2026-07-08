@@ -357,18 +357,23 @@ export const CategoriesService = {
       throw new ForbiddenError('Top-level group categories cannot be deleted');
 
     const flat = await CategoriesRepository.findAccessible(userId, { includeArchived: true });
-    const descendants = collectDescendantIds(flat, id);
+    const descendants = [...collectDescendantIds(flat, id)];
 
-    // Unset categoryId on any linked transactions so they become "uncategorized"
-    // rather than blocking the delete. Transactions remain intact.
-    for (const descId of descendants) {
-      const txCount = await CategoriesRepository.countTransactions(descId);
-      if (txCount > 0) await CategoriesRepository.unsetTransactionCategory(descId);
+    // A category (or any of its descendants) with linked history — transactions,
+    // budgets, events, recurring templates, merchant rules — is never hard-deleted:
+    // that history must remain queryable in the periods it actually happened.
+    // Archiving hides it from new activity going forward without touching a single
+    // existing record. Only a fully "clean" subtree (zero linked records anywhere)
+    // is safe to actually remove.
+    const linkedCount = await CategoriesRepository.countLinkedRecords(descendants);
+
+    if (linkedCount === 0) {
+      await CategoriesRepository.deleteMany(descendants);
+      return { archived: false, deleted: true, id };
     }
 
-    await CategoriesRepository.archiveMany([...descendants]);
-
-    return { archived: true, id, archivedAt: new Date().toISOString() };
+    await CategoriesRepository.archiveMany(descendants);
+    return { archived: true, deleted: false, id, archivedAt: new Date().toISOString() };
   },
 
   async getStats(id: string, userId: string): Promise<CategoryStats> {

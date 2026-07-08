@@ -31,6 +31,7 @@ export const SETTINGS_TOAST_CREATE_ERROR = 'Could not create category';
 export const SETTINGS_TOAST_UPDATE_SUCCESS = 'Category updated';
 export const SETTINGS_TOAST_UPDATE_ERROR = 'Could not update category';
 export const SETTINGS_TOAST_DELETE_SUCCESS = 'Category deleted';
+export const SETTINGS_TOAST_ARCHIVE_SUCCESS = 'Category archived — history preserved';
 export const SETTINGS_TOAST_DELETE_ERROR = 'Could not delete category';
 export const SETTINGS_TOAST_LOAD_ERROR = 'Could not load categories';
 
