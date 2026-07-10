@@ -1,5 +1,6 @@
 'use client';
 
+import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
 import { DuplicateDetect } from '@/components/features/transactions/DuplicateDetect';
@@ -74,12 +75,23 @@ export function RefundForm({
         errors={errors}
         onChange={onChange}
         paymentSources={paymentSources}
-        showDate={false}
-        showAccount={false}
-        showPlanned={false}
-        showRecurring={false}
+        showAmount
+        showMethod={false}
         showTags={false}
+        showNotes={false}
       />
+
+      <CollapsibleSection label="More details — method, notes">
+        <CommonFormFields
+          values={values}
+          errors={errors}
+          onChange={onChange}
+          paymentSources={paymentSources}
+          showDate={false}
+          showAccount={false}
+          showTags={false}
+        />
+      </CollapsibleSection>
     </div>
   );
 }

@@ -35,7 +35,10 @@ export const BALANCE_IMPACT: Record<TxType, BalanceImpact> = {
 
   // Movements — money leaves one account and enters another
   TRANSFER: 'transfer',
-  ATM_WITHDRAWAL: 'transfer', // bank → cash wallet / ATM buffer account
+  // bank → cash wallet. toAccountId is required by the form/schema going forward;
+  // getBalanceDeltas' degenerate-debit fallback below only matters for legacy rows
+  // logged before the destination field existed.
+  ATM_WITHDRAWAL: 'transfer',
   // bank/wallet → investment holding account (demat, mutual fund folio, PPF, etc.).
   // getBalanceDeltas degrades this to a plain debit when no toAccountId is given, so
   // existing investment transactions logged without a destination account are unaffected.

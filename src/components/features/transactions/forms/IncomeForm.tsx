@@ -1,6 +1,7 @@
 'use client';
 
 import { CascadingCategoryPicker } from '@/components/common/CascadingCategoryPicker';
+import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { FormField } from '@/components/common/FormField';
 import { formatAmountShort, getIncomePeriodData } from '@/lib/utils/incomePeriod';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
@@ -8,6 +9,7 @@ import type { FormErrors, TransactionFormValues } from '@/store/transactionFormS
 import type { PaymentSourceOption } from '@/types/finance';
 import { Info } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
+import { CommonFormFields } from './CommonFormFields';
 
 interface IncomeFormProps {
   values: TransactionFormValues;
@@ -154,8 +156,18 @@ export function IncomeForm({
         </div>
       )}
 
-      {/* TDS (optional) — 1/3 width */}
-      <div className="tx-form__row">
+      <CommonFormFields
+        values={values}
+        errors={errors}
+        onChange={onChange}
+        paymentSources={paymentSources}
+        showAmount
+        showMethod={false}
+        showTags={false}
+        showNotes={false}
+      />
+
+      <CollapsibleSection label="More details — method, TDS, tags, notes">
         <FormField
           label="TDS Deducted (₹)"
           htmlFor="tx-tds"
@@ -172,7 +184,16 @@ export function IncomeForm({
             onChange={(e) => onChange('tds', e.target.value)}
           />
         </FormField>
-      </div>
+
+        <CommonFormFields
+          values={values}
+          errors={errors}
+          onChange={onChange}
+          paymentSources={paymentSources}
+          showDate={false}
+          showAccount={false}
+        />
+      </CollapsibleSection>
     </div>
   );
 }

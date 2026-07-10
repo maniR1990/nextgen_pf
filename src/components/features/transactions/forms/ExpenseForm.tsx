@@ -1,12 +1,14 @@
 'use client';
 
-import { CascadingCategoryPicker } from '@/components/common/CascadingCategoryPicker';
+import { CollapsibleCategoryPicker } from '@/components/common/CollapsibleCategoryPicker';
+import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { FormField } from '@/components/common/FormField';
 import { BudgetImpactStrip } from '@/components/features/transactions/BudgetImpactStrip';
 import { DuplicateDetect } from '@/components/features/transactions/DuplicateDetect';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { BudgetImpact, DuplicateMatch, PaymentSourceOption } from '@/types/finance';
+import { CommonFormFields } from './CommonFormFields';
 
 interface ExpenseFormProps {
   values: TransactionFormValues;
@@ -36,26 +38,8 @@ export function ExpenseForm({
 }: ExpenseFormProps) {
   return (
     <div className="tx-form tx-form--expense">
-      {/* Category first — user may know the item but not the category */}
-      <CascadingCategoryPicker
-        label="Category"
-        groups={categoryGroups}
-        priorityGroupType="EXPENSE"
-        value={values.categoryId || null}
-        onChange={(id) => onChange('categoryId', id ?? '')}
-        error={errors.categoryId}
-        onCreateL1={
-          onCreateCategory ? (name) => onCreateCategory(name, null, 'EXPENSE') : undefined
-        }
-        onCreateL2={
-          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
-        }
-        onCreateL3={
-          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
-        }
-      />
-
-      {/* Merchant */}
+      {/* Merchant leads — it's what you actually remember ("BigBasket run"),
+          not the category bucket it rolls up into. */}
       <FormField
         label="Merchant / Description"
         htmlFor="tx-merchant"
@@ -74,32 +58,50 @@ export function ExpenseForm({
         />
       </FormField>
 
+      <CollapsibleCategoryPicker
+        label="Category"
+        groups={categoryGroups}
+        priorityGroupType="EXPENSE"
+        value={values.categoryId || null}
+        onChange={(id) => onChange('categoryId', id ?? '')}
+        error={errors.categoryId}
+        onCreateL1={
+          onCreateCategory ? (name) => onCreateCategory(name, null, 'EXPENSE') : undefined
+        }
+        onCreateL2={
+          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+        }
+        onCreateL3={
+          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+        }
+      />
+
       {duplicate && <DuplicateDetect duplicate={duplicate} onDismiss={onDismissDuplicate} />}
       <BudgetImpactStrip impact={budgetImpact} />
 
-      {/* Tags | Notes */}
-      <div className="tx-form__row">
-        <FormField label="Tags" htmlFor="tx-tags" hint="Comma-separated">
-          <input
-            id="tx-tags"
-            type="text"
-            className="form-input"
-            value={values.tags}
-            placeholder="groceries, annual..."
-            onChange={(e) => onChange('tags', e.target.value)}
-          />
-        </FormField>
-        <FormField label="Notes" htmlFor="tx-notes">
-          <input
-            id="tx-notes"
-            type="text"
-            className="form-input"
-            value={values.notes}
-            placeholder="Optional notes..."
-            onChange={(e) => onChange('notes', e.target.value)}
-          />
-        </FormField>
-      </div>
+      <CommonFormFields
+        values={values}
+        errors={errors}
+        onChange={onChange}
+        paymentSources={paymentSources}
+        showAmount
+        showMethod={false}
+        showTags={false}
+        showNotes={false}
+        showPlanned={false}
+        showRecurring={false}
+      />
+
+      <CollapsibleSection label="More details — method, tags, notes">
+        <CommonFormFields
+          values={values}
+          errors={errors}
+          onChange={onChange}
+          paymentSources={paymentSources}
+          showDate={false}
+          showAccount={false}
+        />
+      </CollapsibleSection>
     </div>
   );
 }

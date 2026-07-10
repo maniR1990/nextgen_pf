@@ -1,4 +1,3 @@
-import { TX_TYPE_GROUPS } from '@/constants/finance';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -6,39 +5,83 @@ import { TypeSelector } from './TypeSelector';
 
 afterEach(() => cleanup());
 
+async function openMoreTypes(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: /more transaction types/i }));
+}
+
 describe('TypeSelector', () => {
-  describe('rendering', () => {
-    it('renders all 4 group headings', () => {
+  describe('collapsed by default', () => {
+    it('shows only Expense and Income up front', () => {
       render(<TypeSelector value="EXPENSE" onChange={vi.fn()} />);
-      expect(screen.getByText('Outflow')).toBeInTheDocument();
-      expect(screen.getByText('Inflow')).toBeInTheDocument();
-      expect(screen.getByText('Movement')).toBeInTheDocument();
-      expect(screen.getByText('Adjustment')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /expense/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /income/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /transfer/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /refund/i })).not.toBeInTheDocument();
     });
 
-    it('renders all 11 type chips', () => {
+    it('shows a "More transaction types" toggle', () => {
       render(<TypeSelector value="EXPENSE" onChange={vi.fn()} />);
-      const totalTypes = Object.values(TX_TYPE_GROUPS).flat().length;
-      const chips = screen.getAllByRole('button');
-      expect(chips).toHaveLength(totalTypes);
+      expect(screen.getByRole('button', { name: /more transaction types/i })).toBeInTheDocument();
     });
 
+    it('auto-expands when the active type is one of the hidden ones', () => {
+      render(<TypeSelector value="TRANSFER" onChange={vi.fn()} />);
+      expect(screen.getByRole('button', { name: /^transfer$/i })).toBeInTheDocument();
+    });
+  });
+
+  describe('expanding', () => {
+    it('reveals the remaining 9 types after clicking "More transaction types"', async () => {
+      const user = userEvent.setup();
+      render(<TypeSelector value="EXPENSE" onChange={vi.fn()} />);
+
+      await openMoreTypes(user);
+
+      for (const name of [
+        'Transfer',
+        'ATM Withdrawal',
+        'Investment',
+        'Sinking',
+        'Gift Received',
+        'Reimbursement',
+        'Refund',
+        'Coupon Use',
+        'Points Redeem',
+      ]) {
+        expect(screen.getByRole('button', { name })).toBeInTheDocument();
+      }
+    });
+
+    it('all 11 types are present once expanded, none duplicated', async () => {
+      const user = userEvent.setup();
+      render(<TypeSelector value="EXPENSE" onChange={vi.fn()} />);
+      await openMoreTypes(user);
+      expect(screen.getAllByRole('button', { name: /expense/i })).toHaveLength(1);
+    });
+  });
+
+  describe('active state', () => {
     it('marks the active chip with aria-pressed=true', () => {
       render(<TypeSelector value="INCOME" onChange={vi.fn()} />);
-      const incomeChip = screen.getByRole('button', { name: /income/i });
-      expect(incomeChip).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('button', { name: /income/i })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
     });
 
     it('marks inactive chips with aria-pressed=false', () => {
       render(<TypeSelector value="EXPENSE" onChange={vi.fn()} />);
-      const incomeChip = screen.getByRole('button', { name: /income/i });
-      expect(incomeChip).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('button', { name: /income/i })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      );
     });
 
     it('active chip has --active modifier class', () => {
       render(<TypeSelector value="EXPENSE" onChange={vi.fn()} />);
-      const expenseChip = screen.getByRole('button', { name: /expense/i });
-      expect(expenseChip.className).toContain('type-selector__chip--active');
+      expect(screen.getByRole('button', { name: /expense/i }).className).toContain(
+        'type-selector__chip--active',
+      );
     });
   });
 
@@ -50,31 +93,18 @@ describe('TypeSelector', () => {
 
       await user.click(screen.getByRole('button', { name: /income/i }));
 
-      expect(onChange).toHaveBeenCalledOnce();
       expect(onChange).toHaveBeenCalledWith('INCOME');
     });
 
-    it('does not call onChange when clicking the already-active chip', async () => {
+    it('calls onChange for a type revealed by expanding', async () => {
       const user = userEvent.setup();
       const onChange = vi.fn();
       render(<TypeSelector value="EXPENSE" onChange={onChange} />);
 
-      await user.click(screen.getByRole('button', { name: /expense/i }));
+      await openMoreTypes(user);
+      await user.click(screen.getByRole('button', { name: /^transfer$/i }));
 
-      // onChange still called — the parent decides whether to re-render
-      expect(onChange).toHaveBeenCalledWith('EXPENSE');
-    });
-
-    it('calls onChange for each distinct type click', async () => {
-      const user = userEvent.setup();
-      const onChange = vi.fn();
-      render(<TypeSelector value="EXPENSE" onChange={onChange} />);
-
-      await user.click(screen.getByRole('button', { name: /transfer/i }));
-      await user.click(screen.getByRole('button', { name: /refund/i }));
-
-      expect(onChange).toHaveBeenNthCalledWith(1, 'TRANSFER');
-      expect(onChange).toHaveBeenNthCalledWith(2, 'REFUND');
+      expect(onChange).toHaveBeenCalledWith('TRANSFER');
     });
   });
 });

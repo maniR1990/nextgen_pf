@@ -1,5 +1,6 @@
 'use client';
 
+import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { FormField } from '@/components/common/FormField';
 import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption } from '@/types/finance';
@@ -68,11 +69,22 @@ export function GiftReceivedForm({
         errors={errors}
         onChange={onChange}
         paymentSources={paymentSources}
-        showDate={false}
-        showAccount={false}
-        showPlanned={false}
-        showRecurring={false}
+        showAmount
+        showMethod={false}
+        showTags={false}
+        showNotes={false}
       />
+
+      <CollapsibleSection label="More details — method, tags, notes">
+        <CommonFormFields
+          values={values}
+          errors={errors}
+          onChange={onChange}
+          paymentSources={paymentSources}
+          showDate={false}
+          showAccount={false}
+        />
+      </CollapsibleSection>
     </div>
   );
 }

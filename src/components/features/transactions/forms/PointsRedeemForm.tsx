@@ -4,6 +4,7 @@ import { FormField } from '@/components/common/FormField';
 import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption } from '@/types/finance';
 import { useEffect } from 'react';
+import { CommonFormFields } from './CommonFormFields';
 
 interface PointsRedeemFormProps {
   values: TransactionFormValues;
@@ -19,7 +20,8 @@ export function PointsRedeemForm({
   values,
   errors,
   onChange,
-}: Omit<PointsRedeemFormProps, 'paymentSources'> & { paymentSources?: PaymentSourceOption[] }) {
+  paymentSources,
+}: PointsRedeemFormProps) {
   const ptsNum = Number.parseFloat(values.ptsSpent);
   const rateNum = Number.parseFloat(values.ptsRate);
   const autoAmount =
@@ -99,16 +101,14 @@ export function PointsRedeemForm({
         </div>
       )}
 
-      <FormField label="Notes" htmlFor="tx-notes">
-        <textarea
-          id="tx-notes"
-          className="form-input form-input--textarea"
-          value={values.notes}
-          rows={2}
-          placeholder="Optional details..."
-          onChange={(e) => onChange('notes', e.target.value)}
-        />
-      </FormField>
+      <CommonFormFields
+        values={values}
+        errors={errors}
+        onChange={onChange}
+        paymentSources={paymentSources}
+        showAmount={false}
+        showTags={false}
+      />
     </div>
   );
 }

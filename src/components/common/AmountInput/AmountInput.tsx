@@ -52,20 +52,23 @@ export function AmountInput({
         />
       </div>
       {showChips && (
-        <div className="amount-input__chips" role="group" aria-label="Quick amount shortcuts">
-          {QUICK_AMOUNT_CHIPS.map((chip) => (
-            <button
-              key={chip.value}
-              type="button"
-              className="amount-input__chip"
-              onClick={() => handleChip(chip.value)}
-              disabled={disabled}
-              aria-label={`Add ₹${chip.label}`}
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
+        <>
+          <p className="amount-input__chips-label">Quick amounts</p>
+          <div className="amount-input__chips" role="group" aria-label="Quick amount shortcuts">
+            {QUICK_AMOUNT_CHIPS.map((chip) => (
+              <button
+                key={chip.value}
+                type="button"
+                className="amount-input__chip"
+                onClick={() => handleChip(chip.value)}
+                disabled={disabled}
+                aria-label={`Add ₹${chip.label}`}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </FormField>
   );

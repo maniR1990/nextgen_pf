@@ -95,14 +95,27 @@ function renderForm(valueOverrides: Partial<TransactionFormValues> = {}) {
   return { onChange };
 }
 
+async function openMoreDetails(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: /more details/i }));
+}
+
 describe('InvestmentForm', () => {
   it('renders a category picker', () => {
     renderForm();
     expect(screen.getByText('Category')).toBeInTheDocument();
   });
 
-  it('renders the "Invested Into" destination account field, unselected by default', () => {
+  it('keeps "Invested Into" and its optional fields collapsed by default', () => {
     renderForm();
+    expect(screen.queryByText('Invested Into')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /more details/i })).toBeInTheDocument();
+  });
+
+  it('renders the "Invested Into" destination account field, unselected, once expanded', async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await openMoreDetails(user);
+
     expect(screen.getByText('Invested Into')).toBeInTheDocument();
     expect(
       screen.getByRole('combobox', { name: /invested into/i }),
@@ -112,6 +125,7 @@ describe('InvestmentForm', () => {
   it('excludes the current source account from the destination options', async () => {
     const user = userEvent.setup();
     renderForm({ sourceId: 'bank1' });
+    await openMoreDetails(user);
 
     await user.click(screen.getByRole('combobox', { name: /invested into/i }));
     expect(screen.getByRole('option', { name: 'Zerodha Coin' })).toBeInTheDocument();
@@ -122,6 +136,7 @@ describe('InvestmentForm', () => {
   it('calls onChange with toAccountId when a destination account is picked', async () => {
     const user = userEvent.setup();
     const { onChange } = renderForm({ sourceId: 'bank1' });
+    await openMoreDetails(user);
 
     await user.click(screen.getByRole('combobox', { name: /invested into/i }));
     await user.click(screen.getByRole('option', { name: 'Zerodha Coin' }));
@@ -129,14 +144,19 @@ describe('InvestmentForm', () => {
     expect(onChange).toHaveBeenCalledWith('toAccountId', 'demat1');
   });
 
-  it('does not require a destination account — no error when toAccountId is empty', () => {
+  it('does not require a destination account — no error when toAccountId is empty', async () => {
+    const user = userEvent.setup();
     renderForm({ toAccountId: '' });
+    await openMoreDetails(user);
     // The field renders without an error state; FormField only shows role="alert" on error.
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('still renders Tags and Notes (unchanged from before)', () => {
+  it('still renders Tags and Notes once expanded (unchanged from before)', async () => {
+    const user = userEvent.setup();
     renderForm();
+    await openMoreDetails(user);
+
     expect(screen.getByLabelText('Tags')).toBeInTheDocument();
     expect(screen.getByLabelText('Notes')).toBeInTheDocument();
   });

@@ -154,7 +154,7 @@ export const CreateTransactionSchema = z
       });
     }
 
-    if (data.type === 'TRANSFER' && !data.toAccountId) {
+    if ((data.type === 'TRANSFER' || data.type === 'ATM_WITHDRAWAL') && !data.toAccountId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Destination account is required',

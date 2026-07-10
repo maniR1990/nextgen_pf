@@ -132,6 +132,10 @@
 
   &__control {
     flex: 1;
+    // min-width: 0 overrides the flex item's default auto minimum (its intrinsic
+    // content size) — without it, a number input can refuse to shrink below that
+    // size and push past its container, the same trap as a bare 1fr grid track.
+    min-width: 0;
     padding-left: var(--space-8); // 32px: --space-3 prefix offset + ₹ glyph width + gap
     font-size: 1.125rem;
     font-weight: 600;
@@ -143,11 +147,16 @@
     }
   }
 
+  &__chips-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin: var(--space-2) 0 var(--space-1-5);
+  }
+
   &__chips {
     display: flex;
     gap: var(--space-2);
     flex-wrap: wrap;
-    margin-top: var(--space-2);
   }
 
   &__chip {
@@ -290,38 +299,90 @@
   }
 }
 
+// ─── CollapsibleSection ─────────────────────────────────────────────────────
+
+.collapsible-section {
+  &__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1-5);
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: color var(--transition-fast), background var(--transition-fast);
+
+    &:hover { color: var(--color-brand); background: var(--color-bg-subtle); }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand);
+      outline-offset: 2px;
+    }
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    transition: transform var(--transition-fast);
+
+    &--open { transform: rotate(180deg); }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-top: var(--space-3);
+  }
+}
+
+// ─── CollapsibleCategoryPicker ──────────────────────────────────────────────
+
+.collapsible-category-picker__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-brand);
+  background: var(--comp-badge-active-bg);
+  border: 1px solid var(--comp-badge-active-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+
+  &:hover { border-color: var(--color-brand); }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}
+
 // ─── TypeSelector ───────────────────────────────────────────────────────────
 
 .type-selector {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-
-  &__group { display: flex; flex-direction: column; gap: var(--space-1-5); }
-
-  &__group-label {
-    font-size: var(--font-size-xs);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-  }
-
   &__chips {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
-    row-gap: var(--space-2);
+    gap: var(--space-1-5);
+    row-gap: var(--space-1-5);
   }
 
   &__chip {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-1-5);
-    padding: var(--space-2) var(--space-3);
-    font-size: var(--font-size-sm);
+    gap: var(--space-1);
+    padding: var(--space-1-5) var(--space-2-5);
+    font-size: var(--font-size-xs);
     font-weight: 500;
-    border: 1.5px solid var(--color-border);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-full, 999px);
     background: var(--color-bg-subtle);
     color: var(--color-text);
@@ -609,36 +670,41 @@
   gap: var(--space-3);
 
   // 2-col header: TypeSelector (left) | Amount + Date + Account (right)
+  //
+  // minmax(0, 1fr) — not bare 1fr — everywhere here: a `1fr` track's automatic
+  // minimum is `auto` (its content's min-content), so a wide child (like the
+  // flat 11-chip TypeSelector row) can force the column past the container.
+  // minmax(0, 1fr) clamps the floor to 0 so the track actually shrinks to fit.
   &__top-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: var(--space-3);
     align-items: start;
     padding-bottom: var(--space-3);
     border-bottom: 1px solid var(--color-border);
 
     // Single-column on all phones + small tablets (≤ 768px)
-    @media (max-width: 768px) { grid-template-columns: 1fr; }
+    @media (max-width: 768px) { grid-template-columns: minmax(0, 1fr); }
   }
 
   // Right column: Amount + Date | Account + Method | checkboxes
   &__key-fields {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: var(--space-2);
 
     // Stack Amount above Date on mobile so date is reachable without scrolling
-    @media (max-width: 640px) { grid-template-columns: 1fr; }
+    @media (max-width: 640px) { grid-template-columns: minmax(0, 1fr); }
   }
 
   // Account + Method side-by-side (spans both cols of parent grid)
   &__key-pair {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: var(--space-2);
     grid-column: 1 / -1;
 
-    @media (max-width: 640px) { grid-template-columns: 1fr; }
+    @media (max-width: 640px) { grid-template-columns: minmax(0, 1fr); }
   }
 
   // Account alone, full-width
@@ -707,14 +773,6 @@
     gap: var(--space-1);
   }
 
-  .type-selector {
-    gap: var(--space-2);
-  }
-
-  .type-selector__group {
-    gap: var(--space-1);
-  }
-
   .type-selector__chips {
     gap: var(--space-1-5);
     row-gap: var(--space-1-5);
@@ -777,19 +835,7 @@
       flex-shrink: 0;
     }
 
-    // TypeSelector: each group's chips scroll horizontally, no wrapping
-    .type-selector {
-      gap: var(--space-1-5);
-    }
-
-    .type-selector__group {
-      gap: var(--space-1);
-    }
-
-    .type-selector__group-label {
-      font-size: 9px;
-    }
-
+    // TypeSelector: compact flat row, wraps within the modal
     .type-selector__chips {
       // Wrap within the modal — prevents grid cell from expanding beyond 1fr
       flex-wrap: wrap;
@@ -828,11 +874,11 @@
 
     // Compact form rows on mobile
     .tx-form__row {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     }
 
     .tx-form__row--2 {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     }
   }
 }
@@ -844,18 +890,20 @@
   flex-direction: column;
   gap: var(--space-4);
 
+  // minmax(0, 1fr) throughout — see the __top-grid comment above for why bare
+  // 1fr isn't safe once a field's content can exceed the track width.
   &__row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-3);
 
-    @media (max-width: 720px) { grid-template-columns: 1fr 1fr; }
-    @media (max-width: 480px) { grid-template-columns: 1fr; }
+    @media (max-width: 720px) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    @media (max-width: 480px) { grid-template-columns: minmax(0, 1fr); }
   }
 
   &__row--2 {
-    grid-template-columns: 1fr 1fr;
-    @media (max-width: 480px) { grid-template-columns: 1fr; }
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    @media (max-width: 480px) { grid-template-columns: minmax(0, 1fr); }
   }
 
   &__col--span-2 {

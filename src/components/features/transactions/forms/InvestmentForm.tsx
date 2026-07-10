@@ -1,6 +1,7 @@
 'use client';
 
 import { CascadingCategoryPicker } from '@/components/common/CascadingCategoryPicker';
+import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { SelectField } from '@/components/common/SelectField';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
@@ -55,32 +56,43 @@ export function InvestmentForm({
         }
       />
 
-      {/* Optional — an investment doesn't have to land in a tracked account (e.g. an
-          employer ESPP with no ledger entry here), so this isn't required like
-          Transfer's To Account is. When set, the destination account's balance is
-          credited too instead of the money just disappearing from the source. */}
-      <SelectField
-        label="Invested Into"
-        id="tx-invest-to-account"
-        value={values.toAccountId}
-        options={destinationOptions}
-        placeholder="Select investment account (optional)"
-        error={errors.toAccountId}
-        onChange={(e) => onChange('toAccountId', e.target.value)}
-      />
-
       <CommonFormFields
         values={values}
         errors={errors}
         onChange={onChange}
         paymentSources={paymentSources}
-        showDate={false}
-        showAccount={false}
+        showAmount
+        showMethod={false}
+        showTags={false}
+        showNotes={false}
         showPlanned={false}
         showRecurring={false}
-        showTags
-        showNotes
       />
+
+      <CollapsibleSection label="More details — invested into, method, tags, notes">
+        {/* Optional — an investment doesn't have to land in a tracked account (e.g. an
+            employer ESPP with no ledger entry here), so this isn't required like
+            Transfer's To Account is. When set, the destination account's balance is
+            credited too instead of the money just disappearing from the source. */}
+        <SelectField
+          label="Invested Into"
+          id="tx-invest-to-account"
+          value={values.toAccountId}
+          options={destinationOptions}
+          placeholder="Select investment account (optional)"
+          error={errors.toAccountId}
+          onChange={(e) => onChange('toAccountId', e.target.value)}
+        />
+
+        <CommonFormFields
+          values={values}
+          errors={errors}
+          onChange={onChange}
+          paymentSources={paymentSources}
+          showDate={false}
+          showAccount={false}
+        />
+      </CollapsibleSection>
     </div>
   );
 }

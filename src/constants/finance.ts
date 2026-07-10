@@ -29,6 +29,11 @@ export interface TxTypeMeta {
   description: string;
   group: keyof typeof TX_TYPE_GROUPS;
   amountSign: 'debit' | 'credit' | 'neutral';
+  /** Whether this type has a payment method, can be marked unplanned, or can recur — single
+   *  source of truth so the modal and every per-type form agree without duplicating the rule. */
+  hasMethod: boolean;
+  hasPlanned: boolean;
+  hasRecurring: boolean;
 }
 
 export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
@@ -38,6 +43,9 @@ export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
     description: 'Day-to-day spend',
     group: 'OUTFLOW',
     amountSign: 'debit',
+    hasMethod: true,
+    hasPlanned: true,
+    hasRecurring: true,
   },
   INVESTMENT: {
     label: 'Investment',
@@ -45,6 +53,9 @@ export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
     description: 'MF/stocks/FD/PPF/NPS/Gold/ELSS/Crypto',
     group: 'OUTFLOW',
     amountSign: 'debit',
+    hasMethod: true,
+    hasPlanned: false,
+    hasRecurring: true,
   },
   SINKING_DEPOSIT: {
     label: 'Sinking',
@@ -52,6 +63,9 @@ export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
     description: 'Contribution to a named goal fund',
     group: 'OUTFLOW',
     amountSign: 'debit',
+    hasMethod: true,
+    hasPlanned: false,
+    hasRecurring: true,
   },
   INCOME: {
     label: 'Income',
@@ -59,6 +73,9 @@ export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
     description: 'Salary, freelance, rental, interest',
     group: 'INFLOW',
     amountSign: 'credit',
+    hasMethod: true,
+    hasPlanned: false,
+    hasRecurring: false,
   },
   GIFT_RECEIVED: {
     label: 'Gift Received',
@@ -66,6 +83,9 @@ export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
     description: 'Cash/voucher gifts',
     group: 'INFLOW',
     amountSign: 'credit',
+    hasMethod: true,
+    hasPlanned: false,
+    hasRecurring: false,
   },
   REIMBURSEMENT: {
     label: 'Reimbursement',
@@ -73,6 +93,9 @@ export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
     description: 'Office expense claims',
     group: 'INFLOW',
     amountSign: 'credit',
+    hasMethod: true,
+    hasPlanned: false,
+    hasRecurring: false,
   },
   TRANSFER: {
     label: 'Transfer',
@@ -80,6 +103,9 @@ export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
     description: 'Internal fund moves between own accounts',
     group: 'MOVEMENT',
     amountSign: 'neutral',
+    hasMethod: true,
+    hasPlanned: false,
+    hasRecurring: false,
   },
   ATM_WITHDRAWAL: {
     label: 'ATM Withdrawal',
@@ -87,6 +113,9 @@ export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
     description: 'Cash pulled from ATM',
     group: 'MOVEMENT',
     amountSign: 'neutral',
+    hasMethod: false,
+    hasPlanned: false,
+    hasRecurring: false,
   },
   REFUND: {
     label: 'Refund',
@@ -94,6 +123,9 @@ export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
     description: 'Merchant credits back',
     group: 'ADJUSTMENT',
     amountSign: 'credit',
+    hasMethod: true,
+    hasPlanned: false,
+    hasRecurring: false,
   },
   COUPON_REDEMPTION: {
     label: 'Coupon Use',
@@ -101,6 +133,9 @@ export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
     description: 'Discount applied at checkout',
     group: 'ADJUSTMENT',
     amountSign: 'neutral',
+    hasMethod: true,
+    hasPlanned: false,
+    hasRecurring: false,
   },
   POINTS_REDEMPTION: {
     label: 'Points Redeem',
@@ -108,6 +143,9 @@ export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
     description: 'Loyalty points used as payment',
     group: 'ADJUSTMENT',
     amountSign: 'neutral',
+    hasMethod: false,
+    hasPlanned: false,
+    hasRecurring: false,
   },
 };
 

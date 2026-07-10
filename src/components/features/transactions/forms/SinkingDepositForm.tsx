@@ -1,9 +1,10 @@
 'use client';
 
-import { FormField } from '@/components/common/FormField';
+import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { SelectField } from '@/components/common/SelectField';
 import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption, SinkingFundOption } from '@/types/finance';
+import { CommonFormFields } from './CommonFormFields';
 
 interface SinkingDepositFormProps {
   values: TransactionFormValues;
@@ -52,16 +53,29 @@ export function SinkingDepositForm({
         </div>
       )}
 
-      <FormField label="Notes" htmlFor="tx-notes">
-        <textarea
-          id="tx-notes"
-          className="form-input form-input--textarea"
-          value={values.notes}
-          rows={2}
-          placeholder="Optional details..."
-          onChange={(e) => onChange('notes', e.target.value)}
+      <CommonFormFields
+        values={values}
+        errors={errors}
+        onChange={onChange}
+        paymentSources={paymentSources}
+        showAmount
+        showMethod={false}
+        showTags={false}
+        showNotes={false}
+        showRecurring={false}
+      />
+
+      <CollapsibleSection label="More details — method, recurring, notes">
+        <CommonFormFields
+          values={values}
+          errors={errors}
+          onChange={onChange}
+          paymentSources={paymentSources}
+          showDate={false}
+          showAccount={false}
+          showTags={false}
         />
-      </FormField>
+      </CollapsibleSection>
     </div>
   );
 }

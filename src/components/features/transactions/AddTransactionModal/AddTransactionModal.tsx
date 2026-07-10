@@ -1,10 +1,6 @@
 'use client';
 
-import { AmountInput } from '@/components/common/AmountInput';
-import { FormField } from '@/components/common/FormField';
 import { Modal } from '@/components/common/Modal';
-import { SelectField } from '@/components/common/SelectField';
-import { RecurringConfig } from '@/components/features/transactions/RecurringConfig';
 import { SuccessState } from '@/components/features/transactions/SuccessState';
 import { TypeSelector } from '@/components/features/transactions/TypeSelector';
 import { ValidationSummary } from '@/components/features/transactions/ValidationSummary';
@@ -25,7 +21,6 @@ import { useBudgetImpact } from '@/components/features/transactions/hooks/useBud
 import { useDuplicateDetect } from '@/components/features/transactions/hooks/useDuplicateDetect';
 import { useTransactionForm } from '@/components/features/transactions/hooks/useTransactionForm';
 import { TX_TYPE_META } from '@/constants/finance';
-import { PAYMENT_METHODS } from '@/constants/finance';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import type { TransactionFormValues } from '@/store/transactionFormStore';
 import type { CategoryOption, PaymentSourceOption, SinkingFundOption } from '@/types/finance';
@@ -96,24 +91,6 @@ export function AddTransactionModal({
 
   const typeMeta = TX_TYPE_META[values.type];
   const isLoading = submitState === 'loading';
-
-  const sourceOptions = (paymentSources ?? []).map((s) => ({ value: s.id, label: s.name }));
-  const methodOptions = PAYMENT_METHODS.map((m) => ({ value: m.value, label: m.label }));
-
-  const TYPES_WITH_METHOD = new Set([
-    'EXPENSE',
-    'INCOME',
-    'INVESTMENT',
-    'SINKING_DEPOSIT',
-    'GIFT_RECEIVED',
-    'REIMBURSEMENT',
-    'TRANSFER',
-    'REFUND',
-    'COUPON_REDEMPTION',
-  ]);
-  const showMethod = TYPES_WITH_METHOD.has(values.type);
-  const showPlanned = values.type === 'EXPENSE';
-  const showRecurring = ['EXPENSE', 'INVESTMENT', 'SINKING_DEPOSIT'].includes(values.type);
 
   // Track which editId we've already prefilled so we don't clobber user edits
   // if prefillValues re-renders (e.g. background refetch of same transaction).
@@ -246,84 +223,9 @@ export function AddTransactionModal({
 
           <Modal.Body>
             <div className="add-tx-modal">
-              <div className="add-tx-modal__top-grid">
-                <section aria-label="Transaction type">
-                  <TypeSelector value={values.type} onChange={handleTypeChange} />
-                </section>
-
-                <div className="add-tx-modal__key-fields">
-                  <AmountInput
-                    value={values.amount}
-                    onChange={(v) => handleFieldChange('amount', v)}
-                    error={errors.amount}
-                    required
-                  />
-                  <FormField label="Date" htmlFor="tx-date-top" error={errors.date} required>
-                    <input
-                      id="tx-date-top"
-                      type="date"
-                      className={['form-input', errors.date && 'form-input--error']
-                        .filter(Boolean)
-                        .join(' ')}
-                      value={values.date}
-                      onChange={(e) => handleFieldChange('date', e.target.value)}
-                    />
-                  </FormField>
-
-                  <div className={showMethod ? 'add-tx-modal__key-pair' : 'add-tx-modal__key-full'}>
-                    <SelectField
-                      label="Account"
-                      id="tx-account-top"
-                      value={values.sourceId}
-                      options={sourceOptions}
-                      placeholder={
-                        sourceOptions.length === 0 ? 'Add accounts in Settings' : 'Select account'
-                      }
-                      error={errors.sourceId}
-                      required
-                      onChange={(e) => handleFieldChange('sourceId', e.target.value)}
-                    />
-                    {showMethod && (
-                      <SelectField
-                        label="Method"
-                        id="tx-method-top"
-                        value={values.method}
-                        options={methodOptions}
-                        onChange={(e) => handleFieldChange('method', e.target.value)}
-                      />
-                    )}
-                  </div>
-
-                  {(showPlanned || showRecurring) && (
-                    <div className="add-tx-modal__key-checks">
-                      {showPlanned && (
-                        <label className="form-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={!values.isPlanned}
-                            onChange={(e) => handleFieldChange('isPlanned', !e.target.checked)}
-                          />
-                          <span>Unplanned</span>
-                        </label>
-                      )}
-                      {showRecurring && (
-                        <label className="form-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={values.isRecurring}
-                            onChange={(e) => handleFieldChange('isRecurring', e.target.checked)}
-                          />
-                          <span>Recurring</span>
-                        </label>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {values.isRecurring && showRecurring && (
-                <RecurringConfig values={values} onChange={handleFieldChange} errors={errors} />
-              )}
+              <section aria-label="Transaction type">
+                <TypeSelector value={values.type} onChange={handleTypeChange} />
+              </section>
 
               <ValidationSummary errors={errors} />
 

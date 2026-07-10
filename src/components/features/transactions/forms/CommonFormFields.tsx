@@ -1,9 +1,10 @@
 'use client';
 
+import { AmountInput } from '@/components/common/AmountInput';
 import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
 import { RecurringConfig } from '@/components/features/transactions/RecurringConfig';
-import { PAYMENT_METHODS } from '@/constants/finance';
+import { PAYMENT_METHODS, TX_TYPE_META } from '@/constants/finance';
 import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption } from '@/types/finance';
 
@@ -15,12 +16,16 @@ interface CommonFormFieldsProps {
     value: TransactionFormValues[K],
   ) => void;
   paymentSources: PaymentSourceOption[];
+  showAmount?: boolean;
   showDate?: boolean;
   showAccount?: boolean;
+  /** Defaults to TX_TYPE_META[values.type].hasMethod — override only for a genuine exception. */
   showMethod?: boolean;
   showNotes?: boolean;
   showTags?: boolean;
+  /** Defaults to TX_TYPE_META[values.type].hasPlanned. */
   showPlanned?: boolean;
+  /** Defaults to TX_TYPE_META[values.type].hasRecurring. */
   showRecurring?: boolean;
 }
 
@@ -29,21 +34,35 @@ export function CommonFormFields({
   errors,
   onChange,
   paymentSources,
+  showAmount = false,
   showDate = true,
   showAccount = true,
-  showMethod = false,
+  showMethod,
   showNotes = true,
   showTags = true,
-  showPlanned = true,
-  showRecurring = true,
+  showPlanned,
+  showRecurring,
 }: CommonFormFieldsProps) {
   const sourceOptions = (paymentSources ?? []).map((s) => ({ value: s.id, label: s.name }));
+  const typeMeta = TX_TYPE_META[values.type];
+  const resolvedShowMethod = showMethod ?? typeMeta.hasMethod;
+  const resolvedShowPlanned = showPlanned ?? typeMeta.hasPlanned;
+  const resolvedShowRecurring = showRecurring ?? typeMeta.hasRecurring;
 
-  const visibleTopFields = [showDate, showAccount, showMethod].filter(Boolean).length;
+  const visibleTopFields = [showDate, showAccount, resolvedShowMethod].filter(Boolean).length;
 
   return (
     <>
-      {/* Date | Account | Method — only rendered when not hoisted to modal top */}
+      {showAmount && (
+        <AmountInput
+          value={values.amount}
+          onChange={(v) => onChange('amount', v)}
+          error={errors.amount}
+          required
+        />
+      )}
+
+      {/* Date | Account | Method */}
       {visibleTopFields > 0 && (
         <div className={`tx-form__row${visibleTopFields === 1 ? ' tx-form__row--2' : ''}`}>
           {showDate && (
@@ -73,7 +92,7 @@ export function CommonFormFields({
             />
           )}
 
-          {showMethod && (
+          {resolvedShowMethod && (
             <SelectField
               label="Method"
               id="tx-method"
@@ -116,7 +135,7 @@ export function CommonFormFields({
         </div>
       )}
 
-      {showPlanned && (
+      {resolvedShowPlanned && (
         <label className="form-checkbox">
           <input
             type="checkbox"
@@ -127,7 +146,7 @@ export function CommonFormFields({
         </label>
       )}
 
-      {showRecurring && (
+      {resolvedShowRecurring && (
         <>
           <label className="form-checkbox">
             <input
