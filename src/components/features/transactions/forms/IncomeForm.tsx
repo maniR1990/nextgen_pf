@@ -66,6 +66,7 @@ export function IncomeForm({
       {/* Category */}
       <CascadingCategoryPicker
         label="Category"
+        required
         groups={categoryGroups}
         priorityGroupType="INCOME"
         value={values.categoryId || null}

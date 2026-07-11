@@ -149,7 +149,10 @@
 
   &__chips-label {
     font-size: var(--font-size-xs);
-    color: var(--color-text-muted);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--comp-input-label, var(--color-text-muted));
     margin: var(--space-2) 0 var(--space-1-5);
   }
 
@@ -171,6 +174,62 @@
     transition: background var(--transition-fast), border-color var(--transition-fast);
 
     &:hover { background: var(--comp-badge-active-bg); border-color: var(--color-brand); color: var(--color-brand); }
+  }
+}
+
+// ─── DateInput ──────────────────────────────────────────────────────────────
+//
+// Replaces the date box outright rather than adding a chip row below it —
+// Today/Yesterday/2 days ago plus a picker trigger fit in the same single
+// row height as every other compact field, so this adds zero extra space.
+// The native <input type="date"> stays in the DOM but visually hidden —
+// showPicker() launches the real OS/browser date UI from it — same
+// hidden-native-control pattern already used by SelectField below.
+
+.date-input {
+  display: flex;
+  gap: var(--space-1-5);
+  flex-wrap: wrap;
+
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1-5) var(--space-2-5);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full, 999px);
+    color: var(--color-text);
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1.25;
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+
+    &:hover { border-color: var(--color-brand); color: var(--color-brand); }
+
+    &--active {
+      border-color: var(--color-brand);
+      background: var(--comp-badge-active-bg);
+      color: var(--color-brand);
+      font-weight: 600;
+    }
+
+    &--picker {
+      color: var(--color-text-muted);
+
+      &.date-input__chip--active { color: var(--color-brand); }
+    }
+  }
+
+  &__native {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+    overflow: hidden;
   }
 }
 
@@ -336,8 +395,8 @@
   &__content {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
-    padding-top: var(--space-3);
+    gap: var(--space-2);
+    padding-top: var(--space-2);
   }
 }
 
@@ -669,59 +728,6 @@
   flex-direction: column;
   gap: var(--space-3);
 
-  // 2-col header: TypeSelector (left) | Amount + Date + Account (right)
-  //
-  // minmax(0, 1fr) — not bare 1fr — everywhere here: a `1fr` track's automatic
-  // minimum is `auto` (its content's min-content), so a wide child (like the
-  // flat 11-chip TypeSelector row) can force the column past the container.
-  // minmax(0, 1fr) clamps the floor to 0 so the track actually shrinks to fit.
-  &__top-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: var(--space-3);
-    align-items: start;
-    padding-bottom: var(--space-3);
-    border-bottom: 1px solid var(--color-border);
-
-    // Single-column on all phones + small tablets (≤ 768px)
-    @media (max-width: 768px) { grid-template-columns: minmax(0, 1fr); }
-  }
-
-  // Right column: Amount + Date | Account + Method | checkboxes
-  &__key-fields {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: var(--space-2);
-
-    // Stack Amount above Date on mobile so date is reachable without scrolling
-    @media (max-width: 640px) { grid-template-columns: minmax(0, 1fr); }
-  }
-
-  // Account + Method side-by-side (spans both cols of parent grid)
-  &__key-pair {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: var(--space-2);
-    grid-column: 1 / -1;
-
-    @media (max-width: 640px) { grid-template-columns: minmax(0, 1fr); }
-  }
-
-  // Account alone, full-width
-  &__key-full {
-    grid-column: 1 / -1;
-  }
-
-  // Planned + Recurring checkboxes
-  &__key-checks {
-    display: flex;
-    gap: var(--space-4);
-    grid-column: 1 / -1;
-    align-items: center;
-    flex-wrap: wrap;
-    padding-top: var(--space-1);
-  }
-
   &__form {
     display: flex;
     flex-direction: column;
@@ -729,6 +735,10 @@
   }
 
   // ─── Compact overrides using design system tokens ─────────────────────────
+  //
+  // Every field control in this modal — text input, select trigger, category
+  // search box, category column trigger — targets the same 36px height and
+  // 6px/10px padding, so nothing reads taller or looser than its neighbor.
 
   .form-input {
     min-height: 36px;
@@ -738,6 +748,20 @@
 
   .form-field {
     gap: var(--space-1);
+  }
+
+  .select-field__control {
+    min-height: 36px;
+    padding: var(--space-1-5) var(--space-2-5);
+    font-size: var(--font-size-sm);
+  }
+
+  .select-field__icon {
+    top: 50%;
+  }
+
+  .casc-cat__search-input-row {
+    padding: var(--space-1-5) var(--space-2-5);
   }
 
   .amount-input__control {
@@ -755,12 +779,11 @@
     font-size: var(--font-size-xs);
   }
 
-  .select-field__icon {
-    top: 50%;
-  }
-
+  // Uniform field-to-field rhythm — one step tighter than the section-level
+  // gap above (.add-tx-modal / .add-tx-modal__form), so the hierarchy reads:
+  // loose between major regions, tight between fields within one.
   .tx-form {
-    gap: var(--space-3);
+    gap: var(--space-2);
   }
 
   .tx-form__row {
@@ -801,11 +824,6 @@
 @media (max-width: 640px) {
   .add-tx-modal {
     gap: var(--space-2);
-
-    &__top-grid {
-      gap: var(--space-2);
-      padding-bottom: var(--space-2);
-    }
 
     // Amount input: larger and more prominent on mobile
     .amount-input__control {
@@ -851,11 +869,6 @@
     section[aria-label="Transaction type"] {
       min-width: 0;
       overflow: hidden;
-    }
-
-    // Key fields: gap only — breakpoints already handle column count
-    &__key-fields {
-      gap: var(--space-1-5);
     }
 
     // Toggle chips on mobile: horizontal scroll

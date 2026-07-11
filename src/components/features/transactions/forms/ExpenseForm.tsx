@@ -60,6 +60,7 @@ export function ExpenseForm({
 
       <CollapsibleCategoryPicker
         label="Category"
+        required
         groups={categoryGroups}
         priorityGroupType="EXPENSE"
         value={values.categoryId || null}

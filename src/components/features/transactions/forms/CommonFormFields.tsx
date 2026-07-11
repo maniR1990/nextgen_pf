@@ -1,6 +1,7 @@
 'use client';
 
 import { AmountInput } from '@/components/common/AmountInput';
+import { DateInput } from '@/components/common/DateInput';
 import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
 import { RecurringConfig } from '@/components/features/transactions/RecurringConfig';
@@ -49,7 +50,7 @@ export function CommonFormFields({
   const resolvedShowPlanned = showPlanned ?? typeMeta.hasPlanned;
   const resolvedShowRecurring = showRecurring ?? typeMeta.hasRecurring;
 
-  const visibleTopFields = [showDate, showAccount, resolvedShowMethod].filter(Boolean).length;
+  const visibleKeyFields = [showAccount, resolvedShowMethod].filter(Boolean).length;
 
   return (
     <>
@@ -62,23 +63,14 @@ export function CommonFormFields({
         />
       )}
 
-      {/* Date | Account | Method */}
-      {visibleTopFields > 0 && (
-        <div className={`tx-form__row${visibleTopFields === 1 ? ' tx-form__row--2' : ''}`}>
-          {showDate && (
-            <FormField label="Date" htmlFor="tx-date" error={errors.date} required>
-              <input
-                id="tx-date"
-                type="date"
-                className={['form-input', errors.date && 'form-input--error']
-                  .filter(Boolean)
-                  .join(' ')}
-                value={values.date}
-                onChange={(e) => onChange('date', e.target.value)}
-              />
-            </FormField>
-          )}
+      {/* Own row — a chip row doesn't belong squeezed into a select-field-width column. */}
+      {showDate && (
+        <DateInput value={values.date} onChange={(v) => onChange('date', v)} error={errors.date} required />
+      )}
 
+      {/* Account | Method */}
+      {visibleKeyFields > 0 && (
+        <div className={`tx-form__row${visibleKeyFields === 1 ? ' tx-form__row--2' : ''}`}>
           {showAccount && (
             <SelectField
               label="Account"

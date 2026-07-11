@@ -60,6 +60,7 @@ export interface CascadingCategoryPickerProps {
   value: string | null;
   onChange: (id: string | null) => void;
   label?: string;
+  required?: boolean;
   error?: string;
   loading?: boolean;
   /** Which group type to float to the top of the list (e.g. 'EXPENSE', 'INCOME'). */
@@ -108,6 +109,7 @@ export function CascadingCategoryPicker({
   value,
   onChange,
   label,
+  required,
   error,
   loading,
   priorityGroupType,
@@ -326,7 +328,16 @@ export function CascadingCategoryPicker({
 
   return (
     <div className="casc-cat">
-      {label && <span className="casc-cat__label">{label}</span>}
+      {label && (
+        <span className="casc-cat__label">
+          {label}
+          {required && (
+            <span className="casc-cat__required" aria-hidden>
+              *
+            </span>
+          )}
+        </span>
+      )}
 
       {/* Universal search — find any category by name without knowing its level */}
       <div className="casc-cat__search-wrap" ref={searchRef}>
@@ -417,9 +428,12 @@ export function CascadingCategoryPicker({
       </div>
 
       <div className="casc-cat__cols">
-        {/* Column 1 — Main Category */}
+        {/* Column 1 — Main Category. Heading only shown once a second column
+            appears — with just one column, the outer "Category" label above
+            already says what this is; repeating "MAIN CATEGORY" right under
+            it is redundant. */}
         <div className="casc-cat__col">
-          <span className="casc-cat__col-heading">MAIN CATEGORY</span>
+          {showCol2 && <span className="casc-cat__col-heading">MAIN CATEGORY</span>}
           <CategoryPicker
             options={l1Options}
             value={activeL1Id}

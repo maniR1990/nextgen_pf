@@ -12,6 +12,11 @@
     color: var(--comp-input-label, var(--color-text-muted));
   }
 
+  &__required {
+    color: var(--color-error);
+    margin-left: 2px;
+  }
+
   // ── Universal search ────────────────────────────────────────────────────────
 
   &__search-wrap {

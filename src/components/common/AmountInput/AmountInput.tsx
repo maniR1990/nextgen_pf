@@ -22,6 +22,7 @@ export function AmountInput({
   label = 'AMOUNT (₹)',
   showChips = true,
   disabled,
+  required,
   ...props
 }: AmountInputProps) {
   const handleChip = (chip: number) => {
@@ -30,7 +31,7 @@ export function AmountInput({
   };
 
   return (
-    <FormField label={label} htmlFor="tx-amount" error={error} hint={hint}>
+    <FormField label={label} htmlFor="tx-amount" error={error} hint={hint} required={required}>
       <div className="amount-input">
         <span className="amount-input__prefix" aria-hidden>
           ₹
@@ -47,6 +48,7 @@ export function AmountInput({
           onChange={(e) => onChange(e.target.value)}
           placeholder="0.00"
           disabled={disabled}
+          required={required}
           aria-label="Transaction amount in rupees"
           {...props}
         />
