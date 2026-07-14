@@ -179,23 +179,24 @@
 
 // ─── MiniDateStrip ──────────────────────────────────────────────────────────
 //
-// A scrollable strip of individual days rather than a calendar-month grid —
-// backdating a transaction a few days is one tap, and scrolling never needs
-// to special-case a month boundary the way a grid would. One unified pill
-// border wraps the whole row (arrows + cells) rather than each day being its
-// own separate chip — only the active day gets a filled highlight, everything
-// else sits flush against the shared border. Cells are fixed-size and hug
-// their own content instead of flex-growing, or on a wide desktop form they'd
-// stretch into oversized, ugly tiles. Past the recent window, the embedded
-// DatePicker (hideTrigger, controlled open) takes over.
+// Every day in the recent window is rendered — no JS-side pagination — and
+// `&__days` is natively scrollable with scroll-snap. That gets touch/trackpad
+// swipe for free on any device, with the arrows just nudging the same scroll
+// position by one cell rather than driving a parallel "which page" state
+// machine. `max-width: 100%` on the strip plus `min-width: 0` on `&__days` is
+// the same overflow-safety pattern used elsewhere in this file (grid tracks,
+// flex items): without it, 14 cells simply push the whole strip wider than
+// its form-field slot instead of scrolling internally. Past the recent
+// window, the embedded DatePicker (hideTrigger, controlled open) takes over.
 
 .mini-date-strip {
-  // inline-flex, not flex — the strip must hug its own content (arrows + 5
-  // cells) and stay left-aligned, not stretch to fill the whole form width.
+  // inline-flex, not flex — the strip must hug its own content and stay
+  // left-aligned, not stretch to fill the whole form width.
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   position: relative;
+  max-width: 100%;
 
   &__arrow {
     flex: 0 0 auto;
@@ -214,6 +215,13 @@
   &__days {
     display: flex;
     gap: var(--space-1);
+    min-width: 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar { display: none; }
   }
 
   &__day {
@@ -222,6 +230,7 @@
     // visibly different widths — a segmented control should feel evenly
     // spaced regardless of which digits happen to be showing.
     min-width: 36px;
+    scroll-snap-align: start;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -232,9 +241,7 @@
     cursor: pointer;
     transition: background var(--transition-fast), color var(--transition-fast);
 
-    &:hover:not(:disabled) { color: var(--color-brand); }
-
-    &:disabled { opacity: 0.35; cursor: not-allowed; }
+    &:hover { color: var(--color-brand); }
 
     &--active {
       background: var(--color-bg-subtle);

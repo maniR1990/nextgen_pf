@@ -17,6 +17,13 @@ if (typeof window !== 'undefined') {
   window.scrollTo = () => {};
 }
 
+// jsdom doesn't implement element scrolling at all — needed by any component
+// that scrolls a container programmatically (e.g. MiniDateStrip's arrows).
+if (typeof Element !== 'undefined') {
+  if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => {};
+  if (!Element.prototype.scrollBy) Element.prototype.scrollBy = () => {};
+}
+
 // jsdom doesn't implement matchMedia — needed by any component with a mobile/desktop
 // breakpoint hook (e.g. DatePicker's popover-vs-sheet switch). Defaults to "no match"
 // (desktop) for every query; tests needing mobile behavior should override per-test.

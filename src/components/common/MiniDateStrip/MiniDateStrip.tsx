@@ -3,7 +3,7 @@
 import { DatePicker } from '@/components/common/DatePicker';
 import { FormField } from '@/components/common/FormField';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 export interface MiniDateStripProps {
   value: string;
@@ -13,10 +13,9 @@ export interface MiniDateStripProps {
   required?: boolean;
 }
 
-const VISIBLE_DAYS = 5;
-// How far back the strip itself will scroll before handing off to the full
-// calendar — most backdating is recent, so two weeks covers the common case
-// without needing the picker at all.
+// How far back the strip renders before handing off to the full calendar —
+// most backdating is recent, so two weeks covers the common case without
+// needing the picker at all.
 const RECENT_WINDOW_DAYS = 14;
 
 function startOfDay(d: Date): Date {
@@ -47,62 +46,98 @@ function formatCellLabel(d: Date): string {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/**
+ * A natively scrollable day strip — every day in the recent window is always
+ * in the DOM, so touch/trackpad swipe just works via the browser's own
+ * scroll handling, and the arrows are a thin `scrollBy` wrapper around the
+ * same mechanism rather than a second, parallel "which page am I on" state
+ * machine. Visibility (for the arrow disabled-states and the "Selected: …"
+ * hint) is derived from IntersectionObserver instead of manual scroll-offset
+ * math, so it stays correct regardless of whether the scroll was driven by a
+ * swipe, an arrow click, or a keyboard/focus jump.
+ */
 export function MiniDateStrip({ value, onChange, error, label = 'Date', required }: MiniDateStripProps) {
   const today = startOfDay(new Date());
   const oldestAllowed = addDays(today, -(RECENT_WINDOW_DAYS - 1));
-  const minWindowEnd = addDays(oldestAllowed, VISIBLE_DAYS - 1);
+  const todayIso = toISODate(today);
+  const oldestIso = toISODate(oldestAllowed);
+  const days = Array.from({ length: RECENT_WINDOW_DAYS }, (_, i) => addDays(oldestAllowed, i));
 
-  function clampWindowEnd(d: Date): Date {
-    if (d > today) return today;
-    if (d < minWindowEnd) return minWindowEnd;
-    return d;
-  }
-
-  const [windowEnd, setWindowEnd] = useState(() => {
-    const parsed = parseISODate(value);
-    return clampWindowEnd(parsed ?? today);
-  });
+  const daysRef = useRef<HTMLDivElement>(null);
+  const cellRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const [visibleIsos, setVisibleIsos] = useState<Set<string>>(new Set());
   const [pickerOpen, setPickerOpen] = useState(false);
+  const hasMountedRef = useRef(false);
 
-  const visibleStart = addDays(windowEnd, -(VISIBLE_DAYS - 1));
-
-  // Re-center the window only when the value has moved somewhere not currently
-  // visible (e.g. prefilled from an old transaction, or just picked via the
-  // fallback calendar) — clicking a day already on screen must not shift it.
   useEffect(() => {
-    const parsed = parseISODate(value);
-    if (!parsed) return;
-    if (parsed >= visibleStart && parsed <= windowEnd) return;
-    setWindowEnd(clampWindowEnd(parsed));
+    const root = daysRef.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setVisibleIsos((prev) => {
+          const next = new Set(prev);
+          for (const entry of entries) {
+            const iso = (entry.target as HTMLElement).dataset.iso;
+            if (!iso) continue;
+            if (entry.isIntersecting) next.add(iso);
+            else next.delete(iso);
+          }
+          return next;
+        });
+      },
+      { root, threshold: 0.9 },
+    );
+    cellRefs.current.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todayIso]);
+
+  const parsedValue = parseISODate(value);
+  const isValueVisible = Boolean(parsedValue) && visibleIsos.has(value);
+  const atStart = visibleIsos.has(oldestIso);
+  const atEnd = visibleIsos.has(todayIso);
+
+  // Scroll the selected day into view on mount, and whenever it changes to a
+  // day this strip can reach but isn't currently showing (e.g. prefilled
+  // from an old transaction). A cell the user just tapped is already
+  // visible, so this is a no-op for the common case.
+  useEffect(() => {
+    const target = cellRefs.current.get(value);
+    if (!target || visibleIsos.has(value)) return;
+    target.scrollIntoView({
+      behavior: hasMountedRef.current ? 'smooth' : 'auto',
+      inline: 'nearest',
+      block: 'nearest',
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  const canGoForward = windowEnd < today;
-  const canGoBackWithinWindow = visibleStart > oldestAllowed;
+  useLayoutEffect(() => {
+    hasMountedRef.current = true;
+  }, []);
+
+  function scrollByOneCell(direction: 1 | -1) {
+    const root = daysRef.current;
+    const cells = [...cellRefs.current.values()];
+    if (!root || cells.length < 2) return;
+    const step = Math.abs(cells[1].offsetLeft - cells[0].offsetLeft);
+    root.scrollBy({ left: direction * step, behavior: 'smooth' });
+  }
 
   function handleBack() {
-    if (canGoBackWithinWindow) {
-      setWindowEnd(addDays(windowEnd, -1));
-    } else {
-      setPickerOpen(true);
-    }
+    if (atStart) setPickerOpen(true);
+    else scrollByOneCell(-1);
   }
 
   function handleForward() {
-    if (canGoForward) setWindowEnd(addDays(windowEnd, 1));
+    scrollByOneCell(1);
   }
 
-  const visibleDates = Array.from({ length: VISIBLE_DAYS }, (_, i) => addDays(visibleStart, i));
-  const parsedValue = parseISODate(value);
-  const isValueVisible = Boolean(
-    parsedValue && parsedValue >= visibleStart && parsedValue <= windowEnd,
-  );
   // Always a non-empty string (falls back to a non-breaking space) so
   // FormField's hint line is always mounted at a fixed height — otherwise the
   // whole form jumps up/down every time this line mounts/unmounts while
   // scrolling the strip in and out of the selected day.
-  const hint =
-    !isValueVisible && parsedValue ? `Selected: ${formatCellLabel(parsedValue)}` : ' ';
+  const hint = parsedValue && !isValueVisible ? `Selected: ${formatCellLabel(parsedValue)}` : ' ';
 
   return (
     <FormField label={label} error={error} required={required} hint={hint}>
@@ -116,15 +151,24 @@ export function MiniDateStrip({ value, onChange, error, label = 'Date', required
           <ChevronLeft size={16} aria-hidden />
         </button>
 
-        <div className="mini-date-strip__days" role="group" aria-label="Select a recent date">
-          {visibleDates.map((d) => {
+        <div
+          ref={daysRef}
+          className="mini-date-strip__days"
+          role="group"
+          aria-label="Select a recent date"
+        >
+          {days.map((d) => {
             const iso = toISODate(d);
-            const isFuture = d > today;
             const isActive = iso === value;
             return (
               <button
                 key={iso}
                 type="button"
+                ref={(el) => {
+                  if (el) cellRefs.current.set(iso, el);
+                  else cellRefs.current.delete(iso);
+                }}
+                data-iso={iso}
                 className={[
                   'mini-date-strip__day',
                   isActive && 'mini-date-strip__day--active',
@@ -132,7 +176,6 @@ export function MiniDateStrip({ value, onChange, error, label = 'Date', required
                   .filter(Boolean)
                   .join(' ')}
                 onClick={() => onChange(iso)}
-                disabled={isFuture}
                 aria-pressed={isActive}
                 aria-label={formatCellLabel(d)}
               >
@@ -149,7 +192,7 @@ export function MiniDateStrip({ value, onChange, error, label = 'Date', required
           type="button"
           className="mini-date-strip__arrow"
           onClick={handleForward}
-          disabled={!canGoForward}
+          disabled={atEnd}
           aria-label="Show later days"
         >
           <ChevronRight size={16} aria-hidden />
@@ -162,14 +205,18 @@ export function MiniDateStrip({ value, onChange, error, label = 'Date', required
           value={value}
           onChange={(iso) => {
             if (!iso) return;
-            // Recenter in the same update as the value change — waiting for the
-            // effect below to react a render later flashes the "Selected: …"
-            // hint for one frame before the window catches up.
-            const parsed = parseISODate(iso);
-            if (parsed) setWindowEnd(clampWindowEnd(parsed));
+            // Scroll (and optimistically mark visible) in the same handler as
+            // the value change — waiting for the IntersectionObserver's own
+            // async confirmation a render later flashes the "Selected: …"
+            // hint for a frame before the strip catches up.
+            const cell = cellRefs.current.get(iso);
+            if (cell) {
+              cell.scrollIntoView({ behavior: 'auto', inline: 'nearest', block: 'nearest' });
+              setVisibleIsos((prev) => new Set(prev).add(iso));
+            }
             onChange(iso);
           }}
-          maxDate={toISODate(today)}
+          maxDate={todayIso}
         />
       </div>
     </FormField>

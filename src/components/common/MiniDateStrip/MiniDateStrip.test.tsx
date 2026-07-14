@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MiniDateStrip } from './MiniDateStrip';
 
@@ -16,13 +16,63 @@ function dayName(day: number) {
   return new RegExp(`^${day} Jul 2026$`);
 }
 
+// jsdom has no real layout, so IntersectionObserver never fires on its own.
+// This test-local mock captures every instance the component creates and lets
+// a test declare "these isos are currently scrolled into view" directly,
+// which is what a real browser would eventually report after a scroll.
+class TestIntersectionObserver implements IntersectionObserver {
+  static instances: TestIntersectionObserver[] = [];
+  readonly root: Element | Document | null = null;
+  readonly rootMargin = '';
+  readonly thresholds: ReadonlyArray<number> = [];
+  private callback: IntersectionObserverCallback;
+  private observed: Element[] = [];
+
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback;
+    TestIntersectionObserver.instances.push(this);
+  }
+
+  observe(el: Element) {
+    this.observed.push(el);
+  }
+  unobserve() {}
+  disconnect() {}
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+
+  fireVisible(isos: string[]) {
+    const entries = this.observed.map(
+      (el) =>
+        ({
+          target: el,
+          isIntersecting: isos.includes((el as HTMLElement).dataset.iso ?? ''),
+        }) as IntersectionObserverEntry,
+    );
+    this.callback(entries, this);
+  }
+}
+
+beforeEach(() => {
+  TestIntersectionObserver.instances = [];
+  vi.stubGlobal('IntersectionObserver', TestIntersectionObserver);
+});
+
+function setVisible(isos: string[]) {
+  const observer = TestIntersectionObserver.instances.at(-1);
+  if (!observer) throw new Error('No IntersectionObserver instance created yet');
+  act(() => observer.fireVisible(isos));
+}
+
 describe('MiniDateStrip', () => {
-  describe('default window', () => {
-    it('shows the 5 most recent days ending today, each labeled with month + day', () => {
+  describe('rendering the recent window', () => {
+    it('renders every day from 14 days ago through today', () => {
       render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
-      for (const day of [14, 15, 16, 17, 18]) {
-        expect(screen.getByRole('button', { name: dayName(day) })).toBeInTheDocument();
-      }
+      expect(screen.getByRole('button', { name: dayName(5) })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: dayName(18) })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: dayName(4) })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: dayName(19) })).not.toBeInTheDocument();
     });
 
     it('marks the cell matching value as active', () => {
@@ -32,22 +82,10 @@ describe('MiniDateStrip', () => {
         'true',
       );
     });
-
-    it('disables the forward arrow when the window already ends today', () => {
-      render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
-      expect(screen.getByRole('button', { name: /show later days/i })).toBeDisabled();
-    });
-  });
-
-  describe('future dates', () => {
-    it('does not render any day after today', () => {
-      render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
-      expect(screen.queryByRole('button', { name: dayName(19) })).not.toBeInTheDocument();
-    });
   });
 
   describe('selecting a day', () => {
-    it('calls onChange with the ISO date when a visible day is clicked', () => {
+    it('calls onChange with the ISO date when a day cell is clicked', () => {
       const onChange = vi.fn();
       render(<MiniDateStrip value="2026-07-18" onChange={onChange} />);
       fireEvent.click(screen.getByRole('button', { name: dayName(16) }));
@@ -55,44 +93,42 @@ describe('MiniDateStrip', () => {
     });
   });
 
-  describe('navigating within the recent window', () => {
-    it('shifts the window back one day without disturbing the selection when "‹" is clicked', () => {
+  describe('scrolling within the recent window', () => {
+    it('scrolls the container back one cell when "‹" is clicked and today is not the oldest visible day', () => {
       render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
+      setVisible(['2026-07-14', '2026-07-15', '2026-07-16', '2026-07-17', '2026-07-18']);
+      const days = screen.getByRole('group', { name: /select a recent date/i });
+      const scrollBySpy = vi.spyOn(days, 'scrollBy');
       fireEvent.click(screen.getByRole('button', { name: /show earlier days/i }));
-      // Window is now Jul 13–17 — Jul 13 newly visible, Jul 18 scrolled out.
-      expect(screen.getByRole('button', { name: dayName(13) })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: dayName(18) })).not.toBeInTheDocument();
+      expect(scrollBySpy).toHaveBeenCalled();
     });
 
-    it('shifts the window forward when "›" is clicked after moving back', () => {
+    it('disables the forward arrow once today is scrolled into view', () => {
       render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
-      const back = screen.getByRole('button', { name: /show earlier days/i });
-      fireEvent.click(back);
-      fireEvent.click(screen.getByRole('button', { name: /show later days/i }));
-      expect(screen.getByRole('button', { name: dayName(18) })).toBeInTheDocument();
+      setVisible(['2026-07-16', '2026-07-17', '2026-07-18']);
+      expect(screen.getByRole('button', { name: /show later days/i })).toBeDisabled();
+    });
+
+    it('leaves the forward arrow enabled while today is scrolled out of view', () => {
+      render(<MiniDateStrip value="2026-07-05" onChange={vi.fn()} />);
+      setVisible(['2026-07-04', '2026-07-05', '2026-07-06']);
+      expect(screen.getByRole('button', { name: /show later days/i })).not.toBeDisabled();
     });
   });
 
   describe('falling back to the full picker beyond the recent window', () => {
-    it('opens the calendar instead of scrolling further once the 14-day boundary is reached', () => {
+    it('opens the calendar instead of scrolling once the oldest day is already in view', () => {
       render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
-      const back = screen.getByRole('button', { name: /show earlier days/i });
-      // Window starts at Jul14–18 (oldest visible Jul 14). The recent-window floor is
-      // Jul 5 (today - 13). Each click walks the window back by one day; once the
-      // oldest visible day would go past Jul 5, the click opens the picker instead.
-      for (let i = 0; i < 10; i++) {
-        fireEvent.click(back);
-      }
+      setVisible(['2026-07-05', '2026-07-06', '2026-07-07']); // oldest allowed day (Jul 5) visible
+      fireEvent.click(screen.getByRole('button', { name: /show earlier days/i }));
       expect(screen.getByRole('grid')).toBeInTheDocument();
     });
 
     it('picking a date from the fallback calendar calls onChange and closes the picker', () => {
       const onChange = vi.fn();
       render(<MiniDateStrip value="2026-07-18" onChange={onChange} />);
-      const back = screen.getByRole('button', { name: /show earlier days/i });
-      for (let i = 0; i < 10; i++) {
-        fireEvent.click(back);
-      }
+      setVisible(['2026-07-05', '2026-07-06', '2026-07-07']);
+      fireEvent.click(screen.getByRole('button', { name: /show earlier days/i }));
       expect(screen.getByRole('grid')).toBeInTheDocument();
 
       const gridCells = screen
@@ -104,15 +140,32 @@ describe('MiniDateStrip', () => {
     });
   });
 
-  describe('value outside the visible window', () => {
-    it('shows a "Selected" hint when the value is further back than the recent window covers', () => {
-      render(<MiniDateStrip value="2026-06-01" onChange={vi.fn()} />);
-      expect(screen.getByText(/selected/i)).toBeInTheDocument();
+  describe('value outside the current view', () => {
+    it('shows a "Selected" hint when the value is not among the currently visible cells', () => {
+      render(<MiniDateStrip value="2026-07-05" onChange={vi.fn()} />);
+      setVisible(['2026-07-16', '2026-07-17', '2026-07-18']);
+      expect(screen.getByText(/selected: 5 jul 2026/i)).toBeInTheDocument();
     });
 
-    it('does not show the hint when the value is within the visible window', () => {
+    it('does not show the hint once the value scrolls into view', () => {
       render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
+      setVisible(['2026-07-16', '2026-07-17', '2026-07-18']);
       expect(screen.queryByText(/selected:/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('per-cell month label', () => {
+    it('shows the month abbreviation on every cell', () => {
+      render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
+      expect(screen.getAllByText('Jul').length).toBe(14);
+    });
+
+    it("shows each cell's own month when the recent window spans a boundary", () => {
+      vi.setSystemTime(new Date(2026, 6, 3));
+      render(<MiniDateStrip value="2026-07-03" onChange={vi.fn()} />);
+      // 14-day window ending Jul 3 starts Jun 20 — 11 Jun cells, 3 Jul cells.
+      expect(screen.getAllByText('Jun').length).toBe(11);
+      expect(screen.getAllByText('Jul').length).toBe(3);
     });
   });
 
@@ -120,21 +173,6 @@ describe('MiniDateStrip', () => {
     it('passes through error and required to the underlying FormField', () => {
       render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} error="Required" required />);
       expect(screen.getByRole('alert')).toHaveTextContent('Required');
-    });
-  });
-
-  describe('per-cell month label', () => {
-    it('shows the month abbreviation on every cell', () => {
-      render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
-      expect(screen.getAllByText('Jul').length).toBe(5);
-    });
-
-    it('shows each cell\'s own month when the visible window spans a boundary', () => {
-      vi.setSystemTime(new Date(2026, 6, 3));
-      render(<MiniDateStrip value="2026-07-03" onChange={vi.fn()} />);
-      // Window is Jun 29 – Jul 3: two Jun cells, three Jul cells.
-      expect(screen.getAllByText('Jun').length).toBe(2);
-      expect(screen.getAllByText('Jul').length).toBe(3);
     });
   });
 });
