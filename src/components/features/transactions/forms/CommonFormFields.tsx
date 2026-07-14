@@ -70,13 +70,14 @@ export function CommonFormFields({
           onChange={(v) => onChange('date', v)}
           error={errors.date}
           required
-          showMonth={false}
         />
       )}
 
-      {/* Account | Method */}
+      {/* Account | Method — grid only when both share the row; a lone field
+          renders in a plain wrapper so it takes the full row width instead of
+          sitting in one half of a 2-column grid it has no partner for. */}
       {visibleKeyFields > 0 && (
-        <div className={`tx-form__row${visibleKeyFields === 1 ? ' tx-form__row--2' : ''}`}>
+        <div className={visibleKeyFields === 2 ? 'tx-form__row tx-form__row--2' : undefined}>
           {showAccount && (
             <SelectField
               label="Account"

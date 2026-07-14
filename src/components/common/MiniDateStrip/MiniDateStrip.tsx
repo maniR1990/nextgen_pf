@@ -11,8 +11,6 @@ export interface MiniDateStripProps {
   error?: string;
   label?: string;
   required?: boolean;
-  /** Show the month abbreviation on each cell alongside the day number. Defaults to true. */
-  showMonth?: boolean;
 }
 
 const VISIBLE_DAYS = 5;
@@ -49,14 +47,7 @@ function formatCellLabel(d: Date): string {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-export function MiniDateStrip({
-  value,
-  onChange,
-  error,
-  label = 'Date',
-  required,
-  showMonth = true,
-}: MiniDateStripProps) {
+export function MiniDateStrip({ value, onChange, error, label = 'Date', required }: MiniDateStripProps) {
   const today = startOfDay(new Date());
   const oldestAllowed = addDays(today, -(RECENT_WINDOW_DAYS - 1));
   const minWindowEnd = addDays(oldestAllowed, VISIBLE_DAYS - 1);
@@ -106,8 +97,12 @@ export function MiniDateStrip({
   const isValueVisible = Boolean(
     parsedValue && parsedValue >= visibleStart && parsedValue <= windowEnd,
   );
+  // Always a non-empty string (falls back to a non-breaking space) so
+  // FormField's hint line is always mounted at a fixed height — otherwise the
+  // whole form jumps up/down every time this line mounts/unmounts while
+  // scrolling the strip in and out of the selected day.
   const hint =
-    !isValueVisible && parsedValue ? `Selected: ${formatCellLabel(parsedValue)}` : undefined;
+    !isValueVisible && parsedValue ? `Selected: ${formatCellLabel(parsedValue)}` : ' ';
 
   return (
     <FormField label={label} error={error} required={required} hint={hint}>
@@ -141,11 +136,9 @@ export function MiniDateStrip({
                 aria-pressed={isActive}
                 aria-label={formatCellLabel(d)}
               >
-                {showMonth && (
-                  <span className="mini-date-strip__month">
-                    {d.toLocaleDateString('en-IN', { month: 'short' })}
-                  </span>
-                )}
+                <span className="mini-date-strip__month">
+                  {d.toLocaleDateString('en-IN', { month: 'short' })}
+                </span>
                 <span className="mini-date-strip__num">{d.getDate()}</span>
               </button>
             );
@@ -168,7 +161,13 @@ export function MiniDateStrip({
           onOpenChange={setPickerOpen}
           value={value}
           onChange={(iso) => {
-            if (iso) onChange(iso);
+            if (!iso) return;
+            // Recenter in the same update as the value change — waiting for the
+            // effect below to react a render later flashes the "Selected: …"
+            // hint for one frame before the window catches up.
+            const parsed = parseISODate(iso);
+            if (parsed) setWindowEnd(clampWindowEnd(parsed));
+            onChange(iso);
           }}
           maxDate={toISODate(today)}
         />

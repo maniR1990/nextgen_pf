@@ -123,16 +123,18 @@ describe('MiniDateStrip', () => {
     });
   });
 
-  describe('showMonth', () => {
-    it('renders the month abbreviation by default', () => {
+  describe('per-cell month label', () => {
+    it('shows the month abbreviation on every cell', () => {
       render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
-      expect(screen.getAllByText('Jul').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Jul').length).toBe(5);
     });
 
-    it('hides the month abbreviation when showMonth is false, keeping the day number and label', () => {
-      render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} showMonth={false} />);
-      expect(screen.queryByText('Jul')).not.toBeInTheDocument();
-      expect(screen.getByRole('button', { name: dayName(18) })).toBeInTheDocument();
+    it('shows each cell\'s own month when the visible window spans a boundary', () => {
+      vi.setSystemTime(new Date(2026, 6, 3));
+      render(<MiniDateStrip value="2026-07-03" onChange={vi.fn()} />);
+      // Window is Jun 29 – Jul 3: two Jun cells, three Jul cells.
+      expect(screen.getAllByText('Jun').length).toBe(2);
+      expect(screen.getAllByText('Jul').length).toBe(3);
     });
   });
 });

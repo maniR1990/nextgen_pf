@@ -181,16 +181,20 @@
 //
 // A scrollable strip of individual days rather than a calendar-month grid —
 // backdating a transaction a few days is one tap, and scrolling never needs
-// to special-case a month boundary the way a grid would. Cells are fixed-size
-// chips that hug their own content (same pattern as .amount-input__chip) —
-// they must NOT flex-grow to fill the row, or on a wide desktop form they
+// to special-case a month boundary the way a grid would. One unified pill
+// border wraps the whole row (arrows + cells) rather than each day being its
+// own separate chip — only the active day gets a filled highlight, everything
+// else sits flush against the shared border. Cells are fixed-size and hug
+// their own content instead of flex-growing, or on a wide desktop form they'd
 // stretch into oversized, ugly tiles. Past the recent window, the embedded
 // DatePicker (hideTrigger, controlled open) takes over.
 
 .mini-date-strip {
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-1);
+  // inline-flex, not flex — the strip must hug its own content (arrows + 5
+  // cells) and stay left-aligned, not stretch to fill the whole form width.
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   position: relative;
 
   &__arrow {
@@ -198,17 +202,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    background: var(--color-bg-subtle);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
     color: var(--color-text-muted);
     cursor: pointer;
-    transition: border-color var(--transition-fast), color var(--transition-fast);
+    transition: color var(--transition-fast);
 
-    &:hover:not(:disabled) { border-color: var(--color-brand); color: var(--color-brand); }
+    &:hover:not(:disabled) { color: var(--color-brand); }
 
-    &:disabled { opacity: 0.4; cursor: not-allowed; }
+    &:disabled { opacity: 0.35; cursor: not-allowed; }
   }
 
   &__days {
@@ -218,52 +218,52 @@
 
   &__day {
     flex: 0 0 auto;
-    min-width: 44px;
+    // Fixed min-width so 1- and 2-digit days (8 vs. 12) don't render as
+    // visibly different widths — a segmented control should feel evenly
+    // spaced regardless of which digits happen to be showing.
+    min-width: 36px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 1px;
-    padding: var(--space-1-5) var(--space-2);
-    background: var(--color-bg-subtle);
-    border: 1px solid var(--color-border);
+    padding: var(--space-0-5) var(--space-1-5);
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+    transition: background var(--transition-fast), color var(--transition-fast);
 
-    &:hover:not(:disabled) { border-color: var(--color-brand); color: var(--color-brand); }
+    &:hover:not(:disabled) { color: var(--color-brand); }
 
     &:disabled { opacity: 0.35; cursor: not-allowed; }
 
     &--active {
-      border-color: var(--color-brand);
-      background: var(--comp-badge-active-bg);
-      color: var(--color-brand);
+      background: var(--color-bg-subtle);
     }
   }
 
   &__month {
     font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-weight: 500;
+    line-height: 1.2;
     color: var(--color-text-muted);
   }
-
-  &__day--active &__month { color: var(--color-brand); }
 
   &__num {
     font-size: var(--font-size-sm);
     font-weight: 700;
+    line-height: 1.2;
   }
 
   // Embedded DatePicker fallback — trigger is hidden, only the popover/sheet
-  // ever renders, so this contributes no width/height when closed.
-  // Popover is position:absolute, so this host div carries no visible content of
-  // its own — override the base `.date-picker { width: 100% }` or it swallows
-  // the whole row's flex space and starves the day cells down to 0.
+  // ever renders. Pinned to the strip's own top-left corner (out of flex flow
+  // entirely) instead of sitting after the forward arrow in DOM order — left
+  // in normal flow, its `left: 0` popover would anchor under the far-right
+  // arrow rather than under the strip, and its base `width: 100%` would also
+  // swallow the row's flex space and starve the day cells down to 0.
   .date-picker {
-    flex-shrink: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: auto;
   }
 }
