@@ -177,59 +177,96 @@
   }
 }
 
-// ─── DateInput ──────────────────────────────────────────────────────────────
+// ─── MiniDateStrip ──────────────────────────────────────────────────────────
 //
-// Replaces the date box outright rather than adding a chip row below it —
-// Today/Yesterday/2 days ago plus a picker trigger fit in the same single
-// row height as every other compact field, so this adds zero extra space.
-// The native <input type="date"> stays in the DOM but visually hidden —
-// showPicker() launches the real OS/browser date UI from it — same
-// hidden-native-control pattern already used by SelectField below.
+// A scrollable strip of individual days rather than a calendar-month grid —
+// backdating a transaction a few days is one tap, and scrolling never needs
+// to special-case a month boundary the way a grid would. Each day cell is
+// `flex: 1 / min-width: 0` so the whole row compresses to fit any viewport
+// (same fix as the grid-track and flex-item overflow traps elsewhere in this
+// file) instead of needing its own mobile breakpoint. Past the recent
+// window, the embedded DatePicker (hideTrigger, controlled open) takes over.
 
-.date-input {
+.mini-date-strip {
   display: flex;
-  gap: var(--space-1-5);
-  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--space-1);
+  position: relative;
 
-  &__chip {
-    display: inline-flex;
+  &__arrow {
+    flex-shrink: 0;
+    display: flex;
     align-items: center;
-    gap: var(--space-1);
-    padding: var(--space-1-5) var(--space-2-5);
-    font-size: var(--font-size-xs);
-    font-weight: 500;
+    justify-content: center;
+    width: 32px;
     background: var(--color-bg-subtle);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-full, 999px);
-    color: var(--color-text);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
     cursor: pointer;
-    white-space: nowrap;
-    line-height: 1.25;
+    transition: border-color var(--transition-fast), color var(--transition-fast);
+
+    &:hover:not(:disabled) { border-color: var(--color-brand); color: var(--color-brand); }
+
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
+
+  &__days {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    gap: var(--space-1);
+  }
+
+  &__day {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    padding: var(--space-1) var(--space-0-5);
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
     transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 
-    &:hover { border-color: var(--color-brand); color: var(--color-brand); }
+    &:hover:not(:disabled) { border-color: var(--color-brand); color: var(--color-brand); }
+
+    &:disabled { opacity: 0.35; cursor: not-allowed; }
 
     &--active {
       border-color: var(--color-brand);
       background: var(--comp-badge-active-bg);
       color: var(--color-brand);
-      font-weight: 600;
-    }
-
-    &--picker {
-      color: var(--color-text-muted);
-
-      &.date-input__chip--active { color: var(--color-brand); }
     }
   }
 
-  &__native {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-    width: 0;
-    height: 0;
-    overflow: hidden;
+  &__month {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  &__day--active &__month { color: var(--color-brand); }
+
+  &__num {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+  }
+
+  // Embedded DatePicker fallback — trigger is hidden, only the popover/sheet
+  // ever renders, so this contributes no width/height when closed.
+  // Popover is position:absolute, so this host div carries no visible content of
+  // its own — override the base `.date-picker { width: 100% }` or it swallows
+  // the whole row's flex space and starves the day cells down to 0.
+  .date-picker {
+    flex-shrink: 0;
+    width: auto;
   }
 }
 

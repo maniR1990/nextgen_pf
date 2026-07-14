@@ -1,8 +1,8 @@
 'use client';
 
 import { AmountInput } from '@/components/common/AmountInput';
-import { DateInput } from '@/components/common/DateInput';
 import { FormField } from '@/components/common/FormField';
+import { MiniDateStrip } from '@/components/common/MiniDateStrip';
 import { SelectField } from '@/components/common/SelectField';
 import { RecurringConfig } from '@/components/features/transactions/RecurringConfig';
 import { PAYMENT_METHODS, TX_TYPE_META } from '@/constants/finance';
@@ -65,7 +65,13 @@ export function CommonFormFields({
 
       {/* Own row — a chip row doesn't belong squeezed into a select-field-width column. */}
       {showDate && (
-        <DateInput value={values.date} onChange={(v) => onChange('date', v)} error={errors.date} required />
+        <MiniDateStrip
+          value={values.date}
+          onChange={(v) => onChange('date', v)}
+          error={errors.date}
+          required
+          showMonth={false}
+        />
       )}
 
       {/* Account | Method */}

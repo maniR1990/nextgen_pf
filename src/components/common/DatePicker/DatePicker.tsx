@@ -30,6 +30,12 @@ export interface DatePickerProps {
   label?: string;
   error?: string;
   clearable?: boolean;
+  /** Controlled open state — omit to keep the default uncontrolled (internal) behavior. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Skip rendering the trigger button — for embedding the popover/sheet behind a
+   *  caller-provided control instead (open must be controlled in that case). */
+  hideTrigger?: boolean;
 }
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -68,9 +74,18 @@ export function DatePicker({
   label,
   error,
   clearable = true,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
 }: DatePickerProps) {
   const today = new Date();
-  const [open, setOpen] = useState(false);
+  const isOpenControlled = controlledOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isOpenControlled ? controlledOpen : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (!isOpenControlled) setInternalOpen(v);
+    onOpenChange?.(v);
+  };
   const [mounted, setMounted] = useState(false);
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -359,40 +374,42 @@ export function DatePicker({
   return (
     <div className="date-picker" ref={containerRef}>
       {label && <label className="date-picker__label">{label}</label>}
-      <button
-        type="button"
-        className={triggerCls}
-        disabled={disabled}
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-      >
-        <CalendarDays size={16} className="date-picker__trigger-icon" aria-hidden />
-        <span
-          className={`date-picker__trigger-text${!displayText ? ' date-picker__trigger-text--placeholder' : ''}`}
+      {!hideTrigger && (
+        <button
+          type="button"
+          className={triggerCls}
+          disabled={disabled}
+          onClick={() => setOpen(!open)}
+          aria-haspopup="dialog"
+          aria-expanded={open}
         >
-          {displayText ?? placeholder}
-        </span>
-        {clearable && hasValue && (
+          <CalendarDays size={16} className="date-picker__trigger-icon" aria-hidden />
           <span
-            className="date-picker__clear-icon"
-            role="button"
-            aria-label="Clear date"
-            onClick={handleClear}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') handleClear(e as unknown as React.MouseEvent);
-            }}
+            className={`date-picker__trigger-text${!displayText ? ' date-picker__trigger-text--placeholder' : ''}`}
           >
-            <X size={14} />
+            {displayText ?? placeholder}
           </span>
-        )}
-        <ChevronDown
-          size={14}
-          className={`date-picker__chevron${open ? ' date-picker__chevron--open' : ''}`}
-          aria-hidden
-        />
-      </button>
+          {clearable && hasValue && (
+            <span
+              className="date-picker__clear-icon"
+              role="button"
+              aria-label="Clear date"
+              onClick={handleClear}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') handleClear(e as unknown as React.MouseEvent);
+              }}
+            >
+              <X size={14} />
+            </span>
+          )}
+          <ChevronDown
+            size={14}
+            className={`date-picker__chevron${open ? ' date-picker__chevron--open' : ''}`}
+            aria-hidden
+          />
+        </button>
+      )}
       {error && (
         <span className="date-picker__error" role="alert">
           {error}

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DatePicker } from './DatePicker';
@@ -42,8 +42,9 @@ describe('DatePicker', () => {
     it('opens calendar on trigger click', async () => {
       const user = userEvent.setup();
       render(<DatePicker label="Date" />);
-      await user.click(screen.getByRole('button', { name: /select date/i }));
-      expect(screen.getByRole('button')).toHaveAttribute('aria-expanded', 'true');
+      const trigger = screen.getByRole('button', { name: /select date/i });
+      await user.click(trigger);
+      expect(trigger).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('calls onChange when a day is selected', async () => {
@@ -60,6 +61,35 @@ describe('DatePicker', () => {
       expect(trigger).toBeDisabled();
       await user.click(trigger);
       expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    });
+  });
+
+  describe('controlled open + hideTrigger (for embedding as a fallback)', () => {
+    it('hides the trigger button when hideTrigger is set', () => {
+      render(<DatePicker hideTrigger open={false} onOpenChange={vi.fn()} />);
+      expect(screen.queryByRole('button', { name: /select date/i })).not.toBeInTheDocument();
+    });
+
+    it('shows the calendar when open is controlled to true, with no trigger present', () => {
+      render(<DatePicker hideTrigger open onOpenChange={vi.fn()} />);
+      expect(screen.getByRole('grid')).toBeInTheDocument();
+    });
+
+    it('calls onOpenChange instead of managing state internally when controlled', () => {
+      const onOpenChange = vi.fn();
+      render(<DatePicker hideTrigger open onOpenChange={onOpenChange} onChange={vi.fn()} />);
+      const dayButtons = screen.getAllByRole('gridcell');
+      fireEvent.click(dayButtons.find((b) => !b.hasAttribute('aria-disabled') || b.getAttribute('aria-disabled') === 'false')!);
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it('an uncontrolled DatePicker (no open prop) still manages its own state as before', async () => {
+      const user = userEvent.setup();
+      render(<DatePicker label="Date" />);
+      const trigger = screen.getByRole('button', { name: /select date/i });
+      expect(trigger).toHaveAttribute('aria-expanded', 'false');
+      await user.click(trigger);
+      expect(trigger).toHaveAttribute('aria-expanded', 'true');
     });
   });
 
