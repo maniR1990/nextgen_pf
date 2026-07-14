@@ -181,11 +181,11 @@
 //
 // A scrollable strip of individual days rather than a calendar-month grid —
 // backdating a transaction a few days is one tap, and scrolling never needs
-// to special-case a month boundary the way a grid would. Each day cell is
-// `flex: 1 / min-width: 0` so the whole row compresses to fit any viewport
-// (same fix as the grid-track and flex-item overflow traps elsewhere in this
-// file) instead of needing its own mobile breakpoint. Past the recent
-// window, the embedded DatePicker (hideTrigger, controlled open) takes over.
+// to special-case a month boundary the way a grid would. Cells are fixed-size
+// chips that hug their own content (same pattern as .amount-input__chip) —
+// they must NOT flex-grow to fill the row, or on a wide desktop form they
+// stretch into oversized, ugly tiles. Past the recent window, the embedded
+// DatePicker (hideTrigger, controlled open) takes over.
 
 .mini-date-strip {
   display: flex;
@@ -194,7 +194,7 @@
   position: relative;
 
   &__arrow {
-    flex-shrink: 0;
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -213,20 +213,18 @@
 
   &__days {
     display: flex;
-    flex: 1;
-    min-width: 0;
     gap: var(--space-1);
   }
 
   &__day {
-    flex: 1;
-    min-width: 0;
+    flex: 0 0 auto;
+    min-width: 44px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 1px;
-    padding: var(--space-1) var(--space-0-5);
+    padding: var(--space-1-5) var(--space-2);
     background: var(--color-bg-subtle);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
