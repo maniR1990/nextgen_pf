@@ -76,6 +76,13 @@
       background: var(--color-brand);
       color: #fff;
     }
+
+    // No-spend day: subtle success-tinted circle — a positive signal, not an alert,
+    // so it stays quiet next to --today/--selected's stronger brand fill.
+    &--no-spend .month-cal__day-num {
+      background: color-mix(in srgb, var(--color-success) 12%, var(--color-bg-surface));
+      color: var(--color-success);
+    }
   }
 
   &__day-num {

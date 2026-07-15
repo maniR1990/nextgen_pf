@@ -22,8 +22,8 @@ describe('MonthCalendar', () => {
 
     it('renders weekday headers', () => {
       render(<MonthCalendar month={6} year={2026} />);
-      expect(screen.getByText('Sun')).toBeInTheDocument();
-      expect(screen.getByText('Sat')).toBeInTheDocument();
+      expect(screen.getByText('Su')).toBeInTheDocument();
+      expect(screen.getByText('Sa')).toBeInTheDocument();
     });
 
     it('renders day buttons for June 2026 (30 days)', () => {
@@ -63,6 +63,34 @@ describe('MonthCalendar', () => {
         />,
       );
       expect(screen.getByText('No transactions')).toBeInTheDocument();
+    });
+  });
+
+  describe('no-spend highlight', () => {
+    it('marks a day listed in noSpendDates', () => {
+      render(<MonthCalendar month={6} year={2026} noSpendDates={['2026-06-13']} />);
+      const day13 = screen.getByRole('gridcell', { name: /June 13, 2026/i });
+      expect(day13.className).toContain('month-cal__day--no-spend');
+    });
+
+    it('does not mark a day absent from noSpendDates', () => {
+      render(<MonthCalendar month={6} year={2026} noSpendDates={['2026-06-13']} />);
+      const day14 = screen.getByRole('gridcell', { name: /June 14, 2026/i });
+      expect(day14.className).not.toContain('month-cal__day--no-spend');
+    });
+
+    it('does not apply the no-spend class to the selected day (selection wins)', () => {
+      render(
+        <MonthCalendar
+          month={6}
+          year={2026}
+          noSpendDates={['2026-06-13']}
+          selectedDate="2026-06-13"
+        />,
+      );
+      const day13 = screen.getByRole('gridcell', { name: /June 13, 2026/i });
+      expect(day13.className).toContain('month-cal__day--selected');
+      expect(day13.className).not.toContain('month-cal__day--no-spend');
     });
   });
 

@@ -189,4 +189,27 @@ export const TransactionRepository = {
       },
       _sum: { amount: true },
     }),
+
+  // Full transaction rows for a period, unpaginated — used by the dashboard calendar,
+  // which needs every transaction to render its per-day dots and the click-a-day detail
+  // panel, not just an aggregate. A single user's month is always small enough to fetch
+  // whole; do not reach for this for anything list-shaped (use findWithCursor instead).
+  findAllForPeriod: (userId: string, year: number, month: number) =>
+    prisma.financeTransaction.findMany({
+      where: {
+        userId,
+        budgetPeriodYear: year,
+        budgetPeriodMonth: month,
+        status: { not: 'VOID' },
+      },
+      select: {
+        id: true,
+        date: true,
+        type: true,
+        amount: true,
+        merchant: true,
+        category: { select: { name: true } },
+      },
+      orderBy: { date: 'asc' },
+    }),
 };

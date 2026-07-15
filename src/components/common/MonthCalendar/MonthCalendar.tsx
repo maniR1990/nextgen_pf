@@ -20,6 +20,8 @@ export interface MonthCalendarProps {
   onMonthChange?: (month: number, year: number) => void;
   onAddTransaction?: (date: string) => void;
   selectedDate?: string | null;
+  /** ISO dates ('YYYY-MM-DD') with no expense that day — given a subtle highlight. */
+  noSpendDates?: string[];
 }
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -56,7 +58,9 @@ export function MonthCalendar({
   onMonthChange,
   onAddTransaction,
   selectedDate,
+  noSpendDates = [],
 }: MonthCalendarProps) {
+  const noSpendSet = new Set(noSpendDates);
   const [viewMonth, setViewMonth] = useState(month - 1);
   const [viewYear, setViewYear] = useState(year);
 
@@ -132,6 +136,7 @@ export function MonthCalendar({
             'month-cal__day',
             isToday(todayDate) && !isSelected ? 'month-cal__day--today' : '',
             isSelected ? 'month-cal__day--selected' : '',
+            noSpendSet.has(iso) && !isSelected ? 'month-cal__day--no-spend' : '',
           ]
             .filter(Boolean)
             .join(' ');

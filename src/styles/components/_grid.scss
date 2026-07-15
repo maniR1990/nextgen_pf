@@ -37,6 +37,15 @@
   }
 }
 
+// 5/12 — stacks on mobile, 5 cols from md
+.grid__col--five {
+  grid-column: span var(--grid-columns);
+
+  @include m.respond-to(md) {
+    grid-column: span 5;
+  }
+}
+
 // 1/4 — stacks on mobile, 4 cols from lg
 .grid__col--quarter {
   grid-column: span var(--grid-columns);

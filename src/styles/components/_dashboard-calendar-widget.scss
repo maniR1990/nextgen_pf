@@ -1,0 +1,38 @@
+@use '../mixins' as m;
+
+// Composes the existing .card / .progress / .badge primitives — only the layout glue
+// between them is new here, not a parallel set of card/progress/badge styles.
+.dashboard-calendar-widget {
+  @include m.flex-col($gap: var(--space-4));
+
+  &__status {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__streak {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  &__bills {
+    @include m.flex-col($gap: var(--space-1-5));
+  }
+
+  &__section-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0;
+  }
+
+  &__bill-row {
+    @include m.flex-between;
+    align-items: center;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+  }
+}

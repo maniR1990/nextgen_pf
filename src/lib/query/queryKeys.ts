@@ -62,6 +62,11 @@ export const queryKeys = {
     all: ['budget'] as const,
     summary: (year: number, month: number) => ['budget', 'summary', year, month] as const,
   },
+  dashboard: {
+    all: ['dashboard'] as const,
+    calendar: (year: number, month: number) =>
+      [...queryKeys.dashboard.all, 'calendar', year, month] as const,
+  },
 };
 
 export { TRANSACTIONS_ROOT };
