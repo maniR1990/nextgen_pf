@@ -175,20 +175,19 @@ export function MonthCalendar({
             <div className="month-cal__panel-summary-left">
               <span className="month-cal__panel-date-label">{panelDateLabel}</span>
               <span className="month-cal__panel-separator">·</span>
-              <span className="month-cal__panel-tx-count">Transactions</span>
+              <span className="month-cal__panel-count">
+                {selectedTxs.length} txn{selectedTxs.length === 1 ? '' : 's'}
+              </span>
             </div>
-            <div className="month-cal__panel-summary-right">
-              <span className="month-cal__panel-count">{selectedTxs.length} transactions</span>
-              {dayTotals && (
-                <span
-                  className={`month-cal__panel-total month-cal__panel-total--${dayTotals.net >= 0 ? 'credit' : 'debit'}`}
-                >
-                  {dayTotals.net >= 0
-                    ? `+₹${dayTotals.net.toLocaleString('en-IN')}`
-                    : `−₹${Math.abs(dayTotals.net).toLocaleString('en-IN')}`}
-                </span>
-              )}
-            </div>
+            {dayTotals && (
+              <span
+                className={`month-cal__panel-total month-cal__panel-total--${dayTotals.net >= 0 ? 'credit' : 'debit'}`}
+              >
+                {dayTotals.net >= 0
+                  ? `+₹${dayTotals.net.toLocaleString('en-IN')}`
+                  : `−₹${Math.abs(dayTotals.net).toLocaleString('en-IN')}`}
+              </span>
+            )}
           </div>
 
           {/* Mobile: individual transaction rows */}

@@ -127,43 +127,37 @@
     @include m.flex-col($gap: 0);
   }
 
-  // Desktop: one-row summary (date · TRANSACTIONS  |  N transactions  total)
+  // One-row summary: date · N txn  —  total. Kept to a single non-wrapping line at
+  // any width (this panel lives inside a grid card, not a full-width viewport, so a
+  // viewport-based breakpoint can't be relied on to guarantee room to wrap onto).
   &__panel-summary {
-    @include m.flex-between;
-    align-items: center;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
     padding: var(--space-1) 0 var(--space-2);
   }
 
   &__panel-summary-left {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: var(--space-1-5);
+    min-width: 0;
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
     font-weight: var(--font-variation-semibold);
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    white-space: nowrap;
   }
 
   &__panel-separator { color: var(--color-text-muted); }
   &__panel-date-label { color: var(--color-text-muted); }
-  &__panel-tx-count { color: var(--color-text-muted); }
-
-  &__panel-summary-right {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-  }
-
-  &__panel-count {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-muted);
-
-    // Hide on mobile (individual rows shown instead)
-    @include m.respond-below(sm) { display: none; }
-  }
+  &__panel-count { color: var(--color-text-muted); }
 
   &__panel-total {
+    flex-shrink: 0;
     font-size: var(--font-size-sm);
     font-weight: var(--font-variation-semibold);
     &--credit { color: var(--color-success); }
