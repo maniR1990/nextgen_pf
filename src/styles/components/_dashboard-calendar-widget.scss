@@ -1,23 +1,83 @@
 @use '../mixins' as m;
 
-// Composes the existing .card / .progress / .badge primitives — only the layout glue
-// between them is new here, not a parallel set of card/progress/badge styles.
+// Composes the existing .card / .badge primitives — only the layout glue between them
+// is new here, not a parallel set of card/badge styles. Sections are separated by a
+// hairline rule rather than gap alone, so the widget reads as clear groups at a glance.
 .dashboard-calendar-widget {
-  @include m.flex-col($gap: var(--space-4));
+  @include m.flex-col($gap: var(--space-3));
 
   &__status {
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
   }
 
-  &__streak {
-    font-size: var(--font-size-sm);
+  // Quick-glance stats: transactions / no-spend days / best streak
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  &__stat {
+    @include m.flex-col($gap: var(--space-0-5));
+    min-width: 0;
+  }
+
+  &__stat-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-semibold);
     color: var(--color-text-muted);
-    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    // These are short, fixed labels ("Transactions", "Best streak") that occasionally
+    // sit right at the edge of their column at real font metrics — let one wrap onto a
+    // second line rather than truncating it into unreadable "TRANSACTIO…" with ellipsis.
+    overflow-wrap: break-word;
+  }
+
+  &__stat-value {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-variation-bold);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    line-height: var(--line-height-tight);
+
+    &--success { color: var(--color-success); }
+  }
+
+  // Budget pace: plain-language line + verdict badge, no progress bar. The value and
+  // the badge+subtext each get their own line — sharing one row wrapped the sentence
+  // awkwardly around the badge on the narrow widths this widget actually renders at.
+  &__pace {
+    @include m.flex-col($gap: var(--space-1-5));
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+  }
+
+  &__pace-value {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-variation-medium);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__pace-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  &__pace-sub {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
   }
 
   &__bills {
     @include m.flex-col($gap: var(--space-1-5));
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
   }
 
   &__section-label {

@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MonthCalendar } from './MonthCalendar';
 import type { CalendarTransaction } from './MonthCalendar';
 
@@ -91,6 +91,38 @@ describe('MonthCalendar', () => {
       const day13 = screen.getByRole('gridcell', { name: /June 13, 2026/i });
       expect(day13.className).toContain('month-cal__day--selected');
       expect(day13.className).not.toContain('month-cal__day--no-spend');
+    });
+  });
+
+  describe('today highlight', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 5, 13));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('marks today with the --today class, distinct from --selected', () => {
+      render(<MonthCalendar month={6} year={2026} />);
+      const day13 = screen.getByRole('gridcell', { name: /June 13, 2026/i });
+      expect(day13.className).toContain('month-cal__day--today');
+      expect(day13.className).not.toContain('month-cal__day--selected');
+    });
+
+    it('drops the --today class in favor of --selected when today is the selected day', () => {
+      render(<MonthCalendar month={6} year={2026} selectedDate="2026-06-13" />);
+      const day13 = screen.getByRole('gridcell', { name: /June 13, 2026/i });
+      expect(day13.className).toContain('month-cal__day--selected');
+      expect(day13.className).not.toContain('month-cal__day--today');
+    });
+
+    it('can be both today and no-spend at once', () => {
+      render(<MonthCalendar month={6} year={2026} noSpendDates={['2026-06-13']} />);
+      const day13 = screen.getByRole('gridcell', { name: /June 13, 2026/i });
+      expect(day13.className).toContain('month-cal__day--today');
+      expect(day13.className).toContain('month-cal__day--no-spend');
     });
   });
 

@@ -51,49 +51,83 @@ describe('DashboardCalendarWidget', () => {
     expect(screen.getByText(/couldn't load the calendar/i)).toBeInTheDocument();
   });
 
-  describe('budget pace', () => {
-    it('renders the pace figures when a budget is planned', () => {
-      mockQuery(baseData({ budgetPace: { plannedTotal: 40000, actualTotal: 24800, dayOfMonth: 18, totalDays: 31, spendPct: 62, timePct: 58 } }));
+  describe('quick stats', () => {
+    it('shows the total transaction count for the month', () => {
+      mockQuery(
+        baseData({
+          transactions: [
+            { id: 't1', date: '2026-07-04', type: 'EXPENSE', amount: 100, merchant: 'A', categoryName: null },
+            { id: 't2', date: '2026-07-05', type: 'EXPENSE', amount: 100, merchant: 'B', categoryName: null },
+          ],
+        }),
+      );
+      const { container } = render(<DashboardCalendarWidget />);
+      expect(screen.getByText('Transactions')).toBeInTheDocument();
+      expect(container.querySelector('.dashboard-calendar-widget__stat-value')?.textContent).toBe('2');
+    });
+
+    it('shows no-spend days as a fraction of elapsed days', () => {
+      mockQuery(
+        baseData({
+          noSpendDays: [1, 3, 5, 7],
+          budgetPace: { plannedTotal: 0, actualTotal: 0, dayOfMonth: 18, totalDays: 31, spendPct: 0, timePct: 58 },
+        }),
+      );
       render(<DashboardCalendarWidget />);
-      expect(screen.getByText('62% spent · 58% of month')).toBeInTheDocument();
+      expect(screen.getByText('No-spend')).toBeInTheDocument();
+      expect(screen.getByText('4 of 18')).toBeInTheDocument();
     });
 
-    it('uses the warning variant when spend is ahead of the month elapsed', () => {
-      mockQuery(baseData({ budgetPace: { plannedTotal: 40000, actualTotal: 30000, dayOfMonth: 18, totalDays: 31, spendPct: 75, timePct: 58 } }));
-      const { container } = render(<DashboardCalendarWidget />);
-      expect(container.querySelector('.progress--warning')).toBeInTheDocument();
-    });
-
-    it('uses the success variant when spend is on or under pace', () => {
-      mockQuery(baseData({ budgetPace: { plannedTotal: 40000, actualTotal: 10000, dayOfMonth: 18, totalDays: 31, spendPct: 25, timePct: 58 } }));
-      const { container } = render(<DashboardCalendarWidget />);
-      expect(container.querySelector('.progress--success')).toBeInTheDocument();
-    });
-
-    it('hides the pace bar entirely when nothing is planned', () => {
-      mockQuery(baseData());
-      const { container } = render(<DashboardCalendarWidget />);
-      expect(container.querySelector('.dashboard-calendar-widget__pace')).not.toBeInTheDocument();
-    });
-  });
-
-  describe('best streak', () => {
-    it('shows the streak line when there is a streak', () => {
+    it('shows a streak value with correct pluralization', () => {
       mockQuery(baseData({ bestStreak: 4 }));
       render(<DashboardCalendarWidget />);
-      expect(screen.getByText(/best no-spend streak this month: 4 days/i)).toBeInTheDocument();
+      expect(screen.getByText('Best streak')).toBeInTheDocument();
+      expect(screen.getByText('4 days')).toBeInTheDocument();
     });
 
     it('uses singular "day" for a streak of 1', () => {
       mockQuery(baseData({ bestStreak: 1 }));
       render(<DashboardCalendarWidget />);
-      expect(screen.getByText(/best no-spend streak this month: 1 day$/i)).toBeInTheDocument();
+      expect(screen.getByText('1 day')).toBeInTheDocument();
     });
 
-    it('hides the streak line when there is no streak yet', () => {
+    it('shows a dash for the streak when there is none yet', () => {
       mockQuery(baseData({ bestStreak: 0 }));
       render(<DashboardCalendarWidget />);
-      expect(screen.queryByText(/best no-spend streak/i)).not.toBeInTheDocument();
+      expect(screen.getByText('—')).toBeInTheDocument();
+    });
+  });
+
+  describe('budget pace', () => {
+    it('renders the pace figures as a plain-language line when a budget is planned', () => {
+      mockQuery(baseData({ budgetPace: { plannedTotal: 40000, actualTotal: 24800, dayOfMonth: 18, totalDays: 31, spendPct: 62, timePct: 58 } }));
+      render(<DashboardCalendarWidget />);
+      expect(screen.getByText('₹24,800 of ₹40,000 spent (62%)')).toBeInTheDocument();
+      expect(screen.getByText('Day 18 of 31 (58%)')).toBeInTheDocument();
+    });
+
+    it('shows an "Ahead of pace" badge when spend is ahead of the month elapsed', () => {
+      mockQuery(baseData({ budgetPace: { plannedTotal: 40000, actualTotal: 30000, dayOfMonth: 18, totalDays: 31, spendPct: 75, timePct: 58 } }));
+      render(<DashboardCalendarWidget />);
+      expect(screen.getByText('Ahead of pace')).toBeInTheDocument();
+    });
+
+    it('shows an "On pace" badge when spend is on or under pace', () => {
+      mockQuery(baseData({ budgetPace: { plannedTotal: 40000, actualTotal: 10000, dayOfMonth: 18, totalDays: 31, spendPct: 25, timePct: 58 } }));
+      render(<DashboardCalendarWidget />);
+      expect(screen.getByText('On pace')).toBeInTheDocument();
+    });
+
+    it('hides the pace section entirely when nothing is planned', () => {
+      mockQuery(baseData());
+      const { container } = render(<DashboardCalendarWidget />);
+      expect(container.querySelector('.dashboard-calendar-widget__pace')).not.toBeInTheDocument();
+    });
+
+    it('does not render a progress bar element', () => {
+      mockQuery(baseData({ budgetPace: { plannedTotal: 40000, actualTotal: 24800, dayOfMonth: 18, totalDays: 31, spendPct: 62, timePct: 58 } }));
+      const { container } = render(<DashboardCalendarWidget />);
+      expect(container.querySelector('[role="progressbar"]')).not.toBeInTheDocument();
     });
   });
 

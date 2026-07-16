@@ -2,6 +2,7 @@
 
 import type { CalendarTransaction } from '@/components/common/MonthCalendar';
 import { MonthCalendar } from '@/components/common/MonthCalendar';
+import { Badge } from '@/components/ui/Badge';
 import { useDashboardCalendar } from '@/hooks/useDashboardCalendar';
 import { useState } from 'react';
 
@@ -32,6 +33,10 @@ function toDotKind(type: string): CalendarTransaction['type'] {
 
 function toISODate(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function money(n: number): string {
+  return `₹${Math.round(n).toLocaleString('en-IN')}`;
 }
 
 export function DashboardCalendarWidget() {
@@ -72,29 +77,46 @@ export function DashboardCalendarWidget() {
   }
 
   const monthLabel = MONTH_LABELS[data.month - 1];
-  const { spendPct, timePct } = data.budgetPace;
-  const paceVariant = spendPct > timePct ? 'warning' : 'success';
+  const { plannedTotal, actualTotal, spendPct, timePct, dayOfMonth, totalDays } = data.budgetPace;
+  const isAheadOfPace = spendPct > timePct;
+  const streakLabel =
+    data.bestStreak > 0 ? `${data.bestStreak} day${data.bestStreak === 1 ? '' : 's'}` : '—';
 
   return (
     <div className="card dashboard-calendar-widget">
-      {data.budgetPace.plannedTotal > 0 && (
-        <div className={`progress progress--${paceVariant} dashboard-calendar-widget__pace`}>
-          <div className="progress__header">
-            <span className="progress__label">Budget pace</span>
-            <span className="progress__value">
-              {spendPct}% spent · {timePct}% of month
+      <div className="dashboard-calendar-widget__stats">
+        <div className="dashboard-calendar-widget__stat">
+          <span className="dashboard-calendar-widget__stat-label">Transactions</span>
+          <span className="dashboard-calendar-widget__stat-value">{data.transactions.length}</span>
+        </div>
+        <div className="dashboard-calendar-widget__stat">
+          <span className="dashboard-calendar-widget__stat-label">No-spend</span>
+          <span className="dashboard-calendar-widget__stat-value dashboard-calendar-widget__stat-value--success">
+            {data.noSpendDays.length} of {dayOfMonth}
+          </span>
+        </div>
+        <div className="dashboard-calendar-widget__stat">
+          <span className="dashboard-calendar-widget__stat-label">Best streak</span>
+          <span className="dashboard-calendar-widget__stat-value dashboard-calendar-widget__stat-value--success">
+            {streakLabel}
+          </span>
+        </div>
+      </div>
+
+      {plannedTotal > 0 && (
+        <div className="dashboard-calendar-widget__pace">
+          <span className="dashboard-calendar-widget__pace-value">
+            {money(actualTotal)} of {money(plannedTotal)} spent ({spendPct}%)
+          </span>
+          <div className="dashboard-calendar-widget__pace-meta">
+            <Badge variant={isAheadOfPace ? 'warning' : 'success'}>
+              {isAheadOfPace ? 'Ahead of pace' : 'On pace'}
+            </Badge>
+            <span className="dashboard-calendar-widget__pace-sub">
+              Day {dayOfMonth} of {totalDays} ({timePct}%)
             </span>
           </div>
-          <div className="progress__track">
-            <div className="progress__bar" style={{ width: `${Math.min(spendPct, 100)}%` }} />
-          </div>
         </div>
-      )}
-
-      {data.bestStreak > 0 && (
-        <p className="dashboard-calendar-widget__streak">
-          Best no-spend streak this month: {data.bestStreak} day{data.bestStreak === 1 ? '' : 's'}
-        </p>
       )}
 
       {data.billDue.length > 0 && (
@@ -105,9 +127,9 @@ export function DashboardCalendarWidget() {
               <span>
                 {bill.name} · due {monthLabel} {bill.day}
               </span>
-              <span className={`badge badge--${bill.paid ? 'success' : 'inactive'}`}>
-                {bill.paid ? 'Paid' : `₹${bill.amount.toLocaleString('en-IN')}`}
-              </span>
+              <Badge variant={bill.paid ? 'success' : 'inactive'}>
+                {bill.paid ? 'Paid' : money(bill.amount)}
+              </Badge>
             </div>
           ))}
         </div>
