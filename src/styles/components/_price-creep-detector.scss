@@ -1,0 +1,56 @@
+@use '../mixins' as m;
+
+// Composes .card / .badge — a punchier, standalone sibling to the subscription-audit
+// list, deliberately not folded into it (this is the specific insight worth calling out).
+.price-creep-detector {
+  @include m.flex-col($gap: var(--space-4));
+
+  &__title {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0;
+  }
+
+  &__item {
+    @include m.flex-col($gap: var(--space-1));
+    padding-top: var(--space-3);
+    border-top: var(--border-width) solid var(--color-border);
+
+    &:first-of-type {
+      padding-top: 0;
+      border-top: none;
+    }
+  }
+
+  &__name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-variation-medium);
+    color: var(--color-text);
+  }
+
+  &__prices {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  &__old-price {
+    font-size: var(--font-size-base);
+    text-decoration: line-through;
+    color: var(--color-text-muted);
+  }
+
+  &__new-price {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-variation-bold);
+    color: var(--color-text);
+  }
+
+  &__meta {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+}

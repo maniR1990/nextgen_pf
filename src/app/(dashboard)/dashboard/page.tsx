@@ -1,4 +1,6 @@
 import { DashboardCalendarWidget } from '@/components/features/dashboard/DashboardCalendarWidget';
+import { SubscriptionAuditWidget } from '@/components/features/dashboard/SubscriptionAuditWidget';
+import { PriceCreepDetector } from '@/components/features/dashboard/PriceCreepDetector';
 import { Suspense } from 'react';
 
 export const metadata = {
@@ -13,6 +15,16 @@ export default function DashboardPage() {
         <div className="grid__col--five">
           <Suspense>
             <DashboardCalendarWidget />
+          </Suspense>
+        </div>
+        <div className="grid__col--five">
+          <Suspense>
+            <SubscriptionAuditWidget />
+          </Suspense>
+        </div>
+        <div className="grid__col--five">
+          <Suspense>
+            <PriceCreepDetector />
           </Suspense>
         </div>
       </div>

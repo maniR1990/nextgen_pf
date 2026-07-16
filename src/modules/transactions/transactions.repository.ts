@@ -212,4 +212,19 @@ export const TransactionRepository = {
       },
       orderBy: { date: 'asc' },
     }),
+
+  // Every recurring-linked transaction ever generated for a user, oldest first — used by the
+  // subscription-audit widget to detect price creep (comparing the last two amounts charged
+  // per template). Small, bounded by "how many recurring templates a person has", not by total
+  // transaction volume, so fetching the whole history is fine.
+  findRecurringHistory: (userId: string) =>
+    prisma.financeTransaction.findMany({
+      where: {
+        userId,
+        recurringTemplateId: { not: null },
+        status: { not: 'VOID' },
+      },
+      select: { recurringTemplateId: true, amount: true, date: true },
+      orderBy: { date: 'asc' },
+    }),
 };

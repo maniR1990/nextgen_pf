@@ -1,0 +1,106 @@
+@use '../mixins' as m;
+
+// Composes the existing .card / .badge primitives — only the layout glue between them
+// is new here, not a parallel set of card/badge styles.
+.subscription-audit-widget {
+  @include m.flex-col($gap: var(--space-4));
+
+  &__status {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__headline {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-variation-semibold);
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  &__total {
+    @include m.flex-col($gap: var(--space-1));
+  }
+
+  &__total-value {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-variation-bold);
+    color: var(--color-text);
+  }
+
+  &__total-sub {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__list {
+    @include m.flex-col($gap: 0);
+    border-top: var(--border-width) solid var(--color-border);
+  }
+
+  &__row {
+    @include m.flex-between;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2-5) 0;
+    border-bottom: var(--border-width) solid var(--color-border);
+  }
+
+  &__row-info {
+    @include m.flex-col($gap: var(--space-0-5));
+    min-width: 0;
+  }
+
+  &__row-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-variation-medium);
+    color: var(--color-text);
+  }
+
+  &__row-meta {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__row-amount {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5);
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+
+  &__old-amount {
+    text-decoration: line-through;
+    color: var(--color-text-muted);
+  }
+
+  &__breakdown {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: 1fr;
+
+    @include m.respond-to(md) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  &__breakdown-group {
+    @include m.flex-col($gap: var(--space-1-5));
+  }
+
+  &__breakdown-row {
+    @include m.flex-between;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+  }
+
+  &__section-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0;
+  }
+}

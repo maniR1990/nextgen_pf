@@ -66,6 +66,7 @@ export const queryKeys = {
     all: ['dashboard'] as const,
     calendar: (year: number, month: number) =>
       [...queryKeys.dashboard.all, 'calendar', year, month] as const,
+    subscriptions: () => [...queryKeys.dashboard.all, 'subscriptions'] as const,
   },
 };
 

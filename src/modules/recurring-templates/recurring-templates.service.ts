@@ -24,7 +24,7 @@ function addMonths(year: number, month: number, n: number): [number, number] {
 }
 
 /** Returns the next N future occurrence dates based on template frequency. */
-function computeOccurrences(
+export function computeOccurrences(
   template: {
     frequency: string;
     dayOfMonth: number | null;
@@ -32,9 +32,10 @@ function computeOccurrences(
     months: number[];
   },
   count: number,
+  referenceDate: Date = new Date(),
 ): Date[] {
   const result: Date[] = [];
-  const now = new Date();
+  const now = new Date(referenceDate); // clone — setHours below must not mutate the caller's Date
   now.setHours(23, 59, 59, 999); // treat today as past
 
   const day1 = template.dayOfMonth ?? 1;
