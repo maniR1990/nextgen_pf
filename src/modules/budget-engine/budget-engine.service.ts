@@ -134,15 +134,24 @@ export const BudgetEngineService = {
     const prevMonth = month === 1 ? 12 : month - 1;
     const prevYear = month === 1 ? year - 1 : year;
 
-    const [spendRows, lastMonthSpendRows] = await Promise.all([
-      BudgetEngineRepository.findSpendByCategory(userId, categoryIds, year, month),
-      BudgetEngineRepository.findSpendByCategory(userId, categoryIds, prevYear, prevMonth),
-    ]);
+    const [spendRows, lastMonthSpendRows, uncategorizedRows, lastMonthUncategorizedRows] =
+      await Promise.all([
+        BudgetEngineRepository.findSpendByCategory(userId, categoryIds, year, month),
+        BudgetEngineRepository.findSpendByCategory(userId, categoryIds, prevYear, prevMonth),
+        BudgetEngineRepository.findUncategorizedSpendByType(userId, year, month),
+        BudgetEngineRepository.findUncategorizedSpendByType(userId, prevYear, prevMonth),
+      ]);
 
     const planMap = new Map(budgetPlans.map((p) => [p.categoryId, p]));
     const spendMap = new Map(spendRows.map((r) => [r.categoryId!, r._sum.amount ?? 0]));
     const lastMonthSpendMap = new Map(
       lastMonthSpendRows.map((r) => [r.categoryId!, r._sum.amount ?? 0]),
+    );
+    const uncategorizedMap = new Map<string, number>(
+      uncategorizedRows.map((r) => [r.type, r._sum.amount ?? 0]),
+    );
+    const lastMonthUncategorizedMap = new Map<string, number>(
+      lastMonthUncategorizedRows.map((r) => [r.type, r._sum.amount ?? 0]),
     );
 
     // Build node map
@@ -171,6 +180,7 @@ export const BudgetEngineService = {
         parentId: cat.parentId,
         _type: cat.type,
         _order: cat.order,
+        isVirtual: false,
       });
     }
 
@@ -185,6 +195,40 @@ export const BudgetEngineService = {
           (parent.children as InternalNode[]).push(node);
         }
       }
+    }
+
+    // Surface uncategorized spend as its own read-only row per group, rather than
+    // letting findSpendByCategory's categoryId grouping silently drop it — a
+    // transaction with no category has nowhere else in this tree to be counted.
+    for (const group of groups) {
+      const actual = uncategorizedMap.get(group._type) ?? 0;
+      const lastMonthActual = lastMonthUncategorizedMap.get(group._type) ?? 0;
+      if (actual === 0 && lastMonthActual === 0) continue;
+
+      (group.children as InternalNode[]).push({
+        id: `uncategorized-${group._type}`,
+        name: 'Uncategorized',
+        level: 1,
+        icon: null,
+        color: null,
+        isSystem: true,
+        isRecurring: false,
+        isUnplanned: false,
+        dueDay: null,
+        isSettled: false,
+        settledTransactionId: null,
+        planned: 0,
+        actual,
+        lastMonthActual,
+        variance: 0,
+        variancePct: 0,
+        progressPct: 0,
+        children: [],
+        parentId: group.id,
+        _type: group._type,
+        _order: Number.MAX_SAFE_INTEGER,
+        isVirtual: true,
+      });
     }
 
     // Sort children by order

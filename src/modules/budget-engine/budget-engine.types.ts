@@ -5,6 +5,11 @@ export interface BudgetCategoryNode {
   icon: string | null;
   color: string | null;
   isSystem: boolean;
+  /** True for the synthetic "Uncategorized" row — spend with no real category assigned,
+   *  surfaced so it's never silently missing from a group's total. Not a real Category
+   *  row: has no id a write endpoint can act on, so the UI must not offer to edit,
+   *  rename, delete, or add children under it. */
+  isVirtual: boolean;
   isRecurring: boolean;
   isUnplanned: boolean;
   /** Day of month (1–31) this item is typically due. null = no due date set. */

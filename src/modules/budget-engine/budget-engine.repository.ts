@@ -108,6 +108,25 @@ export const BudgetEngineRepository = {
     });
   },
 
+  /** Spend with no category assigned, grouped by transaction type, for a period — the
+   *  money findSpendByCategory can never see, since it groups strictly by categoryId. */
+  findUncategorizedSpendByType: (userId: string, year: number, month: number) =>
+    prisma.financeTransaction.groupBy({
+      by: ['type'],
+      where: {
+        userId,
+        budgetPeriodYear: year,
+        budgetPeriodMonth: month,
+        AND: [
+          { OR: [{ categoryId: null }, { categoryId: { isSet: false } }] },
+          // MongoDB stores absent fields differently from explicit null.
+          // isSet: false matches documents where voidedAt was never written.
+          { OR: [{ voidedAt: null }, { voidedAt: { isSet: false } }] },
+        ],
+      },
+      _sum: { amount: true },
+    }),
+
   /** Upsert a budget plan for a specific category + period. */
   upsertBudgetPlan: (
     userId: string,

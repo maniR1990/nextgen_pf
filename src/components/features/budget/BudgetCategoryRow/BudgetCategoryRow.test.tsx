@@ -21,6 +21,7 @@ function makeNode(overrides: Partial<BudgetCategoryNode> & { id: string }): Budg
     icon: null,
     color: null,
     isSystem: false,
+    isVirtual: false,
     isRecurring: false,
     isUnplanned: false,
     dueDay: null,
@@ -191,6 +192,65 @@ describe('BudgetCategoryRow — add-subcategory depth limit', () => {
       />,
     );
     expect(screen.queryByTitle('Add sub-item')).not.toBeInTheDocument();
+  });
+});
+
+describe('BudgetCategoryRow — virtual Uncategorized row', () => {
+  it('renders read-only: no rename, add, due-date, delete, recurring, or unplanned controls', () => {
+    const node = makeNode({ id: 'uncategorized-EXPENSE', name: 'Uncategorized', isVirtual: true, actual: 1741 });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onAddChild={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    expect(screen.queryByTitle('Add sub-item')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Delete')).not.toBeInTheDocument();
+    expect(screen.queryByTitle(/rename/i)).not.toBeInTheDocument();
+    expect(screen.queryByTitle(/mark as recurring/i)).not.toBeInTheDocument();
+    expect(screen.queryByTitle(/mark as unplanned/i)).not.toBeInTheDocument();
+    expect(screen.queryByTitle(/due date/i)).not.toBeInTheDocument();
+  });
+
+  it('does not let the planned cell be clicked into edit mode', async () => {
+    const user = userEvent.setup();
+    const node = makeNode({ id: 'uncategorized-EXPENSE', name: 'Uncategorized', isVirtual: true, actual: 1741 });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /edit planned amount/i })).not.toBeInTheDocument();
+  });
+
+  it('double-clicking the name does not open the rename input', async () => {
+    const user = userEvent.setup();
+    const node = makeNode({ id: 'uncategorized-EXPENSE', name: 'Uncategorized', isVirtual: true });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    await user.dblClick(screen.getByText('Uncategorized'));
+    expect(screen.queryByDisplayValue('Uncategorized')).not.toBeInTheDocument();
   });
 });
 

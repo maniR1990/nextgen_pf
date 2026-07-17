@@ -31,7 +31,10 @@ const GROCERIES = {
   isSystem: false,
 };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(BudgetEngineRepository.findUncategorizedSpendByType).mockResolvedValue([] as never);
+});
 
 describe('BudgetEngineService.getMonthlySummary', () => {
   it('rolls up planned and actual for a single leaf category', async () => {
@@ -149,6 +152,62 @@ describe('BudgetEngineService.getMonthlySummary', () => {
     await BudgetEngineService.getMonthlySummary('u1', 2024, 6);
 
     expect(BudgetEngineRepository.findCategoriesWithActivityInPeriod).not.toHaveBeenCalled();
+  });
+
+  it('adds a virtual Uncategorized row when a group type has uncategorized spend', async () => {
+    vi.mocked(BudgetEngineRepository.findCategoriesForUser).mockResolvedValue([
+      EXPENSE_GROUP,
+      GROCERIES,
+    ] as never);
+    vi.mocked(BudgetEngineRepository.findBudgetPlans).mockResolvedValue([] as never);
+    vi.mocked(BudgetEngineRepository.findSpendByCategory).mockResolvedValue([
+      { categoryId: 'cat1', _sum: { amount: 1200 } },
+    ] as never);
+    vi.mocked(BudgetEngineRepository.findUncategorizedSpendByType).mockResolvedValueOnce([
+      { type: 'EXPENSE', _sum: { amount: 1741 } },
+    ] as never);
+
+    const result = await BudgetEngineService.getMonthlySummary('u1', 2024, 6);
+
+    const group = result.groups[0]!;
+    const uncategorized = group.categories.find((c) => c.isVirtual);
+    expect(uncategorized).toBeDefined();
+    expect(uncategorized!.name).toBe('Uncategorized');
+    expect(uncategorized!.actual).toBe(1741);
+    expect(uncategorized!.planned).toBe(0);
+    // Group total must include the real category AND the uncategorized spend —
+    // this is the figure the Budget page's summary bar reads directly.
+    expect(group.actual).toBe(1200 + 1741);
+  });
+
+  it('does not add an Uncategorized row when there is no uncategorized spend', async () => {
+    vi.mocked(BudgetEngineRepository.findCategoriesForUser).mockResolvedValue([
+      EXPENSE_GROUP,
+      GROCERIES,
+    ] as never);
+    vi.mocked(BudgetEngineRepository.findBudgetPlans).mockResolvedValue([] as never);
+    vi.mocked(BudgetEngineRepository.findSpendByCategory).mockResolvedValue([
+      { categoryId: 'cat1', _sum: { amount: 1200 } },
+    ] as never);
+
+    const result = await BudgetEngineService.getMonthlySummary('u1', 2024, 6);
+
+    const group = result.groups[0]!;
+    expect(group.categories.some((c) => c.isVirtual)).toBe(false);
+    expect(group.actual).toBe(1200);
+  });
+
+  it('marks every real category node isVirtual: false', async () => {
+    vi.mocked(BudgetEngineRepository.findCategoriesForUser).mockResolvedValue([
+      EXPENSE_GROUP,
+      GROCERIES,
+    ] as never);
+    vi.mocked(BudgetEngineRepository.findBudgetPlans).mockResolvedValue([] as never);
+    vi.mocked(BudgetEngineRepository.findSpendByCategory).mockResolvedValue([] as never);
+
+    const result = await BudgetEngineService.getMonthlySummary('u1', 2024, 6);
+
+    expect(result.groups[0]!.categories[0]!.isVirtual).toBe(false);
   });
 
   it('throws BudgetPeriodInvalidError for year < 2020', async () => {

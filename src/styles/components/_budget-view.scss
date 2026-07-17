@@ -710,6 +710,12 @@ $rem-over:       #dc2626;
     }
   }
 
+  // Uncategorized: a computed rollup, not a real category — read this as "note", not "item".
+  &__name--virtual {
+    font-style: italic;
+    color: var(--color-text-muted);
+  }
+
   // Rollup number style — computed sums shown in secondary, non-clickable
   &__rollup-num {
     font-size: 12.5px;

@@ -366,9 +366,9 @@ export function BudgetCategoryRow({
             />
           ) : (
             <span
-              className="budget-row__name"
+              className={`budget-row__name${node.isVirtual ? ' budget-row__name--virtual' : ''}`}
               onDoubleClick={
-                node.level === 0
+                node.level === 0 || node.isVirtual
                   ? undefined
                   : () => {
                       setDraftName(node.name);
@@ -394,7 +394,7 @@ export function BudgetCategoryRow({
               row is hidden on mobile to keep leaf rows compact, so mobile gets its own
               always-visible, always-tappable trigger here instead — otherwise there'd be
               no way to set a due date from a phone at all. */}
-          {!isParent && node.level > 0 && (
+          {!isParent && node.level > 0 && !node.isVirtual && (
             <DayOfMonthPicker
               value={node.dueDay}
               onChange={(day) => void onUpdate(node.id, { dueDay: day })}
@@ -430,8 +430,8 @@ export function BudgetCategoryRow({
         {/* ── Col 2: Planned ──
             Parent = rollup (computed, not editable) — shown in secondary style.
             Leaf   = user-set (editable) — shown in blue.                        */}
-        {isParent ? (
-          /* Rollup: computed sum, not editable */
+        {isParent || node.isVirtual ? (
+          /* Rollup (or virtual row): computed sum, not editable */
           <div className="budget-row__planned-cell budget-row__planned-cell--rollup">
             <span className="budget-row__rollup-num">
               {node.planned > 0 ? formatINR(node.planned) : '—'}
@@ -570,89 +570,96 @@ export function BudgetCategoryRow({
           )}
         </div>
 
-        {/* ── Col 7: Action icons (reveal on hover) ── */}
+        {/* ── Col 7: Action icons (reveal on hover) ──
+            Uncategorized is a computed rollup with no real Category id behind it — none
+            of these actions have anywhere real to write to, so the whole cell is skipped
+            rather than gating each button individually. */}
         <div className="budget-row__actions-cell">
-          <button
-            type="button"
-            className={`budget-row__icon-btn budget-row__icon-btn--rec${node.isRecurring ? ' budget-row__icon-btn--active-rec' : ''}`}
-            title={node.isRecurring ? 'Recurring ON — click to turn off' : 'Mark as recurring'}
-            onClick={() => void onUpdate(node.id, { isRecurring: !node.isRecurring })}
-            disabled={isSaving}
-          >
-            <RefreshCw size={11} />
-          </button>
-          <button
-            type="button"
-            className={`budget-row__icon-btn budget-row__icon-btn--unpl${node.isUnplanned ? ' budget-row__icon-btn--active-unpl' : ''}`}
-            title={node.isUnplanned ? 'Unplanned ON — click to turn off' : 'Mark as unplanned'}
-            onClick={() => void onUpdate(node.id, { isUnplanned: !node.isUnplanned })}
-            disabled={isSaving}
-          >
-            <Zap size={11} />
-          </button>
-          {node.level > 0 && (
-            <button
-              type="button"
-              className="budget-row__icon-btn budget-row__icon-btn--rename"
-              title="Rename (or double-click name)"
-              onClick={() => {
-                setDraftName(node.name);
-                setRenamingId(node.id);
-              }}
-            >
-              <Pencil size={11} />
-            </button>
-          )}
-          {onAddChild && depth < CATEGORY_MAX_LEVEL && (
-            <button
-              type="button"
-              className="budget-row__icon-btn budget-row__icon-btn--add"
-              title="Add sub-item"
-              onClick={() => {
-                setShowAdd((v) => !v);
-                setIsExpanded(true);
-              }}
-            >
-              <Plus size={12} />
-            </button>
-          )}
-          {node.level > 0 && !isParent && (
-            <DayOfMonthPicker
-              value={node.dueDay}
-              onChange={(day) => void onUpdate(node.id, { dueDay: day })}
-              monthLabel={new Date().toLocaleString('default', { month: 'long' })}
-              trigger={({ open, ref }) => (
+          {!node.isVirtual && (
+            <>
+              <button
+                type="button"
+                className={`budget-row__icon-btn budget-row__icon-btn--rec${node.isRecurring ? ' budget-row__icon-btn--active-rec' : ''}`}
+                title={node.isRecurring ? 'Recurring ON — click to turn off' : 'Mark as recurring'}
+                onClick={() => void onUpdate(node.id, { isRecurring: !node.isRecurring })}
+                disabled={isSaving}
+              >
+                <RefreshCw size={11} />
+              </button>
+              <button
+                type="button"
+                className={`budget-row__icon-btn budget-row__icon-btn--unpl${node.isUnplanned ? ' budget-row__icon-btn--active-unpl' : ''}`}
+                title={node.isUnplanned ? 'Unplanned ON — click to turn off' : 'Mark as unplanned'}
+                onClick={() => void onUpdate(node.id, { isUnplanned: !node.isUnplanned })}
+                disabled={isSaving}
+              >
+                <Zap size={11} />
+              </button>
+              {node.level > 0 && (
                 <button
-                  ref={ref}
                   type="button"
-                  className={[
-                    'budget-row__icon-btn budget-row__icon-btn--due',
-                    node.dueDay ? 'budget-row__icon-btn--active-due' : '',
-                    open ? 'budget-row__icon-btn--active-due' : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  title={
-                    node.dueDay
-                      ? `Due on the ${node.dueDay}${ordinal(node.dueDay)} — click to change`
-                      : 'Set due date'
-                  }
-                  disabled={isSaving}
+                  className="budget-row__icon-btn budget-row__icon-btn--rename"
+                  title="Rename (or double-click name)"
+                  onClick={() => {
+                    setDraftName(node.name);
+                    setRenamingId(node.id);
+                  }}
                 >
-                  <CalendarClock size={11} />
+                  <Pencil size={11} />
                 </button>
               )}
-            />
-          )}
-          {node.level > 0 && (
-            <button
-              type="button"
-              className="budget-row__icon-btn budget-row__icon-btn--delete"
-              title="Delete"
-              onClick={() => void handleDelete()}
-            >
-              <Trash2 size={11} />
-            </button>
+              {onAddChild && depth < CATEGORY_MAX_LEVEL && (
+                <button
+                  type="button"
+                  className="budget-row__icon-btn budget-row__icon-btn--add"
+                  title="Add sub-item"
+                  onClick={() => {
+                    setShowAdd((v) => !v);
+                    setIsExpanded(true);
+                  }}
+                >
+                  <Plus size={12} />
+                </button>
+              )}
+              {node.level > 0 && !isParent && (
+                <DayOfMonthPicker
+                  value={node.dueDay}
+                  onChange={(day) => void onUpdate(node.id, { dueDay: day })}
+                  monthLabel={new Date().toLocaleString('default', { month: 'long' })}
+                  trigger={({ open, ref }) => (
+                    <button
+                      ref={ref}
+                      type="button"
+                      className={[
+                        'budget-row__icon-btn budget-row__icon-btn--due',
+                        node.dueDay ? 'budget-row__icon-btn--active-due' : '',
+                        open ? 'budget-row__icon-btn--active-due' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      title={
+                        node.dueDay
+                          ? `Due on the ${node.dueDay}${ordinal(node.dueDay)} — click to change`
+                          : 'Set due date'
+                      }
+                      disabled={isSaving}
+                    >
+                      <CalendarClock size={11} />
+                    </button>
+                  )}
+                />
+              )}
+              {node.level > 0 && (
+                <button
+                  type="button"
+                  className="budget-row__icon-btn budget-row__icon-btn--delete"
+                  title="Delete"
+                  onClick={() => void handleDelete()}
+                >
+                  <Trash2 size={11} />
+                </button>
+              )}
+            </>
           )}
         </div>
 
