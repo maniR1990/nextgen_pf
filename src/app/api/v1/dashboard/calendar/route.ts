@@ -46,10 +46,21 @@ const handleCalendar = compose(withAuth())(async (req, ctx) => {
 
     const expenseDaySet = new Set<number>();
     const incomeDaySet = new Set<number>();
+    // actualTotal is summed directly from transactions (same SPEND_TYPES filter as
+    // expenseDaySet above), not from BudgetEngineService's per-category "actual" —
+    // that figure groups spend by categoryId and silently drops any transaction with
+    // no category, understating real spend for anyone with even one uncategorized
+    // expense. Transaction-level EXPENSE totals are the one figure every other
+    // dashboard/transactions view already agrees on; this keeps budget pace on it too.
+    let actualTotal = 0;
     for (const tx of transactions) {
       const day = tx.date.getUTCDate();
-      if ((SPEND_TYPES as readonly string[]).includes(tx.type)) expenseDaySet.add(day);
-      else if ((INCOME_TYPES as readonly string[]).includes(tx.type)) incomeDaySet.add(day);
+      if ((SPEND_TYPES as readonly string[]).includes(tx.type)) {
+        expenseDaySet.add(day);
+        actualTotal += tx.amount;
+      } else if ((INCOME_TYPES as readonly string[]).includes(tx.type)) {
+        incomeDaySet.add(day);
+      }
     }
 
     const duePayments = derivePayments(budgetSummary.groups).map((p) => ({
@@ -59,12 +70,13 @@ const handleCalendar = compose(withAuth())(async (req, ctx) => {
       paid: p.paid,
     }));
 
+    // plannedTotal stays category-based — a "planned" amount is inherently something
+    // the user set per budget category, so uncategorized spend has no planned figure
+    // to contribute regardless.
     let plannedTotal = 0;
-    let actualTotal = 0;
     for (const group of budgetSummary.groups) {
       if (group.type !== 'EXPENSE') continue;
       plannedTotal += group.planned;
-      actualTotal += group.actual;
     }
 
     const totalDays = daysInMonth(year, month);
