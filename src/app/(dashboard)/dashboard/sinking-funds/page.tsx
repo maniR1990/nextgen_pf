@@ -1,5 +1,5 @@
-import { DashboardSectionPage } from '../_components/DashboardSectionPage';
+import { redirect } from 'next/navigation';
 
 export default function SinkingFundsPage() {
-  return <DashboardSectionPage title="Sinking Funds" />;
+  redirect('/dashboard/settings?tab=funds');
 }

@@ -1,5 +1,5 @@
-import { DashboardSectionPage } from '../_components/DashboardSectionPage';
+import { redirect } from 'next/navigation';
 
 export default function AccountsPage() {
-  return <DashboardSectionPage title="Accounts" />;
+  redirect('/dashboard/settings?tab=accounts');
 }
