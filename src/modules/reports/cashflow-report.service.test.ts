@@ -1,21 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getPeriodTotals } from '@/modules/transactions/period-spend';
+import type { PeriodTotals } from '@/modules/transactions/period-spend';
 import { CashflowReportRepository } from './cashflow-report.repository';
 import { CashflowReportService } from './cashflow-report.service';
 
 vi.mock('./cashflow-report.repository');
+vi.mock('@/modules/transactions/period-spend');
 
 beforeEach(() => vi.clearAllMocks());
+
+function mockPeriodTotals(overrides: Partial<PeriodTotals> = {}) {
+  vi.mocked(getPeriodTotals).mockResolvedValue({
+    totalIncome: 0,
+    totalExpense: 0,
+    totalExpenseOnly: 0,
+    net: 0,
+    totalsByType: {},
+    uncategorizedByType: {},
+    ...overrides,
+  });
+}
 
 // ── getMonthlyReport ──────────────────────────────────────────────────────────
 
 describe('CashflowReportService.getMonthlyReport', () => {
   it('returns totalIncome as sum of income-type transactions', async () => {
-    vi.mocked(CashflowReportRepository.sumByTypes).mockImplementation(
-      async (_userId, _year, _month, types) => {
-        if (types.includes('INCOME')) return 100000;
-        return 0;
-      },
-    );
+    mockPeriodTotals({ totalIncome: 100000 });
     vi.mocked(CashflowReportRepository.fundGroupBreakdown).mockResolvedValue([]);
 
     const report = await CashflowReportService.getMonthlyReport('u1', 2026, 6);
@@ -23,7 +33,7 @@ describe('CashflowReportService.getMonthlyReport', () => {
   });
 
   it('returns savingsBreakdown grouped by fund group for IN flow', async () => {
-    vi.mocked(CashflowReportRepository.sumByTypes).mockResolvedValue(0);
+    mockPeriodTotals();
     vi.mocked(CashflowReportRepository.fundGroupBreakdown).mockImplementation(
       async (_userId, _year, _month, flow) => {
         if (flow === 'IN') {
@@ -46,7 +56,7 @@ describe('CashflowReportService.getMonthlyReport', () => {
   });
 
   it('returns fundUsed grouped by fund group for OUT flow', async () => {
-    vi.mocked(CashflowReportRepository.sumByTypes).mockResolvedValue(0);
+    mockPeriodTotals();
     vi.mocked(CashflowReportRepository.fundGroupBreakdown).mockImplementation(
       async (_userId, _year, _month, flow) => {
         if (flow === 'OUT') {
@@ -67,14 +77,11 @@ describe('CashflowReportService.getMonthlyReport', () => {
   it('computes remaining = (income + fundUsed) - savings - expenses - ATM', async () => {
     // income=100000, savingsIN=25000, fundUsedOUT=20000, expenses=30000, ATM=5000
     // remaining = (100000 + 20000) - 25000 - 30000 - 5000 = 60000
-    vi.mocked(CashflowReportRepository.sumByTypes).mockImplementation(
-      async (_userId, _year, _month, types) => {
-        if (types.includes('INCOME')) return 100000;
-        if (types.includes('EXPENSE')) return 30000;
-        if (types.includes('ATM_WITHDRAWAL')) return 5000;
-        return 0;
-      },
-    );
+    mockPeriodTotals({
+      totalIncome: 100000,
+      totalExpenseOnly: 30000,
+      totalsByType: { ATM_WITHDRAWAL: 5000 },
+    });
     vi.mocked(CashflowReportRepository.fundGroupBreakdown).mockImplementation(
       async (_userId, _year, _month, flow) => {
         if (flow === 'IN')
@@ -90,7 +97,7 @@ describe('CashflowReportService.getMonthlyReport', () => {
   });
 
   it('returns remaining=0 and null percentages when income=0 and fundUsed=0', async () => {
-    vi.mocked(CashflowReportRepository.sumByTypes).mockResolvedValue(0);
+    mockPeriodTotals();
     vi.mocked(CashflowReportRepository.fundGroupBreakdown).mockResolvedValue([]);
 
     const report = await CashflowReportService.getMonthlyReport('u1', 2026, 7);
@@ -102,13 +109,7 @@ describe('CashflowReportService.getMonthlyReport', () => {
 
   it('uses fundUsed as denominator when income=0 (withdrawal month)', async () => {
     // July: no income, Emergency fund OUT=30000 covers expenses=25000
-    vi.mocked(CashflowReportRepository.sumByTypes).mockImplementation(
-      async (_userId, _year, _month, types) => {
-        if (types.includes('INCOME')) return 0;
-        if (types.includes('EXPENSE')) return 25000;
-        return 0;
-      },
-    );
+    mockPeriodTotals({ totalIncome: 0, totalExpenseOnly: 25000 });
     vi.mocked(CashflowReportRepository.fundGroupBreakdown).mockImplementation(
       async (_userId, _year, _month, flow) => {
         if (flow === 'OUT') {
@@ -131,13 +132,7 @@ describe('CashflowReportService.getMonthlyReport', () => {
 
   it('does not include tagged TRANSFER in expense total', async () => {
     // Tagged transfers are savings — EXPENSE sum must not include them
-    vi.mocked(CashflowReportRepository.sumByTypes).mockImplementation(
-      async (_userId, _year, _month, types) => {
-        if (types.includes('INCOME')) return 50000;
-        if (types.includes('EXPENSE')) return 10000; // only EXPENSE-type rows
-        return 0;
-      },
-    );
+    mockPeriodTotals({ totalIncome: 50000, totalExpenseOnly: 10000 });
     vi.mocked(CashflowReportRepository.fundGroupBreakdown).mockImplementation(
       async (_userId, _year, _month, flow) => {
         if (flow === 'IN') {
@@ -154,12 +149,7 @@ describe('CashflowReportService.getMonthlyReport', () => {
   });
 
   it('denominator is income + fundUsed for savings rate calculation', async () => {
-    vi.mocked(CashflowReportRepository.sumByTypes).mockImplementation(
-      async (_userId, _year, _month, types) => {
-        if (types.includes('INCOME')) return 80000;
-        return 0;
-      },
-    );
+    mockPeriodTotals({ totalIncome: 80000 });
     vi.mocked(CashflowReportRepository.fundGroupBreakdown).mockImplementation(
       async (_userId, _year, _month, flow) => {
         if (flow === 'IN')

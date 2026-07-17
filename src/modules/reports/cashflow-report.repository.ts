@@ -1,28 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 
-const INCOME_TYPES = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND'] as const;
-const EXPENSE_TYPES = ['EXPENSE'] as const;
-const ATM_TYPES = ['ATM_WITHDRAWAL'] as const;
-
 export const CashflowReportRepository = {
-  async sumByTypes(
-    userId: string,
-    year: number,
-    month: number,
-    types: readonly string[],
-  ): Promise<number> {
-    const agg = await prisma.financeTransaction.aggregate({
-      where: {
-        userId,
-        budgetPeriodYear: year,
-        budgetPeriodMonth: month,
-        type: { in: types as never },
-      },
-      _sum: { amount: true },
-    });
-    return agg._sum.amount ?? 0;
-  },
-
   async fundGroupBreakdown(
     userId: string,
     year: number,
@@ -37,6 +15,7 @@ export const CashflowReportRepository = {
         budgetPeriodMonth: month,
         fundGroupId: { not: null },
         fundGroupFlow: flow,
+        status: { not: 'VOID' },
       },
       _sum: { amount: true },
     });
@@ -63,11 +42,11 @@ export const CashflowReportRepository = {
   ): Promise<{ totalIn: number; totalOut: number }> {
     const [inAgg, outAgg] = await Promise.all([
       prisma.financeTransaction.aggregate({
-        where: { userId, fundGroupId, fundGroupFlow: 'IN' },
+        where: { userId, fundGroupId, fundGroupFlow: 'IN', status: { not: 'VOID' } },
         _sum: { amount: true },
       }),
       prisma.financeTransaction.aggregate({
-        where: { userId, fundGroupId, fundGroupFlow: 'OUT' },
+        where: { userId, fundGroupId, fundGroupFlow: 'OUT', status: { not: 'VOID' } },
         _sum: { amount: true },
       }),
     ]);
@@ -76,8 +55,4 @@ export const CashflowReportRepository = {
       totalOut: outAgg._sum.amount ?? 0,
     };
   },
-
-  INCOME_TYPES,
-  EXPENSE_TYPES,
-  ATM_TYPES,
 };

@@ -2,15 +2,12 @@ import { asRouteHandler, compose, withAuth } from '@/lib/api/middleware';
 import { v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { BudgetEngineService } from '@/modules/budget-engine';
 import { TransactionRepository } from '@/modules/transactions';
+import { getPeriodTotals, SPEND_ONLY_TYPES } from '@/modules/transactions/period-spend';
 import { derivePayments } from '@/components/common/PaymentSchedulePanel/derivePayments';
 import { deriveCalendarData } from './derive';
 
-// Only EXPENSE counts toward "no-spend day" and the budget-pace total — deliberately
-// narrower than the dashboard summary's OUTFLOW_TYPES (EXPENSE + INVESTMENT +
-// SINKING_DEPOSIT), which answers a different question (overall cash outflow pace).
-// A day where you only moved money into savings or investments isn't a "spend" day in
-// the behavioral no-spend-streak sense this widget is tracking.
-const SPEND_TYPES = ['EXPENSE'] as const;
+// The per-day EXPENSE/INCOME split below is calendar-specific (which day had activity),
+// separate from the period-wide totals — see period-spend.ts for those.
 const INCOME_TYPES = ['INCOME'] as const;
 
 function daysInMonth(year: number, month: number) {
@@ -22,11 +19,16 @@ function daysInMonth(year: number, month: number) {
 // write, visibly disagreeing with the (uncached) Transactions page. Client-side React
 // Query staleTime already avoids redundant refetches on the happy path.
 async function fetchCalendarData(userId: string, year: number, month: number) {
-  const [transactions, budgetSummary] = await Promise.all([
+  const [transactions, budgetSummary, periodTotals] = await Promise.all([
     TransactionRepository.findAllForPeriod(userId, year, month),
     BudgetEngineService.getMonthlySummary(userId, year, month),
+    // Same shared figure the Dashboard summary and Transactions page read — see
+    // period-spend.ts. Deliberately not derived from `transactions` above: that keeps
+    // this route's total on the exact same code path as every other view instead of a
+    // locally re-implemented sum that could quietly diverge again.
+    getPeriodTotals(userId, year, month),
   ]);
-  return { transactions, budgetSummary };
+  return { transactions, budgetSummary, periodTotals };
 }
 
 const handleCalendar = compose(withAuth())(async (req, ctx) => {
@@ -42,22 +44,19 @@ const handleCalendar = compose(withAuth())(async (req, ctx) => {
   }
 
   try {
-    const { transactions, budgetSummary } = await fetchCalendarData(userId, year, month);
+    const { transactions, budgetSummary, periodTotals } = await fetchCalendarData(
+      userId,
+      year,
+      month,
+    );
+    const actualTotal = periodTotals.totalExpenseOnly;
 
     const expenseDaySet = new Set<number>();
     const incomeDaySet = new Set<number>();
-    // actualTotal is summed directly from transactions (same SPEND_TYPES filter as
-    // expenseDaySet above), not from BudgetEngineService's per-category "actual" —
-    // that figure groups spend by categoryId and silently drops any transaction with
-    // no category, understating real spend for anyone with even one uncategorized
-    // expense. Transaction-level EXPENSE totals are the one figure every other
-    // dashboard/transactions view already agrees on; this keeps budget pace on it too.
-    let actualTotal = 0;
     for (const tx of transactions) {
       const day = tx.date.getUTCDate();
-      if ((SPEND_TYPES as readonly string[]).includes(tx.type)) {
+      if ((SPEND_ONLY_TYPES as readonly string[]).includes(tx.type)) {
         expenseDaySet.add(day);
-        actualTotal += tx.amount;
       } else if ((INCOME_TYPES as readonly string[]).includes(tx.type)) {
         incomeDaySet.add(day);
       }

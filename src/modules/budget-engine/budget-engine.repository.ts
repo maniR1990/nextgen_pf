@@ -90,7 +90,20 @@ export const BudgetEngineRepository = {
       select: { plannedAmount: true, isRecurring: true, isUnplanned: true },
     }),
 
-  /** Batch spend grouped by categoryId for a period. */
+  /** Batch spend grouped by categoryId for a period.
+   *
+   *  Assumes — but does not verify — that every transaction's `type` matches the `type`
+   *  of the category it's tagged with (e.g. an EXPENSE transaction is never tagged with
+   *  an INCOME-type category). Nothing in the schema or the write path enforces this; it
+   *  holds only because every category picker in the UI already filters by the current
+   *  transaction's type. If that ever stops being true — a bug elsewhere lets a
+   *  transaction get tagged with a mismatched category — this rollup would silently
+   *  misclassify that money into the wrong group (EXPENSE money counted as INCOME
+   *  actual, or similar) without either side erroring. No enforcement was added here:
+   *  FinanceTransactionType has 10 values against Category.type's 4, so a correct
+   *  mapping between them (e.g. does a GIFT_RECEIVED transaction require an INCOME-type
+   *  category, or its own?) is a real design decision that hasn't been made yet, and
+   *  guessing wrong on a live write path risks rejecting valid transactions. */
   findSpendByCategory: (userId: string, categoryIds: string[], year: number, month: number) => {
     if (categoryIds.length === 0) return Promise.resolve([]);
     return prisma.financeTransaction.groupBy({
@@ -107,25 +120,6 @@ export const BudgetEngineRepository = {
       _sum: { amount: true },
     });
   },
-
-  /** Spend with no category assigned, grouped by transaction type, for a period — the
-   *  money findSpendByCategory can never see, since it groups strictly by categoryId. */
-  findUncategorizedSpendByType: (userId: string, year: number, month: number) =>
-    prisma.financeTransaction.groupBy({
-      by: ['type'],
-      where: {
-        userId,
-        budgetPeriodYear: year,
-        budgetPeriodMonth: month,
-        AND: [
-          { OR: [{ categoryId: null }, { categoryId: { isSet: false } }] },
-          // MongoDB stores absent fields differently from explicit null.
-          // isSet: false matches documents where voidedAt was never written.
-          { OR: [{ voidedAt: null }, { voidedAt: { isSet: false } }] },
-        ],
-      },
-      _sum: { amount: true },
-    }),
 
   /** Upsert a budget plan for a specific category + period. */
   upsertBudgetPlan: (

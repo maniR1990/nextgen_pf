@@ -1,13 +1,10 @@
+import { getPeriodTotals } from '@/modules/transactions/period-spend';
 import { CashflowReportRepository } from './cashflow-report.repository';
 import type {
   CashflowReportData,
   FundGroupContributionResult,
   FundGroupLineItem,
 } from './cashflow-report.types';
-
-const INCOME_TYPES = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND'] as const;
-const EXPENSE_TYPES = ['EXPENSE'] as const;
-const ATM_TYPES = ['ATM_WITHDRAWAL'] as const;
 
 function safePct(numerator: number, denominator: number): number | null {
   if (denominator === 0) return null;
@@ -16,13 +13,18 @@ function safePct(numerator: number, denominator: number): number | null {
 
 export const CashflowReportService = {
   async getMonthlyReport(userId: string, year: number, month: number): Promise<CashflowReportData> {
-    const [totalIncome, expensesTotal, atmTotal, savingsRaw, fundUsedRaw] = await Promise.all([
-      CashflowReportRepository.sumByTypes(userId, year, month, INCOME_TYPES),
-      CashflowReportRepository.sumByTypes(userId, year, month, EXPENSE_TYPES),
-      CashflowReportRepository.sumByTypes(userId, year, month, ATM_TYPES),
+    const [periodTotals, savingsRaw, fundUsedRaw] = await Promise.all([
+      // Same shared figures every other dashboard/transactions/budget view reads — see
+      // period-spend.ts. Previously this report ran its own three aggregate queries with
+      // no VOID-status filter, silently over-counting a voided transaction.
+      getPeriodTotals(userId, year, month),
       CashflowReportRepository.fundGroupBreakdown(userId, year, month, 'IN'),
       CashflowReportRepository.fundGroupBreakdown(userId, year, month, 'OUT'),
     ]);
+
+    const totalIncome = periodTotals.totalIncome;
+    const expensesTotal = periodTotals.totalExpenseOnly;
+    const atmTotal = periodTotals.totalsByType.ATM_WITHDRAWAL ?? 0;
 
     const totalSavings = savingsRaw.reduce((s, r) => s + r.totalAmount, 0);
     const totalFundUsed = fundUsedRaw.reduce((s, r) => s + r.totalAmount, 0);

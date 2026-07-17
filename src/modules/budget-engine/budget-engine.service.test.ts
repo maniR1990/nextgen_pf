@@ -33,7 +33,7 @@ const GROCERIES = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(BudgetEngineRepository.findUncategorizedSpendByType).mockResolvedValue([] as never);
+  vi.mocked(TransactionRepository.sumUncategorizedByTypeForPeriod).mockResolvedValue([] as never);
 });
 
 describe('BudgetEngineService.getMonthlySummary', () => {
@@ -163,7 +163,7 @@ describe('BudgetEngineService.getMonthlySummary', () => {
     vi.mocked(BudgetEngineRepository.findSpendByCategory).mockResolvedValue([
       { categoryId: 'cat1', _sum: { amount: 1200 } },
     ] as never);
-    vi.mocked(BudgetEngineRepository.findUncategorizedSpendByType).mockResolvedValueOnce([
+    vi.mocked(TransactionRepository.sumUncategorizedByTypeForPeriod).mockResolvedValueOnce([
       { type: 'EXPENSE', _sum: { amount: 1741 } },
     ] as never);
 

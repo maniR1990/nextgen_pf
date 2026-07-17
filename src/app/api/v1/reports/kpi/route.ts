@@ -3,11 +3,11 @@ import { asRouteHandler } from '@/lib/api/middleware';
 import { v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { prisma } from '@/lib/db/prisma';
 import { BudgetEngineService } from '@/modules/budget-engine';
+import { getPeriodTotals, INFLOW_TYPES, OUTFLOW_TYPES } from '@/modules/transactions/period-spend';
 
-const INCOME_TYPES = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND'] as const;
-const EXPENSE_TYPES = ['EXPENSE'] as const;
-const INVEST_TYPES = ['INVESTMENT', 'SINKING_DEPOSIT'] as const;
-const ATM_TYPES = ['ATM_WITHDRAWAL'] as const;
+// The investment-only slice of OUTFLOW_TYPES — everything debit except day-to-day
+// EXPENSE. Derived rather than hand-typed so it can't drift from OUTFLOW_TYPES itself.
+const INVEST_TYPES = OUTFLOW_TYPES.filter((t) => t !== 'EXPENSE');
 
 const INCOME_TYPE_LABELS: Record<string, string> = {
   INCOME: 'Salary',
@@ -37,79 +37,40 @@ const handleReportsKpi = compose(withAuth())(async (req, ctx) => {
   }
 
   try {
-    const [incomeAgg, expenseAgg, investAgg, atmAgg, incomeGroups, sipCount, budgetSummary] =
-      await Promise.all([
-        prisma.financeTransaction.aggregate({
-          where: {
-            userId,
-            budgetPeriodYear: year,
-            budgetPeriodMonth: month,
-            type: { in: INCOME_TYPES as never },
-          },
-          _sum: { amount: true },
-        }),
-        prisma.financeTransaction.aggregate({
-          where: {
-            userId,
-            budgetPeriodYear: year,
-            budgetPeriodMonth: month,
-            type: { in: EXPENSE_TYPES as never },
-          },
-          _sum: { amount: true },
-        }),
-        prisma.financeTransaction.aggregate({
-          where: {
-            userId,
-            budgetPeriodYear: year,
-            budgetPeriodMonth: month,
-            type: { in: INVEST_TYPES as never },
-          },
-          _sum: { amount: true },
-        }),
-        prisma.financeTransaction.aggregate({
-          where: {
-            userId,
-            budgetPeriodYear: year,
-            budgetPeriodMonth: month,
-            type: { in: ATM_TYPES as never },
-          },
-          _sum: { amount: true },
-        }),
-        // Distinct income types to build a label like "Salary + Gift"
-        prisma.financeTransaction.groupBy({
-          by: ['type'],
-          where: {
-            userId,
-            budgetPeriodYear: year,
-            budgetPeriodMonth: month,
-            type: { in: INCOME_TYPES as never },
-          },
-        }),
-        // Count recurring investment transactions (SIPs)
-        prisma.financeTransaction.count({
-          where: {
-            userId,
-            budgetPeriodYear: year,
-            budgetPeriodMonth: month,
-            type: { in: INVEST_TYPES as never },
-            isRecurring: true,
-          },
-        }),
-        BudgetEngineService.getMonthlySummary(userId, year, month),
-      ]);
+    const [periodTotals, sipCount, budgetSummary] = await Promise.all([
+      // Same shared figures every other dashboard/transactions/budget view reads — see
+      // period-spend.ts. Previously this route ran four of its own aggregate queries
+      // plus a groupBy, none filtering out VOID transactions.
+      getPeriodTotals(userId, year, month),
+      // Count recurring investment transactions (SIPs)
+      prisma.financeTransaction.count({
+        where: {
+          userId,
+          budgetPeriodYear: year,
+          budgetPeriodMonth: month,
+          type: { in: INVEST_TYPES as never },
+          isRecurring: true,
+          status: { not: 'VOID' },
+        },
+      }),
+      BudgetEngineService.getMonthlySummary(userId, year, month),
+    ]);
 
-    const totalIncome = incomeAgg._sum.amount ?? 0;
-    const expensesSpent = expenseAgg._sum.amount ?? 0;
-    const invested = investAgg._sum.amount ?? 0;
-    const atmWithdrawn = atmAgg._sum.amount ?? 0;
+    const totalIncome = periodTotals.totalIncome;
+    const expensesSpent = periodTotals.totalExpenseOnly;
+    const invested = INVEST_TYPES.reduce(
+      (sum, type) => sum + (periodTotals.totalsByType[type] ?? 0),
+      0,
+    );
+    const atmWithdrawn = periodTotals.totalsByType.ATM_WITHDRAWAL ?? 0;
     const accountBalance = totalIncome - expensesSpent - invested - atmWithdrawn;
 
-    // "Salary + Gift" etc. — sorted to keep INCOME first
-    const ORDER = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND'];
+    // "Salary + Gift" etc. — built from totalsByType instead of a separate groupBy
+    // query. INFLOW_TYPES' order already puts INCOME first (it mirrors TX_TYPE_META's
+    // declaration order in period-spend.ts), so no separate sort/ORDER array is needed.
     const incomeSourceLabel =
-      incomeGroups
-        .sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type))
-        .map((row) => INCOME_TYPE_LABELS[row.type] ?? row.type)
+      INFLOW_TYPES.filter((type) => (periodTotals.totalsByType[type] ?? 0) > 0)
+        .map((type) => INCOME_TYPE_LABELS[type] ?? type)
         .join(' + ') || '—';
 
     // Budget totals from budget engine (planned vs spent across all categories)

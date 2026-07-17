@@ -7,9 +7,9 @@ import {
 } from '@/lib/api/errors';
 import { applyDeltas, getBalanceDeltas, reverseDeltas } from '@/lib/balance-engine';
 import { prisma } from '@/lib/db/prisma';
-import { TX_TYPE_META, type TxType } from '@/constants/finance';
 import { evaluateFraud } from '@/lib/rules-engine/evaluator';
 import { UserRepository } from '@/modules/users/users.repository';
+import { getPeriodTotals } from './period-spend';
 import { TX_INCLUDE, TransactionRepository } from './transactions.repository';
 import type {
   CreateTransactionDto,
@@ -91,24 +91,12 @@ export const TransactionService = {
   },
 
   // Whole-period Income/Expense/Net — computed server-side over every matching row, not
-  // just whatever page(s) the client has paginated in. Same credit/debit classification
-  // the transaction timeline uses client-side (TX_TYPE_META.amountSign), so the two stay
-  // in sync. TRANSFER/ATM_WITHDRAWAL are neutral (money moving between the user's own
-  // accounts, not spent or earned) and are deliberately excluded from both buckets.
+  // just whatever page(s) the client has paginated in. Delegates to the shared
+  // getPeriodTotals so this figure can never drift from the Dashboard's or the Calendar
+  // widget's — see period-spend.ts for why that matters.
   async getPeriodSummary(userId: string, year: number, month: number) {
-    const groups = await TransactionRepository.sumByTypeForPeriod(userId, year, month);
-
-    let totalIncome = 0;
-    let totalExpense = 0;
-
-    for (const g of groups) {
-      const amount = g._sum.amount ?? 0;
-      const type = g.type as TxType;
-      if (TX_TYPE_META[type]?.amountSign === 'credit') totalIncome += amount;
-      else if (TX_TYPE_META[type]?.amountSign === 'debit') totalExpense += amount;
-    }
-
-    return { totalIncome, totalExpense, net: totalIncome - totalExpense };
+    const { totalIncome, totalExpense, net } = await getPeriodTotals(userId, year, month);
+    return { totalIncome, totalExpense, net };
   },
 
   // ── Single ────────────────────────────────────────────────────────────────

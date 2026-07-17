@@ -57,6 +57,28 @@ const transferTx = { ...baseTx, type: 'TRANSFER', accountId: 'acc1', toAccountId
 
 beforeEach(() => vi.clearAllMocks());
 
+// ── getPeriodSummary ─────────────────────────────────────────────────────────
+
+describe('TransactionService.getPeriodSummary', () => {
+  it('delegates to the shared period-spend calculation', async () => {
+    vi.mocked(TransactionRepository.sumByTypeForPeriod).mockResolvedValue([
+      { type: 'EXPENSE', _sum: { amount: 24399.68 } },
+      { type: 'INCOME', _sum: { amount: 85000 } },
+    ] as never);
+    vi.mocked(TransactionRepository.sumUncategorizedByTypeForPeriod).mockResolvedValue(
+      [] as never,
+    );
+
+    const result = await TransactionService.getPeriodSummary('u1', 2026, 7);
+
+    expect(result).toEqual({
+      totalIncome: 85000,
+      totalExpense: 24399.68,
+      net: 85000 - 24399.68,
+    });
+  });
+});
+
 // ── getById ───────────────────────────────────────────────────────────────────
 
 describe('TransactionService.getById', () => {

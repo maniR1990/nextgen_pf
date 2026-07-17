@@ -3,6 +3,7 @@ import { v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { prisma } from '@/lib/db/prisma';
 import { FundsService } from '@/modules/funds';
 import { NetWorthRepository } from '@/modules/net-worth/net-worth.repository';
+import { getPeriodTotals } from '@/modules/transactions/period-spend';
 
 function initials(name: string): string {
   return name
@@ -17,47 +18,17 @@ function daysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate();
 }
 
-// ATM_WITHDRAWAL is deliberately excluded — it's a cash movement, not spend. Counting it
-// here would double the real expense once cash is actually paid out (also excluded in
-// reports/kpi and cashflow-report for the same reason).
-const OUTFLOW_TYPES = ['EXPENSE', 'INVESTMENT', 'SINKING_DEPOSIT'] as const;
-const INFLOW_TYPES = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND'] as const;
-
 // Deliberately uncached: this always reads live from the DB. A time-based cache here
 // previously let the dashboard show pre-edit totals for up to 30s after any transaction
 // write, visibly disagreeing with the (uncached) Transactions page. Client-side React
 // Query staleTime already avoids redundant refetches on the happy path.
 async function fetchSummaryData(userId: string, year: number, month: number) {
-  const [user, outAgg, inAgg, totalCount, pendingCount, nwAccounts, fundsSummary] =
+  const [user, periodTotals, totalCount, pendingCount, nwAccounts, fundsSummary] =
     await Promise.all([
       prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { name: true } }),
 
-      // status: VOID must be excluded here — this is the one figure users compare
-      // directly against the Transactions page's own total (getPeriodSummary, via
-      // TransactionRepository.sumByTypeForPeriod), which already excludes VOID rows.
-      // Without this filter a voided expense/investment/sinking-deposit this month
-      // would inflate "Month spend" here while the Transactions page correctly omits it.
-      prisma.financeTransaction.aggregate({
-        where: {
-          userId,
-          budgetPeriodYear: year,
-          budgetPeriodMonth: month,
-          type: { in: OUTFLOW_TYPES as never },
-          status: { not: 'VOID' },
-        },
-        _sum: { amount: true },
-      }),
-
-      prisma.financeTransaction.aggregate({
-        where: {
-          userId,
-          budgetPeriodYear: year,
-          budgetPeriodMonth: month,
-          type: { in: INFLOW_TYPES as never },
-          status: { not: 'VOID' },
-        },
-        _sum: { amount: true },
-      }),
+      // Same figure the Transactions page and Calendar widget read — see period-spend.ts.
+      getPeriodTotals(userId, year, month),
 
       prisma.financeTransaction.count({ where: { userId } }),
       prisma.financeTransaction.count({ where: { userId, status: 'PENDING' } }),
@@ -65,7 +36,7 @@ async function fetchSummaryData(userId: string, year: number, month: number) {
       FundsService.getSummary(userId),
     ]);
 
-  return { user, outAgg, inAgg, totalCount, pendingCount, nwAccounts, fundsSummary };
+  return { user, periodTotals, totalCount, pendingCount, nwAccounts, fundsSummary };
 }
 
 const handleSummary = compose(withAuth())(async (_req, ctx) => {
@@ -75,7 +46,7 @@ const handleSummary = compose(withAuth())(async (_req, ctx) => {
   const month = now.getMonth() + 1;
 
   try {
-    const { user, outAgg, inAgg, totalCount, pendingCount, nwAccounts, fundsSummary } =
+    const { user, periodTotals, totalCount, pendingCount, nwAccounts, fundsSummary } =
       await fetchSummaryData(userId, year, month);
 
     // Compute net worth from account balances
@@ -88,8 +59,8 @@ const handleSummary = compose(withAuth())(async (_req, ctx) => {
     }
     const netWorth = totalAssets - totalLiabilities;
 
-    const totalOut = outAgg._sum.amount ?? 0;
-    const totalIn = inAgg._sum.amount ?? 0;
+    const totalOut = periodTotals.totalExpense;
+    const totalIn = periodTotals.totalIncome;
 
     const dayOfMonth = now.getDate();
     const totalDays = daysInMonth(year, month);

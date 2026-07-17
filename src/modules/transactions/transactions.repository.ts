@@ -213,6 +213,28 @@ export const TransactionRepository = {
       orderBy: { date: 'asc' },
     }),
 
+  // Spend with no category assigned, grouped by type, for a period — the money a
+  // category-grouped view (budget-by-category) can never see, since it groups strictly
+  // by categoryId. Lives here rather than in budget-engine because "which transactions
+  // count, by type, for a period" is a transactions-domain question — every caller that
+  // needs a period total for any reason should be able to find it in one place.
+  sumUncategorizedByTypeForPeriod: (userId: string, year: number, month: number) =>
+    prisma.financeTransaction.groupBy({
+      by: ['type'],
+      where: {
+        userId,
+        budgetPeriodYear: year,
+        budgetPeriodMonth: month,
+        AND: [
+          { OR: [{ categoryId: null }, { categoryId: { isSet: false } }] },
+          // MongoDB stores absent fields differently from explicit null.
+          // isSet: false matches documents where voidedAt was never written.
+          { OR: [{ voidedAt: null }, { voidedAt: { isSet: false } }] },
+        ],
+      },
+      _sum: { amount: true },
+    }),
+
   // Every recurring-linked transaction ever generated for a user, oldest first — used by the
   // subscription-audit widget to detect price creep (comparing the last two amounts charged
   // per template). Small, bounded by "how many recurring templates a person has", not by total

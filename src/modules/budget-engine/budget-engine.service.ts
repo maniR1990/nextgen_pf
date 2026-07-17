@@ -138,8 +138,10 @@ export const BudgetEngineService = {
       await Promise.all([
         BudgetEngineRepository.findSpendByCategory(userId, categoryIds, year, month),
         BudgetEngineRepository.findSpendByCategory(userId, categoryIds, prevYear, prevMonth),
-        BudgetEngineRepository.findUncategorizedSpendByType(userId, year, month),
-        BudgetEngineRepository.findUncategorizedSpendByType(userId, prevYear, prevMonth),
+        // Lives on TransactionRepository, not here — "which transactions have no
+        // category, by type" is a transactions-domain query every caller shares.
+        TransactionRepository.sumUncategorizedByTypeForPeriod(userId, year, month),
+        TransactionRepository.sumUncategorizedByTypeForPeriod(userId, prevYear, prevMonth),
       ]);
 
     const planMap = new Map(budgetPlans.map((p) => [p.categoryId, p]));
