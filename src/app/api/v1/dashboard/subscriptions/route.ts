@@ -3,32 +3,28 @@ import { v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { RecurringTemplatesRepository } from '@/modules/recurring-templates';
 import { computeOccurrences } from '@/modules/recurring-templates/recurring-templates.service';
 import { TransactionRepository } from '@/modules/transactions';
-import { unstable_cache } from 'next/cache';
 import { deriveSubscriptionData } from './derive';
 import type { RecurringTxInput, SubscriptionTemplateInput } from './derive';
 
-const fetchSubscriptionData = unstable_cache(
-  async (userId: string) => {
-    const now = new Date();
-    const [templates, history, typeSums] = await Promise.all([
-      RecurringTemplatesRepository.findByUserId(userId),
-      TransactionRepository.findRecurringHistory(userId),
-      TransactionRepository.sumByTypeForPeriod(userId, now.getFullYear(), now.getMonth() + 1),
-    ]);
-    return { templates, history, typeSums };
-  },
-  ['dashboard-subscriptions'],
-  { revalidate: 60 },
-);
+// Deliberately uncached: this always reads live from the DB. A time-based cache here
+// previously let the dashboard show pre-edit totals for up to 60s after any transaction
+// write, visibly disagreeing with the (uncached) Transactions page. Client-side React
+// Query staleTime already avoids redundant refetches on the happy path.
+async function fetchSubscriptionData(userId: string) {
+  const now = new Date();
+  const [templates, history, typeSums] = await Promise.all([
+    RecurringTemplatesRepository.findByUserId(userId),
+    TransactionRepository.findRecurringHistory(userId),
+    TransactionRepository.sumByTypeForPeriod(userId, now.getFullYear(), now.getMonth() + 1),
+  ]);
+  return { templates, history, typeSums };
+}
 
 const handleSubscriptions = compose(withAuth())(async (_req, ctx) => {
   const userId = ctx.session!.id;
 
   try {
-    const { templates: rawTemplates, history: rawHistory, typeSums } =
-      await fetchSubscriptionData(userId);
-    // Same unstable_cache gotcha as the calendar route: a cache hit deserializes Date
-    // fields as plain strings, so re-wrap before any Date-method usage below.
+    const { templates: rawTemplates, history, typeSums } = await fetchSubscriptionData(userId);
     const now = new Date();
 
     const activeExpenseTemplates = rawTemplates.filter((t) => t.isActive && t.type === 'EXPENSE');
@@ -47,7 +43,7 @@ const handleSubscriptions = compose(withAuth())(async (_req, ctx) => {
     });
 
     const templateIds = new Set(templates.map((t) => t.id));
-    const transactions: RecurringTxInput[] = rawHistory
+    const transactions: RecurringTxInput[] = history
       .filter(
         (tx): tx is typeof tx & { recurringTemplateId: string } =>
           tx.recurringTemplateId != null && templateIds.has(tx.recurringTemplateId),
@@ -55,7 +51,7 @@ const handleSubscriptions = compose(withAuth())(async (_req, ctx) => {
       .map((tx) => ({
         recurringTemplateId: tx.recurringTemplateId,
         amount: tx.amount,
-        date: new Date(tx.date),
+        date: tx.date,
       }));
 
     const monthlyExpenseTotal = typeSums.find((s) => s.type === 'EXPENSE')?._sum.amount ?? 0;

@@ -4,13 +4,19 @@
  * Transaction React Query hooks.
  *
  * Invalidation strategy:
- *  CREATE  → lists + budget + accounts (TRANSFER only)
- *  PATCH   → detail(id) + lists + budget + accounts (TRANSFER only)
- *  DELETE  → detail(id) + lists + budget + accounts
- *  VOID    → detail(id) + lists + budget
+ *  CREATE  → lists + budget + accounts (TRANSFER only) + dashboard
+ *  PATCH   → detail(id) + lists + budget + accounts (TRANSFER only) + dashboard
+ *  DELETE  → detail(id) + lists + budget + accounts + dashboard
+ *  VOID    → detail(id) + lists + budget + dashboard
  *
  * Always invalidate `transactions.lists()` (not `.all`) so we don't
  * accidentally bust individual detail queries that haven't changed.
+ *
+ * `dashboard.all` must always be included: every dashboard widget (spend
+ * summary, calendar, subscriptions) aggregates the same FinanceTransaction
+ * rows this module writes, and without this the dashboard would keep
+ * showing pre-edit totals until its own staleTime happens to lapse —
+ * visibly disagreeing with the just-edited Transactions page.
  */
 
 import { useToast } from '@/components/common/ToastProvider/useToast';
@@ -91,6 +97,7 @@ function invalidateAfterWrite(
   void qc.invalidateQueries({ queryKey: queryKeys.transactions.lists() });
   void qc.invalidateQueries({ queryKey: queryKeys.transactions.summaries() });
   void qc.invalidateQueries({ queryKey: queryKeys.budget.all });
+  void qc.invalidateQueries({ queryKey: queryKeys.dashboard.all });
   if (opts.id) {
     void qc.invalidateQueries({ queryKey: queryKeys.transactions.detail(opts.id) });
   }
@@ -186,6 +193,7 @@ export function useVoidTransaction() {
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.lists() });
       void qc.invalidateQueries({ queryKey: queryKeys.transactions.summaries() });
       void qc.invalidateQueries({ queryKey: queryKeys.budget.all });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboard.all });
       toast.success('Transaction voided');
     },
     onError: (err) => {

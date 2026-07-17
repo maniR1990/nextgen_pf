@@ -3,7 +3,6 @@ import { v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { prisma } from '@/lib/db/prisma';
 import { FundsService } from '@/modules/funds';
 import { NetWorthRepository } from '@/modules/net-worth/net-worth.repository';
-import { unstable_cache } from 'next/cache';
 
 function initials(name: string): string {
   return name
@@ -24,45 +23,50 @@ function daysInMonth(year: number, month: number) {
 const OUTFLOW_TYPES = ['EXPENSE', 'INVESTMENT', 'SINKING_DEPOSIT'] as const;
 const INFLOW_TYPES = ['INCOME', 'GIFT_RECEIVED', 'REIMBURSEMENT', 'REFUND'] as const;
 
-// Cache the heavy DB work per userId for 30 seconds.
-// Key includes userId so different users never share cached data.
-const fetchSummaryData = unstable_cache(
-  async (userId: string, year: number, month: number) => {
-    const [user, outAgg, inAgg, totalCount, pendingCount, nwAccounts, fundsSummary] =
-      await Promise.all([
-        prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { name: true } }),
+// Deliberately uncached: this always reads live from the DB. A time-based cache here
+// previously let the dashboard show pre-edit totals for up to 30s after any transaction
+// write, visibly disagreeing with the (uncached) Transactions page. Client-side React
+// Query staleTime already avoids redundant refetches on the happy path.
+async function fetchSummaryData(userId: string, year: number, month: number) {
+  const [user, outAgg, inAgg, totalCount, pendingCount, nwAccounts, fundsSummary] =
+    await Promise.all([
+      prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { name: true } }),
 
-        prisma.financeTransaction.aggregate({
-          where: {
-            userId,
-            budgetPeriodYear: year,
-            budgetPeriodMonth: month,
-            type: { in: OUTFLOW_TYPES as never },
-          },
-          _sum: { amount: true },
-        }),
+      // status: VOID must be excluded here — this is the one figure users compare
+      // directly against the Transactions page's own total (getPeriodSummary, via
+      // TransactionRepository.sumByTypeForPeriod), which already excludes VOID rows.
+      // Without this filter a voided expense/investment/sinking-deposit this month
+      // would inflate "Month spend" here while the Transactions page correctly omits it.
+      prisma.financeTransaction.aggregate({
+        where: {
+          userId,
+          budgetPeriodYear: year,
+          budgetPeriodMonth: month,
+          type: { in: OUTFLOW_TYPES as never },
+          status: { not: 'VOID' },
+        },
+        _sum: { amount: true },
+      }),
 
-        prisma.financeTransaction.aggregate({
-          where: {
-            userId,
-            budgetPeriodYear: year,
-            budgetPeriodMonth: month,
-            type: { in: INFLOW_TYPES as never },
-          },
-          _sum: { amount: true },
-        }),
+      prisma.financeTransaction.aggregate({
+        where: {
+          userId,
+          budgetPeriodYear: year,
+          budgetPeriodMonth: month,
+          type: { in: INFLOW_TYPES as never },
+          status: { not: 'VOID' },
+        },
+        _sum: { amount: true },
+      }),
 
-        prisma.financeTransaction.count({ where: { userId } }),
-        prisma.financeTransaction.count({ where: { userId, status: 'PENDING' } }),
-        NetWorthRepository.findAccountsWithGroups(userId),
-        FundsService.getSummary(userId),
-      ]);
+      prisma.financeTransaction.count({ where: { userId } }),
+      prisma.financeTransaction.count({ where: { userId, status: 'PENDING' } }),
+      NetWorthRepository.findAccountsWithGroups(userId),
+      FundsService.getSummary(userId),
+    ]);
 
-    return { user, outAgg, inAgg, totalCount, pendingCount, nwAccounts, fundsSummary };
-  },
-  ['dashboard-summary'],
-  { revalidate: 30 }, // cache per userId for 30 seconds
-);
+  return { user, outAgg, inAgg, totalCount, pendingCount, nwAccounts, fundsSummary };
+}
 
 const handleSummary = compose(withAuth())(async (_req, ctx) => {
   const userId = ctx.session!.id;

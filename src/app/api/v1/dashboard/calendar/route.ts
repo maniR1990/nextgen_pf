@@ -3,7 +3,6 @@ import { v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { BudgetEngineService } from '@/modules/budget-engine';
 import { TransactionRepository } from '@/modules/transactions';
 import { derivePayments } from '@/components/common/PaymentSchedulePanel/derivePayments';
-import { unstable_cache } from 'next/cache';
 import { deriveCalendarData } from './derive';
 
 // Only EXPENSE counts toward "no-spend day" and the budget-pace total — deliberately
@@ -18,17 +17,17 @@ function daysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate();
 }
 
-const fetchCalendarData = unstable_cache(
-  async (userId: string, year: number, month: number) => {
-    const [transactions, budgetSummary] = await Promise.all([
-      TransactionRepository.findAllForPeriod(userId, year, month),
-      BudgetEngineService.getMonthlySummary(userId, year, month),
-    ]);
-    return { transactions, budgetSummary };
-  },
-  ['dashboard-calendar'],
-  { revalidate: 30 },
-);
+// Deliberately uncached: this always reads live from the DB. A time-based cache here
+// previously let the dashboard show pre-edit totals for up to 30s after any transaction
+// write, visibly disagreeing with the (uncached) Transactions page. Client-side React
+// Query staleTime already avoids redundant refetches on the happy path.
+async function fetchCalendarData(userId: string, year: number, month: number) {
+  const [transactions, budgetSummary] = await Promise.all([
+    TransactionRepository.findAllForPeriod(userId, year, month),
+    BudgetEngineService.getMonthlySummary(userId, year, month),
+  ]);
+  return { transactions, budgetSummary };
+}
 
 const handleCalendar = compose(withAuth())(async (req, ctx) => {
   const userId = ctx.session!.id;
@@ -43,15 +42,7 @@ const handleCalendar = compose(withAuth())(async (req, ctx) => {
   }
 
   try {
-    const { transactions: rawTransactions, budgetSummary } = await fetchCalendarData(
-      userId,
-      year,
-      month,
-    );
-    // unstable_cache round-trips its return value through JSON between requests, which
-    // turns Date objects into plain strings on a cache hit (a cache miss still has real
-    // Dates fresh from Prisma) — re-wrap so every consumer below sees a real Date either way.
-    const transactions = rawTransactions.map((tx) => ({ ...tx, date: new Date(tx.date) }));
+    const { transactions, budgetSummary } = await fetchCalendarData(userId, year, month);
 
     const expenseDaySet = new Set<number>();
     const incomeDaySet = new Set<number>();
