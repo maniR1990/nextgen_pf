@@ -1,11 +1,11 @@
 @use '../mixins' as m;
 
 .month-cal {
-  @include m.flex-col($gap: var(--space-3));
+  @include m.flex-col($gap: var(--space-2));
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-4);
+  padding: var(--space-3);
 
   &__nav {
     @include m.flex-between;
@@ -49,8 +49,8 @@
   &__day {
     @include m.flex-col;
     align-items: center;
-    padding: var(--space-1) var(--space-1) var(--space-2);
-    min-height: 52px;
+    padding: var(--space-1) var(--space-1) var(--space-1);
+    min-height: 44px;
     background: none;
     border: none;
     cursor: pointer;
@@ -89,8 +89,8 @@
   }
 
   &__day-num {
-    width: 26px;
-    height: 26px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     @include m.flex-center;
     font-size: var(--font-size-xs);
@@ -103,7 +103,7 @@
     display: flex;
     align-items: center;
     gap: 2px;
-    margin-top: 3px;
+    margin-top: 2px;
   }
 
   &__dot {
@@ -121,6 +121,48 @@
     font-size: 7px;
     color: var(--color-text-muted);
     line-height: 1;
+  }
+
+  // Legend — one compact wrapping row, small enough to sit under the grid without
+  // adding real height on desktop. Reuses the same colors as the dots/day-highlights
+  // above so a reader can match swatch to meaning at a glance, not just a color.
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding-top: var(--space-1);
+    border-top: 1px solid var(--color-border);
+  }
+
+  &__legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  &__legend-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &--debit   { background: var(--color-error); }
+    &--credit  { background: var(--color-success); }
+    &--neutral { background: var(--color-text-muted); }
+  }
+
+  &__legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &--no-spend { background: color-mix(in srgb, var(--color-success) 12%, var(--color-bg-surface)); }
+    &--today    { box-shadow: inset 0 0 0 1.5px var(--color-brand); }
   }
 
   // Day-detail panel — revealed on click, styled as its own tinted sub-card so it reads

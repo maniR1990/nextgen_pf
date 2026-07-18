@@ -167,6 +167,30 @@ export function MonthCalendar({
         })}
       </div>
 
+      {/* Legend — explains the dot colors and day highlights without needing a tap */}
+      <div className="month-cal__legend" aria-hidden>
+        <span className="month-cal__legend-item">
+          <span className="month-cal__legend-dot month-cal__legend-dot--debit" />
+          Expense
+        </span>
+        <span className="month-cal__legend-item">
+          <span className="month-cal__legend-dot month-cal__legend-dot--credit" />
+          Income
+        </span>
+        <span className="month-cal__legend-item">
+          <span className="month-cal__legend-dot month-cal__legend-dot--neutral" />
+          Other
+        </span>
+        <span className="month-cal__legend-item">
+          <span className="month-cal__legend-swatch month-cal__legend-swatch--no-spend" />
+          No-spend day
+        </span>
+        <span className="month-cal__legend-item">
+          <span className="month-cal__legend-swatch month-cal__legend-swatch--today" />
+          Today
+        </span>
+      </div>
+
       {/* Selected day panel */}
       {selectedDate && (
         <div className="month-cal__panel">
