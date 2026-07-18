@@ -1,29 +1,4 @@
 {
-  "collapseAfterMs": 10000,
-  "items": [
-    {
-      "id": "pending",
-      "label": "PENDING",
-      "dataKey": "pendingCount",
-      "unit": "transactions",
-      "href": "/dashboard/transactions?status=pending"
-    },
-    {
-      "id": "spendPace",
-      "label": "SPEND PACE",
-      "dataKey": "spendPaceLabel",
-      "changeKey": "spendPaceChangePct"
-    },
-    {
-      "id": "unallocated",
-      "label": "UNALLOCATED",
-      "dataKey": "unallocated",
-      "badge": "ready",
-      "format": "currency-inr"
-    },
-    { "id": "nextRecurring", "label": "NEXT RECURRING", "dataKey": "nextRecurringLabel" },
-    { "id": "monthCloses", "label": "MONTH CLOSES", "dataKey": "monthClosesLabel" }
-  ],
   "shortcuts": [
     { "id": "commandPalette", "label": "Command palette", "key": "⌘K", "action": "commandPalette" },
     { "id": "logTransaction", "label": "Log transaction", "key": "N", "action": "logTransaction" }

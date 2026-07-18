@@ -1,51 +1,74 @@
 import type { AppFooterConfig } from '@/lib/schemas/appFooter';
-import type { AppHeaderData } from '@/lib/schemas/appHeader';
+import type { AppHeaderData, PulseMetric } from '@/lib/schemas/appHeader';
 import { act, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppFooter } from './AppFooter';
 
 const mockConfig: AppFooterConfig = {
-  collapseAfterMs: 10000,
-  items: [
-    { id: 'pending', label: 'PENDING', dataKey: 'pendingCount', unit: 'transactions' },
-    { id: 'spendPace', label: 'SPEND PACE', dataKey: 'spendPaceLabel' },
-    {
-      id: 'unallocated',
-      label: 'UNALLOCATED',
-      dataKey: 'unallocated',
-      format: 'currency-inr',
-      badge: 'ready',
-    },
-    { id: 'nextRecurring', label: 'NEXT RECURRING', dataKey: 'nextRecurringLabel' },
-    { id: 'monthCloses', label: 'MONTH CLOSES', dataKey: 'monthClosesLabel' },
-  ],
   shortcuts: [
     { id: 'commandPalette', label: 'Command palette', key: '⌘K', action: 'commandPalette' },
     { id: 'logTransaction', label: 'Log transaction', key: 'N', action: 'logTransaction' },
   ],
 };
 
-const mockData: Pick<
-  AppHeaderData,
-  | 'pendingCount'
-  | 'spendPaceLabel'
-  | 'spendPaceChangePct'
-  | 'unallocated'
-  | 'nextRecurringLabel'
-  | 'monthClosesLabel'
-> = {
-  pendingCount: 3,
+const mockMetrics: PulseMetric[] = [
+  {
+    id: 'readyToAssign',
+    label: 'READY TO ASSIGN',
+    dataKey: 'readyToAssign',
+    metaKey: 'budgetPeriodLabel',
+    format: 'currency-inr',
+    alertWhenZero: true,
+  },
+  {
+    id: 'monthSpend',
+    label: 'MONTH SPEND',
+    dataKey: 'monthSpend',
+    metaKey: 'spendPaceLabel',
+    format: 'currency-inr',
+  },
+  {
+    id: 'monthCloses',
+    label: 'CLOSES IN',
+    dataKey: 'daysUntilClose',
+    metaKey: 'closeDateLabel',
+    format: 'days',
+  },
+];
+
+const mockData: AppHeaderData = {
+  netWorth: 4_720_000,
+  netWorthChangePct: 2.3,
+  readyToAssign: 6_817,
+  budgetPeriodLabel: 'Jun 2026',
+  monthSpend: 89_432,
   spendPaceLabel: 'Pace: ₹4,210/day',
+  daysUntilClose: 18,
+  closeDateLabel: 'Jun 30',
+  market: {},
+  pendingCount: 3,
+  spendPace: 4_210,
   spendPaceChangePct: 12,
   unallocated: 6_817,
   nextRecurringLabel: 'Jun 15 · Car Service ₹4,500',
   monthClosesLabel: '18 days · Jun 30',
+  userInitials: 'RK',
+  notificationCount: 3,
 };
+
+function scrollTo(y: number) {
+  Object.defineProperty(window, 'scrollY', { value: y, writable: true, configurable: true });
+  act(() => {
+    window.dispatchEvent(new Event('scroll'));
+  });
+}
 
 function renderFooter(onLogTransaction = vi.fn(), onCommandPalette = vi.fn()) {
   render(
     <AppFooter
       config={mockConfig}
+      metrics={mockMetrics}
+      collapseAfterScrollPx={40}
       data={mockData}
       onLogTransaction={onLogTransaction}
       onCommandPalette={onCommandPalette}
@@ -53,31 +76,26 @@ function renderFooter(onLogTransaction = vi.fn(), onCommandPalette = vi.fn()) {
   );
 }
 
+afterEach(() => scrollTo(0));
+
 // ─── Rendering ─────────────────────────────────────────────────────────────────
 
 describe('AppFooter rendering', () => {
-  it('renders all item labels', () => {
+  it('mirrors the pulse strip metric labels, not a separate set', () => {
     renderFooter();
-    expect(screen.getByText('PENDING')).toBeDefined();
-    expect(screen.getByText('SPEND PACE')).toBeDefined();
-    expect(screen.getByText('UNALLOCATED')).toBeDefined();
-    expect(screen.getByText('NEXT RECURRING')).toBeDefined();
-    expect(screen.getByText('MONTH CLOSES')).toBeDefined();
+    expect(screen.getByText('READY TO ASSIGN')).toBeDefined();
+    expect(screen.getByText('MONTH SPEND')).toBeDefined();
+    expect(screen.getByText('CLOSES IN')).toBeDefined();
   });
 
-  it('renders pending count with unit', () => {
-    renderFooter();
-    expect(screen.getByText(/3 transactions/i)).toBeDefined();
-  });
-
-  it('renders spend pace label', () => {
-    renderFooter();
-    expect(screen.getByText(/₹4,210\/day/)).toBeDefined();
-  });
-
-  it('renders unallocated as formatted INR', () => {
+  it('renders readyToAssign as formatted INR', () => {
     renderFooter();
     expect(screen.getByText(/₹6,817/)).toBeDefined();
+  });
+
+  it('renders metric meta text', () => {
+    renderFooter();
+    expect(screen.getByText(/Pace: ₹4,210\/day/)).toBeDefined();
   });
 
   it('renders keyboard shortcut keys', () => {
@@ -93,36 +111,27 @@ describe('AppFooter rendering', () => {
   });
 });
 
-// ─── Collapse behaviour ────────────────────────────────────────────────────────
+// ─── Collapse behaviour — mutually exclusive with the header pulse strip ───────
 
 describe('AppFooter collapse', () => {
-  beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
-
-  it('is expanded by default', () => {
+  it('is collapsed at the top of the page, while the pulse strip is showing', () => {
     renderFooter();
-    const footer = document.querySelector('.app-footer');
-    expect(footer?.classList.contains('app-footer--collapsed')).toBe(false);
-  });
-
-  it('collapses to accent line after collapseAfterMs', () => {
-    renderFooter();
-    act(() => {
-      vi.advanceTimersByTime(10_000);
-    });
     const footer = document.querySelector('.app-footer');
     expect(footer?.classList.contains('app-footer--collapsed')).toBe(true);
   });
 
-  it('re-expands on mouse enter', () => {
+  it('expands once scrolled past the same threshold that hides the pulse strip', () => {
     renderFooter();
-    const footer = document.querySelector('.app-footer')!;
-    act(() => {
-      vi.advanceTimersByTime(10_000);
-    });
-    act(() => {
-      footer.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
-    });
-    expect(footer.classList.contains('app-footer--collapsed')).toBe(false);
+    scrollTo(41);
+    const footer = document.querySelector('.app-footer');
+    expect(footer?.classList.contains('app-footer--collapsed')).toBe(false);
+  });
+
+  it('collapses again as soon as the user scrolls back up', () => {
+    renderFooter();
+    scrollTo(200);
+    scrollTo(150);
+    const footer = document.querySelector('.app-footer');
+    expect(footer?.classList.contains('app-footer--collapsed')).toBe(true);
   });
 });

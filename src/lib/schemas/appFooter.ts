@@ -1,16 +1,5 @@
 import { z } from 'zod';
 
-export const FooterItemSchema = z.object({
-  id: z.string().min(1),
-  label: z.string().min(1).max(32),
-  dataKey: z.string().min(1),
-  changeKey: z.string().optional(),
-  unit: z.string().optional(),
-  badge: z.string().optional(),
-  format: z.enum(['currency-inr', 'currency-inr-compact', 'days', 'number']).optional(),
-  href: z.string().optional(),
-});
-
 export const FooterShortcutSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1).max(32),
@@ -18,12 +7,12 @@ export const FooterShortcutSchema = z.object({
   action: z.enum(['commandPalette', 'logTransaction']),
 });
 
+// The footer no longer carries its own status metrics — it mirrors the header's
+// pulseStrip.metrics (same numbers, same labels) and only becomes visible once the
+// pulse strip has scrolled out of view, so it never shows the same figures at once.
 export const AppFooterConfigSchema = z.object({
-  collapseAfterMs: z.number().int().positive(),
-  items: z.array(FooterItemSchema).min(1).max(8),
   shortcuts: z.array(FooterShortcutSchema).min(1).max(4),
 });
 
 export type AppFooterConfig = z.infer<typeof AppFooterConfigSchema>;
-export type FooterItem = z.infer<typeof FooterItemSchema>;
 export type FooterShortcut = z.infer<typeof FooterShortcutSchema>;

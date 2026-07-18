@@ -1,8 +1,9 @@
 'use client';
 
+import { useScrollCollapse } from '@/hooks/useScrollCollapse';
 import type { AppHeaderConfig, AppHeaderData, ContextSubBarItem } from '@/lib/schemas/appHeader';
 import { usePathname } from 'next/navigation';
-import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Suspense, useLayoutEffect, useRef } from 'react';
 import { ContextSubBar } from './ContextSubBar';
 import { MainNav } from './MainNav';
 import { PulseStrip } from './PulseStrip';
@@ -31,8 +32,7 @@ function getSubBarItems(
 
 export function AppHeader({ config, data, onLogTransaction, onSearch }: AppHeaderProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
-  const prevScrollY = useRef(0);
+  const collapsed = useScrollCollapse(config.pulseStrip.collapseAfterScrollPx);
   const headerRef = useRef<HTMLElement>(null);
 
   // Set --app-header-height only when expanded so padding-top never shrinks on scroll.
@@ -44,24 +44,6 @@ export function AppHeader({ config, data, onLogTransaction, onSearch }: AppHeade
     if (!el) return;
     document.documentElement.style.setProperty('--app-header-height', `${el.offsetHeight}px`);
   }, [collapsed, pathname]);
-
-  useEffect(() => {
-    const threshold = config.pulseStrip.collapseAfterScrollPx;
-
-    function onScroll() {
-      const y = window.scrollY;
-      const scrollingDown = y > prevScrollY.current;
-      if (scrollingDown && y > threshold) {
-        setCollapsed(true);
-      } else if (!scrollingDown) {
-        setCollapsed(false);
-      }
-      prevScrollY.current = y;
-    }
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [config.pulseStrip.collapseAfterScrollPx]);
 
   const subBarItems = getSubBarItems(config.contextSubBar.screens, pathname);
   const isTransactionsScreen = pathname.startsWith('/dashboard/transactions');

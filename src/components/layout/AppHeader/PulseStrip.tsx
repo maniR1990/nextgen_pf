@@ -2,7 +2,8 @@
 
 import type { PulseMetric } from '@/lib/schemas/appHeader';
 import type { AppHeaderData } from '@/lib/schemas/appHeader';
-import { formatChangePct, formatINR, formatINRCompact } from '@/lib/utils/format';
+import { formatChangePct } from '@/lib/utils/format';
+import { formatMetricValue } from '@/lib/utils/pulseMetric';
 
 interface PulseStripProps {
   metrics: PulseMetric[];
@@ -10,21 +11,6 @@ interface PulseStripProps {
   marketLabels: Record<string, string>;
   data: AppHeaderData;
   collapsed: boolean;
-}
-
-function formatMetricValue(metric: PulseMetric, data: AppHeaderData): string {
-  const raw = data[metric.dataKey as keyof AppHeaderData];
-  const value = typeof raw === 'number' ? raw : 0;
-  switch (metric.format) {
-    case 'currency-inr-compact':
-      return formatINRCompact(value);
-    case 'currency-inr':
-      return formatINR(value);
-    case 'days':
-      return String(value);
-    default:
-      return String(raw ?? '—');
-  }
 }
 
 export function PulseStrip({

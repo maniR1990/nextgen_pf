@@ -58,6 +58,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <AppFooter
         config={footerConfig}
+        metrics={headerConfig.pulseStrip.metrics}
+        collapseAfterScrollPx={headerConfig.pulseStrip.collapseAfterScrollPx}
         data={liveData}
         onLogTransaction={() => setTxOpen(true)}
         onCommandPalette={() => {

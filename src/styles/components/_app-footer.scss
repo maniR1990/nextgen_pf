@@ -69,15 +69,11 @@ $footer-dark-muted: #7d8590;
   }
 }
 
-.app-footer__item-link,
 .app-footer__item-static {
   display: flex;
   align-items: baseline;
   gap: 5px;
-  text-decoration: none;
   white-space: nowrap;
-
-  &:hover .app-footer__item-value { color: #fff; }
 }
 
 .app-footer__item-label {
@@ -98,14 +94,13 @@ $footer-dark-muted: #7d8590;
   color: $footer-dark-text;
   font-variant-numeric: tabular-nums;
   transition: color var(--transition-fast);
+
+  &--alert { color: #f85149; }
 }
 
-.app-footer__badge {
-  font-family: var(--font-family-sans);
-  font-size: 0.58rem;
-  font-weight: 700;
-  color: #3fb950;
-  letter-spacing: 0.04em;
+.app-footer__item-meta {
+  font-size: 0.6rem;
+  color: $footer-dark-muted;
 }
 
 .app-footer__change {

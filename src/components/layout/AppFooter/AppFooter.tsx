@@ -1,50 +1,33 @@
 'use client';
 
-import type { AppFooterConfig, FooterItem } from '@/lib/schemas/appFooter';
-import type { AppHeaderData } from '@/lib/schemas/appHeader';
-import { formatINR } from '@/lib/utils/format';
-import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useScrollCollapse } from '@/hooks/useScrollCollapse';
+import type { AppFooterConfig } from '@/lib/schemas/appFooter';
+import type { AppHeaderData, PulseMetric } from '@/lib/schemas/appHeader';
+import { formatChangePct } from '@/lib/utils/format';
+import { formatMetricValue } from '@/lib/utils/pulseMetric';
 
 export interface AppFooterProps {
   config: AppFooterConfig;
-  data: Pick<
-    AppHeaderData,
-    | 'pendingCount'
-    | 'spendPaceLabel'
-    | 'spendPaceChangePct'
-    | 'unallocated'
-    | 'nextRecurringLabel'
-    | 'monthClosesLabel'
-  >;
+  metrics: PulseMetric[];
+  collapseAfterScrollPx: number;
+  data: AppHeaderData;
   onLogTransaction: () => void;
   onCommandPalette: () => void;
 }
 
-function resolveItemValue(item: FooterItem, data: AppFooterProps['data']): string {
-  const raw = (data as Record<string, unknown>)[item.dataKey];
-  if (raw === undefined || raw === null) return '—';
-  if (item.format === 'currency-inr' && typeof raw === 'number') return formatINR(raw);
-  if (item.unit && typeof raw === 'number') return `${raw} ${item.unit}`;
-  return String(raw);
-}
-
-export function AppFooter({ config, data, onLogTransaction, onCommandPalette }: AppFooterProps) {
-  const [collapsed, setCollapsed] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const resetTimer = useCallback(() => {
-    setCollapsed(false);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setCollapsed(true), config.collapseAfterMs);
-  }, [config.collapseAfterMs]);
-
-  useEffect(() => {
-    timerRef.current = setTimeout(() => setCollapsed(true), config.collapseAfterMs);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [config.collapseAfterMs]);
+export function AppFooter({
+  config,
+  metrics,
+  collapseAfterScrollPx,
+  data,
+  onLogTransaction,
+  onCommandPalette,
+}: AppFooterProps) {
+  // The pulse strip up top hides once the user scrolls past this threshold — the
+  // footer is its stand-in for that state, so it only expands exactly when the strip
+  // is gone. Same numbers, one place on screen at a time, never both.
+  const pulseStripHidden = useScrollCollapse(collapseAfterScrollPx);
+  const collapsed = !pulseStripHidden;
 
   function handleShortcut(action: string) {
     if (action === 'logTransaction') onLogTransaction();
@@ -54,24 +37,34 @@ export function AppFooter({ config, data, onLogTransaction, onCommandPalette }: 
   return (
     <footer
       className={['app-footer', collapsed && 'app-footer--collapsed'].filter(Boolean).join(' ')}
-      onMouseEnter={resetTimer}
-      onFocus={resetTimer}
       aria-label="Financial status bar"
+      aria-hidden={collapsed}
     >
       <div className="app-footer__inner">
         <ul className="app-footer__items">
-          {config.items.map((item) => {
-            const value = resolveItemValue(item, data);
-            const change = item.changeKey
-              ? ((data as Record<string, unknown>)[item.changeKey] as number | undefined)
+          {metrics.map((metric) => {
+            const value = formatMetricValue(metric, data);
+            const change = metric.changeKey
+              ? (data[metric.changeKey as keyof AppHeaderData] as number | undefined)
               : undefined;
+            const meta = metric.metaKey
+              ? String(data[metric.metaKey as keyof AppHeaderData] ?? '')
+              : undefined;
+            const isZeroAlert = metric.alertWhenZero && value === '₹0';
 
             const content = (
               <>
-                <span className="app-footer__item-label">{item.label}</span>
-                <span className="app-footer__item-value">
+                <span className="app-footer__item-label">{metric.label}</span>
+                <span
+                  className={[
+                    'app-footer__item-value',
+                    isZeroAlert && 'app-footer__item-value--alert',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
                   {value}
-                  {item.badge && <span className="app-footer__badge">{item.badge}</span>}
+                  {metric.unit && <span> {metric.unit}</span>}
                   {change !== undefined && (
                     <span
                       className={[
@@ -79,23 +72,17 @@ export function AppFooter({ config, data, onLogTransaction, onCommandPalette }: 
                         change >= 0 ? 'app-footer__change--up' : 'app-footer__change--down',
                       ].join(' ')}
                     >
-                      {change >= 0 ? '+' : '−'}
-                      {Math.abs(change).toFixed(0)}%
+                      {formatChangePct(change)}
                     </span>
                   )}
                 </span>
+                {meta && <span className="app-footer__item-meta">{meta}</span>}
               </>
             );
 
             return (
-              <li key={item.id} className="app-footer__item">
-                {item.href ? (
-                  <Link href={item.href} className="app-footer__item-link">
-                    {content}
-                  </Link>
-                ) : (
-                  <div className="app-footer__item-static">{content}</div>
-                )}
+              <li key={metric.id} className="app-footer__item">
+                <div className="app-footer__item-static">{content}</div>
               </li>
             );
           })}
