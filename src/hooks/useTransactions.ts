@@ -54,8 +54,9 @@ export interface TransactionBody {
   // Gift
   giftFrom?: string;
   occasion?: string;
-  // Sinking
-  sfId?: string;
+  // Sinking / fund purpose-tag
+  fundId?: string;
+  fundFlow?: 'IN' | 'OUT';
   // Expense extras
   isTaxDed?: boolean;
   isReimbursable?: boolean;

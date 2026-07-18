@@ -1,8 +1,11 @@
 'use client';
 
 import { DayOfMonthPicker } from '@/components/common/DayOfMonthPicker';
+import { FrequencyPicker } from '@/components/common/FrequencyPicker';
 import { CATEGORY_MAX_LEVEL } from '@/constants/categories';
+import { FREQUENCY_INTERVAL_MONTHS } from '@/lib/utils/recurringFrequency';
 import type { BudgetCategoryNode } from '@/modules/budget-engine/budget-engine.types';
+import type { RecurringFrequency } from '@prisma/client';
 import {
   CalendarClock,
   Check,
@@ -36,6 +39,33 @@ function ordinal(n: number): string {
 function formatINR(n: number): string {
   if (Math.abs(n) >= 1_00_000) return `₹${(Math.abs(n) / 1_00_000).toFixed(1)}L`;
   return `₹${Math.abs(n).toLocaleString('en-IN')}`;
+}
+
+const FREQUENCY_LABELS: Record<RecurringFrequency, string> = {
+  MONTHLY: 'Monthly',
+  TWICE_MONTHLY: 'Twice monthly',
+  EVERY_2_MONTHS: 'Every 2 months',
+  QUARTERLY: 'Quarterly',
+  HALF_YEARLY: 'Half-yearly',
+  ANNUAL: 'Annual',
+};
+
+// A quarterly/half-yearly/annual plan needs to know WHICH calendar months it's due in —
+// without this, seedRecurring can't tell when to copy the plan forward (see
+// isDueInMonth). There's no UI yet to hand-pick individual months, so picking a
+// frequency here seeds a sensible default: evenly spaced months starting from the one
+// it was set in, e.g. picking Half-yearly in July defaults to [July, January].
+function defaultMonthsForFrequency(frequency: RecurringFrequency, fromMonth: number): number[] {
+  const interval = FREQUENCY_INTERVAL_MONTHS[frequency];
+  if (interval < 1) return []; // Monthly / twice-monthly don't need explicit months
+  const count = Math.round(12 / interval);
+  const months: number[] = [];
+  let m = fromMonth;
+  for (let i = 0; i < count; i++) {
+    months.push(m);
+    m = ((m - 1 + interval) % 12) + 1;
+  }
+  return months.sort((a, b) => a - b);
 }
 
 // #4 keyboard nav: after committing a planned value, click the next editable planned cell
@@ -232,6 +262,8 @@ interface Props {
     data: {
       planned?: number;
       isRecurring?: boolean;
+      frequency?: RecurringFrequency | null;
+      months?: number[];
       isUnplanned?: boolean;
       dueDay?: number | null;
     },
@@ -304,6 +336,19 @@ export function BudgetCategoryRow({
     }
     // #4 Keyboard Tab: move to next editable planned cell
     if (moveNext) focusNextPlannedCell(node.id);
+  }
+
+  async function handleFrequencyChange(frequency: RecurringFrequency | null) {
+    if (!frequency) {
+      await onUpdate(node.id, { isRecurring: false, frequency: null, months: [] });
+      return;
+    }
+    const currentMonth = new Date().getMonth() + 1;
+    await onUpdate(node.id, {
+      isRecurring: true,
+      frequency,
+      months: defaultMonthsForFrequency(frequency, currentMonth),
+    });
   }
 
   async function commitRename() {
@@ -381,7 +426,14 @@ export function BudgetCategoryRow({
           )}
 
           {node.isRecurring && (
-            <span className="budget-row__badge budget-row__badge--rec" title="Recurring">
+            <span
+              className="budget-row__badge budget-row__badge--rec"
+              title={
+                node.frequency
+                  ? FREQUENCY_LABELS[node.frequency as RecurringFrequency]
+                  : 'Recurring'
+              }
+            >
               ↻
             </span>
           )}
@@ -483,14 +535,29 @@ export function BudgetCategoryRow({
                 }}
               />
             ) : (
-              <span className="budget-row__amount budget-row__amount--planned">
-                {node.planned > 0 ? (
-                  <>
-                    {formatINR(node.planned)}
-                    <Pencil size={10} className="budget-row__planned-edit-hint" aria-hidden="true" />
-                  </>
-                ) : (
-                  <span className="budget-row__amount--placeholder">+ Set budget</span>
+              <span className="budget-row__planned-stack">
+                <span className="budget-row__amount budget-row__amount--planned">
+                  {node.planned > 0 ? (
+                    <>
+                      {formatINR(node.planned)}
+                      <Pencil
+                        size={10}
+                        className="budget-row__planned-edit-hint"
+                        aria-hidden="true"
+                      />
+                    </>
+                  ) : (
+                    <span className="budget-row__amount--placeholder">+ Set budget</span>
+                  )}
+                </span>
+                {/* Money already set aside toward this category's linked Fund — separate
+                    from Actual so a sinking-fund contribution never reads as if it were
+                    spent. */}
+                {node.transferred != null && (
+                  <span className="budget-row__transferred" title="Transferred toward linked fund">
+                    {formatINR(node.transferred)}
+                    {node.fundTargetAmount ? ` of ${formatINR(node.fundTargetAmount)}` : ''}
+                  </span>
                 )}
               </span>
             )}
@@ -576,16 +643,36 @@ export function BudgetCategoryRow({
             rather than gating each button individually. */}
         <div className="budget-row__actions-cell">
           {!node.isVirtual && (
-            <>
-              <button
-                type="button"
-                className={`budget-row__icon-btn budget-row__icon-btn--rec${node.isRecurring ? ' budget-row__icon-btn--active-rec' : ''}`}
-                title={node.isRecurring ? 'Recurring ON — click to turn off' : 'Mark as recurring'}
-                onClick={() => void onUpdate(node.id, { isRecurring: !node.isRecurring })}
-                disabled={isSaving}
-              >
-                <RefreshCw size={11} />
-              </button>
+            <div className="budget-row__actions-inner">
+              <FrequencyPicker
+                value={node.isRecurring ? ((node.frequency as RecurringFrequency) ?? 'MONTHLY') : null}
+                onChange={(freq) => void handleFrequencyChange(freq)}
+                trigger={({ open, ref }) => (
+                  <button
+                    ref={ref}
+                    type="button"
+                    className={[
+                      'freq-picker-trigger',
+                      node.isRecurring ? 'freq-picker-trigger--active' : '',
+                      open ? 'freq-picker-trigger--open' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    title={
+                      node.isRecurring && node.frequency
+                        ? `Recurring — ${FREQUENCY_LABELS[node.frequency as RecurringFrequency]}`
+                        : 'Mark as recurring'
+                    }
+                    aria-label={`Recurring frequency for ${node.name}`}
+                    disabled={isSaving}
+                  >
+                    <RefreshCw size={10} />
+                    {node.isRecurring && node.frequency && node.frequency !== 'MONTHLY'
+                      ? FREQUENCY_LABELS[node.frequency as RecurringFrequency]
+                      : null}
+                  </button>
+                )}
+              />
               <button
                 type="button"
                 className={`budget-row__icon-btn budget-row__icon-btn--unpl${node.isUnplanned ? ' budget-row__icon-btn--active-unpl' : ''}`}
@@ -659,7 +746,7 @@ export function BudgetCategoryRow({
                   <Trash2 size={11} />
                 </button>
               )}
-            </>
+            </div>
           )}
         </div>
 

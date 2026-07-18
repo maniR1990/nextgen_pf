@@ -38,15 +38,15 @@ async function fetchSources(): Promise<FormSourceOption[]> {
 }
 
 async function fetchSinkingFunds(): Promise<FormSinkingFundOption[]> {
-  const res = await fetch('/api/v1/sinking-funds');
-  if (!res.ok) throw new Error('Failed to load sinking funds');
-  const json = await res.json();
-  return (json.data ?? []).map((r: Record<string, unknown>) => ({
-    id: r.id,
-    label: r.name,
-    target: r.targetAmount,
-    saved: r.currentBalance,
-    monthly: r.monthlyContribution,
+  const funds = await apiGetV1<
+    Array<{ id: string; name: string; targetAmount: number; targetMonths: number | null; currentAmount: number }>
+  >('/api/v1/funds?purpose=SINKING&limit=100');
+  return funds.map((f) => ({
+    id: f.id,
+    label: f.name,
+    target: f.targetAmount,
+    saved: f.currentAmount,
+    monthly: f.targetMonths ? f.targetAmount / f.targetMonths : 0,
   }));
 }
 

@@ -53,8 +53,9 @@ export function buildTransactionBody(
     // Gift
     giftFrom: values.giftFrom || undefined,
     occasion: values.occasion || undefined,
-    // Sinking
-    sfId: values.sfId || undefined,
+    // Sinking / fund purpose-tag
+    fundId: values.fundId || undefined,
+    fundFlow: values.fundFlow || undefined,
     // Expense extras
     isTaxDed: values.isTaxDed || undefined,
     isReimbursable: values.isReimbursable || undefined,
@@ -165,7 +166,8 @@ export function useTransactionForm(editId?: string) {
       toAccountId: values.toAccountId || undefined,
       incomeType: values.incomeType || undefined,
       assetClass: values.assetClass || undefined,
-      sfId: values.sfId || undefined,
+      fundId: values.fundId || undefined,
+      fundFlow: values.fundFlow || undefined,
       recSchedule: values.isRecurring
         ? {
             frequency: values.recFrequency,

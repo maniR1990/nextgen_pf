@@ -23,6 +23,31 @@ function addMonths(year: number, month: number, n: number): [number, number] {
   return [y, m];
 }
 
+/** Walks forward year by year, only landing on the explicitly configured due months
+ *  (1-12) — e.g. a half-yearly item due in January and July lands on exactly those two
+ *  months every year, instead of drifting based on whatever date this function happens
+ *  to be called on. */
+function occurrencesFromDueMonths(
+  dayOfMonth: number,
+  months: number[],
+  now: Date,
+  count: number,
+): Date[] {
+  const sortedMonths = [...new Set(months)].sort((a, b) => a - b);
+  const result: Date[] = [];
+  let year = now.getFullYear();
+  while (result.length < count) {
+    for (const m of sortedMonths) {
+      const monthIndex = m - 1;
+      const candidate = new Date(year, monthIndex, clampDay(dayOfMonth, year, monthIndex));
+      if (candidate > now) result.push(candidate);
+      if (result.length >= count) break;
+    }
+    year += 1;
+  }
+  return result;
+}
+
 /** Returns the next N future occurrence dates based on template frequency. */
 export function computeOccurrences(
   template: {
@@ -57,6 +82,13 @@ export function computeOccurrences(
       [year, month] = addMonths(year, month, 1);
     }
     return result;
+  }
+
+  // Non-monthly frequencies with explicit due months configured — honor them exactly
+  // rather than jumping in fixed intervals from whatever date this happens to be called
+  // on, which used to let a half-yearly item silently drift onto the wrong months.
+  if (template.months.length > 0 && template.frequency !== 'MONTHLY') {
+    return occurrencesFromDueMonths(day1, template.months, now, count);
   }
 
   const intervalMonths =

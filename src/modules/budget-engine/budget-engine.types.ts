@@ -11,9 +11,19 @@ export interface BudgetCategoryNode {
    *  rename, delete, or add children under it. */
   isVirtual: boolean;
   isRecurring: boolean;
+  /** Cadence for a recurring item. null = not recurring, or legacy monthly-only. */
+  frequency: string | null;
+  /** Calendar months (1-12) this item is due in — only meaningful when frequency is set
+   *  and isn't MONTHLY. Empty = not yet configured (seedRecurring will skip it). */
+  months: number[];
   isUnplanned: boolean;
   /** Day of month (1–31) this item is typically due. null = no due date set. */
   dueDay: number | null;
+  /** Net amount set aside toward this category's linked Fund (money in minus money
+   *  out, lifetime — not scoped to this period). Null when no Fund is linked. */
+  transferred: number | null;
+  /** The linked Fund's savings target, for a "of ₹X" progress display. */
+  fundTargetAmount: number | null;
   /** True once this period's due item has been settled (paid), regardless of whether
    *  the settling transaction's type/category rolls up into `actual` below — e.g. a
    *  TRANSFER never does. Independent of the actual>=planned heuristic. */

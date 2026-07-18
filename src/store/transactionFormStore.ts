@@ -36,8 +36,9 @@ export interface TransactionFormValues {
   giftFrom: string;
   occasion: string;
 
-  // Sinking deposit
-  sfId: string;
+  // Sinking deposit / fund purpose-tag on a Transfer
+  fundId: string;
+  fundFlow: 'IN' | 'OUT' | '';
 
   // Expense extras
   isTaxDed: boolean;
@@ -124,7 +125,8 @@ function buildDefaultValues(): TransactionFormValues {
     tds: '',
     giftFrom: '',
     occasion: '',
-    sfId: '',
+    fundId: '',
+    fundFlow: '',
     isTaxDed: false,
     isReimbursable: false,
     reimbDate: '',

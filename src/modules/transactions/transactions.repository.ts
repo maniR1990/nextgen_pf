@@ -235,6 +235,30 @@ export const TransactionRepository = {
       _sum: { amount: true },
     }),
 
+  // Lifetime net balance per Fund, from transfers explicitly tagged with fundId/fundFlow —
+  // money in (IN) minus money out (OUT). Not period-scoped: a sinking fund's "how much have
+  // I saved toward this so far" is a running total across every month, not one month's worth.
+  sumTransfersByFund: async (userId: string, fundIds: string[]) => {
+    if (fundIds.length === 0) return new Map<string, number>();
+    const rows = await prisma.financeTransaction.groupBy({
+      by: ['fundId', 'fundFlow'],
+      where: {
+        userId,
+        fundId: { in: fundIds },
+        OR: [{ voidedAt: null }, { voidedAt: { isSet: false } }],
+      },
+      _sum: { amount: true },
+    });
+    const balances = new Map<string, number>(fundIds.map((id) => [id, 0]));
+    for (const row of rows) {
+      if (!row.fundId) continue;
+      const amount = row._sum.amount ?? 0;
+      const signed = row.fundFlow === 'OUT' ? -amount : amount;
+      balances.set(row.fundId, (balances.get(row.fundId) ?? 0) + signed);
+    }
+    return balances;
+  },
+
   // Every recurring-linked transaction ever generated for a user, oldest first — used by the
   // subscription-audit widget to detect price creep (comparing the last two amounts charged
   // per template). Small, bounded by "how many recurring templates a person has", not by total

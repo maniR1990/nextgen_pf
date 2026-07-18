@@ -7,6 +7,7 @@ import { CategoriesRepository } from '@/modules/categories/categories.repository
 import type { CategoryTreeNode } from '@/modules/categories/categories.types';
 import { buildCategoryTree } from '@/modules/categories/lib/category-tree';
 import { mapCategoryTreeToPickerOptions } from '@/modules/categories/lib/map-category-tree-to-picker-options';
+import { TransactionRepository } from '@/modules/transactions/transactions.repository';
 
 export interface FormSourceOption {
   id: string;
@@ -113,16 +114,19 @@ export async function getCategoryOptions(userId: string): Promise<FormCategoryOp
 export async function getSinkingFundOptions(userId: string): Promise<FormSinkingFundOption[]> {
   const rows = await prisma.fund.findMany({
     where: { userId },
-    select: { id: true, name: true, targetAmount: true, archivedAt: true },
+    select: { id: true, name: true, targetAmount: true, targetMonths: true, archivedAt: true },
     orderBy: { name: 'asc' },
   });
-  return rows
-    .filter((r) => r.archivedAt == null)
-    .map((r) => ({
-      id: r.id,
-      label: r.name,
-      target: r.targetAmount,
-      saved: 0,
-      monthly: 0,
-    }));
+  const active = rows.filter((r) => r.archivedAt == null);
+  const savedMap = await TransactionRepository.sumTransfersByFund(
+    userId,
+    active.map((r) => r.id),
+  );
+  return active.map((r) => ({
+    id: r.id,
+    label: r.name,
+    target: r.targetAmount,
+    saved: savedMap.get(r.id) ?? 0,
+    monthly: r.targetMonths ? r.targetAmount / r.targetMonths : 0,
+  }));
 }

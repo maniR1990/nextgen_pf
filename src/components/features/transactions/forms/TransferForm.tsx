@@ -4,7 +4,7 @@ import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
 import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
-import type { PaymentSourceOption } from '@/types/finance';
+import type { PaymentSourceOption, SinkingFundOption } from '@/types/finance';
 import { CommonFormFields } from './CommonFormFields';
 
 interface TransferFormProps {
@@ -15,12 +15,21 @@ interface TransferFormProps {
     value: TransactionFormValues[K],
   ) => void;
   paymentSources: PaymentSourceOption[];
+  sinkingFunds: SinkingFundOption[];
 }
 
-export function TransferForm({ values, errors, onChange, paymentSources }: TransferFormProps) {
+export function TransferForm({
+  values,
+  errors,
+  onChange,
+  paymentSources,
+  sinkingFunds,
+}: TransferFormProps) {
   const accountOptions = (paymentSources ?? [])
     .filter((s) => s.id !== values.sourceId)
     .map((s) => ({ value: s.id, label: s.name }));
+
+  const fundOptions = (sinkingFunds ?? []).map((f) => ({ value: f.id, label: f.label }));
 
   return (
     <div className="tx-form tx-form--transfer">
@@ -72,6 +81,31 @@ export function TransferForm({ values, errors, onChange, paymentSources }: Trans
               onChange={(e) => onChange('txFee', e.target.value)}
             />
           </FormField>
+        </div>
+
+        <div className="tx-form__row tx-form__row--2">
+          <SelectField
+            label="Fund (optional)"
+            id="tx-fund"
+            value={values.fundId}
+            options={fundOptions}
+            placeholder="Not tied to a fund"
+            onChange={(e) => onChange('fundId', e.target.value)}
+          />
+
+          {values.fundId && (
+            <FormField label="Direction" htmlFor="tx-fund-flow">
+              <select
+                id="tx-fund-flow"
+                className="form-input"
+                value={values.fundFlow || 'IN'}
+                onChange={(e) => onChange('fundFlow', e.target.value as 'IN' | 'OUT')}
+              >
+                <option value="IN">Add to fund</option>
+                <option value="OUT">Draw from fund</option>
+              </select>
+            </FormField>
+          )}
         </div>
 
         <CommonFormFields

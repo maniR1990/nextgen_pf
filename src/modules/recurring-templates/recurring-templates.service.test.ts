@@ -1,7 +1,7 @@
 import { ConflictError, NotFoundError } from '@/lib/api/errors';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RecurringTemplatesRepository } from './recurring-templates.repository';
-import { RecurringTemplatesService } from './recurring-templates.service';
+import { computeOccurrences, RecurringTemplatesService } from './recurring-templates.service';
 
 vi.mock('./recurring-templates.repository');
 
@@ -101,6 +101,53 @@ describe('RecurringTemplatesService.previewOccurrences', () => {
     result.occurrences.forEach((o) => {
       expect(o.date.getTime()).toBeGreaterThan(Date.now());
     });
+  });
+});
+
+describe('computeOccurrences — honors explicit due months', () => {
+  const reference = new Date(2026, 2, 15); // March 15, 2026
+
+  it('lands only on the configured months for HALF_YEARLY, not every 6 months from today', () => {
+    const dates = computeOccurrences(
+      { frequency: 'HALF_YEARLY', dayOfMonth: 10, months: [1, 7] },
+      2,
+      reference,
+    );
+    // Jan 10 already passed this year, so next is Jul 10 2026, then Jan 10 2027 —
+    // NOT Sep 15 2026 (which is what "6 months from March 15" would wrongly produce).
+    expect(dates[0]).toEqual(new Date(2026, 6, 10));
+    expect(dates[1]).toEqual(new Date(2027, 0, 10));
+  });
+
+  it('lands on all configured months for QUARTERLY across a year boundary', () => {
+    const dates = computeOccurrences(
+      { frequency: 'QUARTERLY', dayOfMonth: 1, months: [1, 4, 7, 10] },
+      5,
+      reference,
+    );
+    expect(dates.map((d) => d.getMonth())).toEqual([3, 6, 9, 0, 3]);
+    expect(dates[3].getFullYear()).toBe(2027);
+  });
+
+  it('falls back to fixed-interval-from-now when no due months are configured yet', () => {
+    const dates = computeOccurrences(
+      { frequency: 'ANNUAL', dayOfMonth: 10, months: [] },
+      1,
+      reference,
+    );
+    // Legacy behavior preserved for templates created before due-month selection existed.
+    expect(dates[0]).toEqual(new Date(2027, 2, 10));
+  });
+
+  it('ignores months for MONTHLY frequency — every month is due regardless', () => {
+    const dates = computeOccurrences(
+      { frequency: 'MONTHLY', dayOfMonth: 10, months: [1] },
+      2,
+      reference,
+    );
+    // March 10 has already passed relative to the March 15 reference date.
+    expect(dates[0]).toEqual(new Date(2026, 3, 10));
+    expect(dates[1]).toEqual(new Date(2026, 4, 10));
   });
 });
 

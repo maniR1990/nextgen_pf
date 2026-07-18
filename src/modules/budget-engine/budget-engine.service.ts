@@ -1,4 +1,7 @@
 import { BudgetPeriodInvalidError, CategoryNotFoundError } from '@/lib/api/errors';
+import { isDueInMonth } from '@/lib/utils/recurringFrequency';
+import type { RecurringFrequency } from '@prisma/client';
+import { FundsRepository } from '@/modules/funds/funds.repository';
 import { TransactionRepository } from '@/modules/transactions/transactions.repository';
 import { BudgetEngineRepository } from './budget-engine.repository';
 import type { BudgetCategoryNode, BudgetGroup, BudgetSummaryResponse } from './budget-engine.types';
@@ -22,6 +25,7 @@ type RawCategory = {
   icon: string | null;
   order: number;
   isSystem: boolean;
+  linkedFundId: string | null;
 };
 
 type RawCategoryWithArchive = RawCategory & { archivedAt: Date | null };
@@ -134,7 +138,15 @@ export const BudgetEngineService = {
     const prevMonth = month === 1 ? 12 : month - 1;
     const prevYear = month === 1 ? year - 1 : year;
 
-    const [spendRows, lastMonthSpendRows, uncategorizedRows, lastMonthUncategorizedRows] =
+    const linkedFundIds = [
+      ...new Set(
+        (rawCategories as RawCategory[])
+          .map((c) => c.linkedFundId)
+          .filter((id): id is string => id != null),
+      ),
+    ];
+
+    const [spendRows, lastMonthSpendRows, uncategorizedRows, lastMonthUncategorizedRows, fundBalances, fundTargets] =
       await Promise.all([
         BudgetEngineRepository.findSpendByCategory(userId, categoryIds, year, month),
         BudgetEngineRepository.findSpendByCategory(userId, categoryIds, prevYear, prevMonth),
@@ -142,6 +154,9 @@ export const BudgetEngineService = {
         // category, by type" is a transactions-domain query every caller shares.
         TransactionRepository.sumUncategorizedByTypeForPeriod(userId, year, month),
         TransactionRepository.sumUncategorizedByTypeForPeriod(userId, prevYear, prevMonth),
+        // Lifetime net saved toward each linked Fund — feeds the Transferred column.
+        TransactionRepository.sumTransfersByFund(userId, linkedFundIds),
+        FundsRepository.findTargetAmountsByIds(userId, linkedFundIds),
       ]);
 
     const planMap = new Map(budgetPlans.map((p) => [p.categoryId, p]));
@@ -155,6 +170,7 @@ export const BudgetEngineService = {
     const lastMonthUncategorizedMap = new Map<string, number>(
       lastMonthUncategorizedRows.map((r) => [r.type, r._sum.amount ?? 0]),
     );
+    const fundTargetMap = new Map(fundTargets.map((f) => [f.id, f.targetAmount]));
 
     // Build node map
     const nodeMap = new Map<string, InternalNode>();
@@ -168,10 +184,14 @@ export const BudgetEngineService = {
         color: cat.color,
         isSystem: cat.isSystem,
         isRecurring: plan?.isRecurring ?? false,
+        frequency: plan?.frequency ?? null,
+        months: plan?.months ?? [],
         isUnplanned: plan?.isUnplanned ?? false,
         dueDay: plan?.dueDay ?? null,
         isSettled: plan?.settledAt != null,
         settledTransactionId: plan?.settledTransactionId ?? null,
+        transferred: cat.linkedFundId ? (fundBalances.get(cat.linkedFundId) ?? 0) : null,
+        fundTargetAmount: cat.linkedFundId ? (fundTargetMap.get(cat.linkedFundId) ?? null) : null,
         planned: plan?.plannedAmount ?? 0,
         actual: spendMap.get(cat.id) ?? 0,
         lastMonthActual: lastMonthSpendMap.get(cat.id) ?? 0,
@@ -215,10 +235,14 @@ export const BudgetEngineService = {
         color: null,
         isSystem: true,
         isRecurring: false,
+        frequency: null,
+        months: [],
         isUnplanned: false,
         dueDay: null,
         isSettled: false,
         settledTransactionId: null,
+        transferred: null,
+        fundTargetAmount: null,
         planned: 0,
         actual,
         lastMonthActual,
@@ -318,6 +342,8 @@ export const BudgetEngineService = {
     data: {
       planned?: number;
       isRecurring?: boolean;
+      frequency?: RecurringFrequency | null;
+      months?: number[];
       isUnplanned?: boolean;
       dueDay?: number | null;
       /** true = mark this period's due item settled; false = clear settlement (undo). */
@@ -332,6 +358,8 @@ export const BudgetEngineService = {
     return BudgetEngineRepository.upsertBudgetPlan(userId, year, month, categoryId, {
       ...(data.planned !== undefined && { plannedAmount: data.planned }),
       ...(data.isRecurring !== undefined && { isRecurring: data.isRecurring }),
+      ...(data.frequency !== undefined && { frequency: data.frequency }),
+      ...(data.months !== undefined && { months: data.months }),
       ...(data.isUnplanned !== undefined && { isUnplanned: data.isUnplanned }),
       ...(data.dueDay !== undefined && { dueDay: data.dueDay }),
       // Every settlement made through this endpoint today is user-initiated (Quick Pay
@@ -362,13 +390,19 @@ export const BudgetEngineService = {
       BudgetEngineRepository.existingPlanCategoryIds(userId, year, month),
     ]);
 
-    const toSeed = recurringPlans.filter((p) => !existingIds.has(p.categoryId));
+    // Only copy the plan forward when the target month is actually a due month for this
+    // item's frequency — a half-yearly plan must not get seeded into all twelve months.
+    const toSeed = recurringPlans.filter(
+      (p) => !existingIds.has(p.categoryId) && isDueInMonth(p.frequency, p.months, month),
+    );
 
     await Promise.all(
       toSeed.map((p) =>
         BudgetEngineRepository.upsertBudgetPlan(userId, year, month, p.categoryId, {
           plannedAmount: p.plannedAmount,
           isRecurring: true,
+          frequency: p.frequency,
+          months: p.months,
           isUnplanned: p.isUnplanned,
           dueDay: p.dueDay ?? undefined,
           carryOverEnabled: p.carryOverEnabled,

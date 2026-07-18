@@ -23,10 +23,14 @@ function makeNode(overrides: Partial<BudgetCategoryNode> & { id: string }): Budg
     isSystem: false,
     isVirtual: false,
     isRecurring: false,
+    frequency: null,
+    months: [],
     isUnplanned: false,
     dueDay: null,
     isSettled: false,
     settledTransactionId: null,
+    transferred: null,
+    fundTargetAmount: null,
     planned: 500,
     actual: 0,
     lastMonthActual: 0,
@@ -292,5 +296,151 @@ describe('BudgetCategoryRow — pace projection', () => {
     );
     const badge = screen.getByText('On track');
     expect(badge).not.toHaveAttribute('title');
+  });
+});
+
+describe('BudgetCategoryRow — frequency picker', () => {
+  it('shows a plain "mark as recurring" trigger when the item is not recurring', () => {
+    const node = makeNode({ id: 'insurance', isRecurring: false, frequency: null });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    expect(screen.getByLabelText(/recurring frequency for insurance/i)).toHaveAttribute(
+      'title',
+      'Mark as recurring',
+    );
+  });
+
+  it('shows the stored frequency in the trigger tooltip when recurring', () => {
+    const node = makeNode({ id: 'insurance', isRecurring: true, frequency: 'HALF_YEARLY' });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    expect(screen.getByLabelText(/recurring frequency for insurance/i)).toHaveAttribute(
+      'title',
+      'Recurring — Half-yearly',
+    );
+  });
+
+  it('opens a popover listing every frequency when the trigger is clicked', async () => {
+    const user = userEvent.setup();
+    const node = makeNode({ id: 'insurance', isRecurring: false, frequency: null });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    await user.click(screen.getByLabelText(/recurring frequency for insurance/i));
+    expect(screen.getByRole('option', { name: 'Half-yearly' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Quarterly' })).toBeInTheDocument();
+  });
+
+  it('turning off calls onUpdate with isRecurring:false and frequency:null', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn().mockResolvedValue(undefined);
+    const node = makeNode({ id: 'insurance', isRecurring: true, frequency: 'HALF_YEARLY' });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={onUpdate}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    await user.click(screen.getByLabelText(/recurring frequency for insurance/i));
+    await user.click(screen.getByText('Turn off recurring'));
+    expect(onUpdate).toHaveBeenCalledWith('insurance', {
+      isRecurring: false,
+      frequency: null,
+      months: [],
+    });
+  });
+
+  it('picking a non-monthly frequency seeds a default set of due months', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn().mockResolvedValue(undefined);
+    const node = makeNode({ id: 'insurance', isRecurring: false, frequency: null });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={onUpdate}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    await user.click(screen.getByLabelText(/recurring frequency for insurance/i));
+    await user.click(screen.getByRole('option', { name: 'Quarterly' }));
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    const [, payload] = onUpdate.mock.calls[0];
+    expect(payload.isRecurring).toBe(true);
+    expect(payload.frequency).toBe('QUARTERLY');
+    expect(payload.months).toHaveLength(4);
+  });
+});
+
+describe('BudgetCategoryRow — Transferred (fund-linked category)', () => {
+  it('shows the linked fund balance next to Planned', () => {
+    const node = makeNode({
+      id: 'insurance',
+      planned: 500,
+      transferred: 3000,
+      fundTargetAmount: 6000,
+    });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    expect(screen.getByText('₹3,000 of ₹6,000')).toBeInTheDocument();
+  });
+
+  it('renders nothing extra when the category has no linked fund', () => {
+    const node = makeNode({ id: 'groceries', planned: 500, transferred: null });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    expect(screen.queryByTitle('Transferred toward linked fund')).not.toBeInTheDocument();
   });
 });

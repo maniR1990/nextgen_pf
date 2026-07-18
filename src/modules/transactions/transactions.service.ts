@@ -151,6 +151,12 @@ export const TransactionService = {
         fundGroupId: dto.fundGroupId,
         fundGroupFlow: dto.fundGroupFlow as never,
       }),
+      ...(dto.fundId && {
+        fund: { connect: { id: dto.fundId } },
+        // A sinking deposit is always money going INTO the fund; TRANSFER is the only
+        // other type that can carry a fund tag, and it picks its own direction.
+        fundFlow: (dto.type === 'SINKING_DEPOSIT' ? 'IN' : dto.fundFlow) as never,
+      }),
       ...(dto.isRecurring &&
         dto.recSchedule && {
           recurringConfig: {
@@ -241,7 +247,10 @@ export const TransactionService = {
     if (dto.tds !== undefined) data.tds = dto.tds;
     if (dto.giftFrom !== undefined) data.giftFrom = dto.giftFrom;
     if (dto.occasion !== undefined) data.occasion = dto.occasion;
-    if (dto.sfId !== undefined) data.sfId = dto.sfId;
+    if (dto.fundId !== undefined) {
+      data.fund = dto.fundId ? { connect: { id: dto.fundId } } : { disconnect: true };
+    }
+    if (dto.fundFlow !== undefined) data.fundFlow = dto.fundFlow;
     if (dto.isTaxDed !== undefined) data.isTaxDed = dto.isTaxDed;
     if (dto.isReimbursable !== undefined) data.isReimbursable = dto.isReimbursable;
     if (dto.reimbDate !== undefined) data.reimbDate = dto.reimbDate;

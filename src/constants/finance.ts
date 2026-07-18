@@ -257,7 +257,7 @@ export const TYPE_FIELDS: Record<TxType, string[]> = {
     'method',
     'isRecurring',
   ],
-  SINKING_DEPOSIT: ['date', 'amount', 'sfId', 'sourceId', 'method', 'isRecurring'],
+  SINKING_DEPOSIT: ['date', 'amount', 'fundId', 'sourceId', 'method', 'isRecurring'],
   INCOME: [
     'date',
     'amount',
@@ -290,7 +290,7 @@ export const TYPE_FIELDS: Record<TxType, string[]> = {
     'sourceId',
     'method',
   ],
-  TRANSFER: ['date', 'amount', 'sourceId', 'toAccountId', 'txPurpose', 'txFee', 'method'],
+  TRANSFER: ['date', 'amount', 'sourceId', 'toAccountId', 'fundId', 'txPurpose', 'txFee', 'method'],
   ATM_WITHDRAWAL: ['date', 'amount', 'sourceId', 'atmLocation', 'atmPurpose', 'method'],
   REFUND: [
     'date',

@@ -868,6 +868,19 @@ $rem-over:       #dc2626;
     }
   }
 
+  &__planned-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+  }
+
+  &__transferred {
+    font-size: 10px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
   // Persistent edit affordance for touch (no :hover on mobile) — shown ≤520px only
   &__planned-edit-hint {
     display: none;
@@ -991,32 +1004,64 @@ $rem-over:       #dc2626;
     &--bad  { color: $actual-over; }
   }
 
-  // Col 7: Actions
+  // Col 7: Actions. `position: relative` here (not on the row) is the anchor for the
+  // hover overlay below — the CELL's own box always stays exactly at its grid-assigned
+  // position, so the overlay pinned to it via `right: 0` never moves, whether hovering
+  // or not. Anchoring to the row instead would use the row's full stretched width as
+  // the reference box, which is wider than the visible grid columns and made the
+  // toolbar visibly jump right on hover.
   &__actions-cell {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: flex-end;
+  }
+
+  &__actions-inner {
+    display: flex;
+    align-items: center;
     gap: 2px;
   }
 
+  // On hover, up to 6 icons need ~145px but the grid track is only 80px wide — rather
+  // than let them overflow into the Pace/Last-month columns (which still hold real,
+  // readable text underneath), float the toolbar as an opaque overlay instead. It
+  // covers whatever's underneath cleanly rather than visually mixing with it.
+  &:hover &__actions-inner {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--color-bg-surface);
+    border-radius: 6px;
+    box-shadow: -16px 0 12px 4px var(--color-bg-surface), 0 1px 3px rgba(0, 0, 0, 0.08);
+    padding: 3px 2px;
+    z-index: 5;
+  }
+
+  // Hover-reveal icons default to zero WIDTH, not just zero opacity — opacity alone
+  // still reserves flex space, so with 5-6 of these in one narrow actions column, an
+  // always-visible one (e.g. the recurring/unplanned badges below) gets pushed left
+  // past the column boundary and overlaps the Last Month column next to it.
   &__icon-btn {
     opacity: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
+    width: 0;
     height: 22px;
     border-radius: 5px;
     background: none;
     border: 1px solid transparent;
     cursor: pointer;
-    transition: all 0.12s;
+    transition: opacity 0.12s, width 0.12s, background 0.12s, border-color 0.12s, color 0.12s;
     color: var(--color-text-muted);
     padding: 0;
+    overflow: hidden;
+    flex-shrink: 0;
 
     &:hover { background: var(--color-bg-subtle); border-color: var(--color-border); color: var(--color-text-primary); }
 
-    &--rec:hover    { color: $planned-color; border-color: rgba(59,130,246,.3); background: rgba(59,130,246,.07); }
     &--unpl:hover   { color: #d97706; border-color: rgba(217,119,6,.3); background: rgba(217,119,6,.07); }
     &--rename:hover { color: $planned-color; border-color: rgba(59,130,246,.3); background: rgba(59,130,246,.07); }
     &--add:hover    { color: $rem-good; border-color: rgba(22,163,74,.3); background: rgba(22,163,74,.07); }
@@ -1025,25 +1070,21 @@ $rem-over:       #dc2626;
 
     &--active-due {
       opacity: 1;
+      width: 22px;
       color: #15803d;
       border-color: rgba(22,163,74,.25);
       background: rgba(22,163,74,.08);
     }
-    &--active-rec {
-      opacity: 1;
-      color: $planned-color;
-      border-color: rgba(59,130,246,.25);
-      background: rgba(59,130,246,.08);
-    }
     &--active-unpl {
       opacity: 1;
+      width: 22px;
       color: #d97706;
       border-color: rgba(217,119,6,.25);
       background: rgba(217,119,6,.08);
     }
   }
 
-  &:hover &__icon-btn { opacity: 1; }
+  &:hover &__icon-btn { opacity: 1; width: 22px; }
 
   // Add-sub form
   &__add-name {

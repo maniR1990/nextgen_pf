@@ -1,16 +1,11 @@
+import { monthlyEquivalent as sharedMonthlyEquivalent } from '@/lib/utils/recurringFrequency';
+import type { RecurringFrequency } from '@prisma/client';
+
 // Converts any RecurringFrequency into "times per month" so amounts on different
 // cadences (annual insurance vs. monthly Netflix) can be summed/compared on one scale.
-const MONTHLY_MULTIPLIER: Record<string, number> = {
-  MONTHLY: 1,
-  TWICE_MONTHLY: 2,
-  EVERY_2_MONTHS: 1 / 2,
-  QUARTERLY: 1 / 3,
-  HALF_YEARLY: 1 / 6,
-  ANNUAL: 1 / 12,
-};
-
+// Delegates to the same table Budget planning uses, so the two views can never drift.
 function monthlyEquivalent(frequency: string, amount: number): number {
-  return amount * (MONTHLY_MULTIPLIER[frequency] ?? 1);
+  return sharedMonthlyEquivalent(amount, frequency as RecurringFrequency);
 }
 
 function round1(n: number): number {

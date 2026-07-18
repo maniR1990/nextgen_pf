@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
+import type { RecurringFrequency } from '@prisma/client';
 
 export const BudgetEngineRepository = {
   /**
@@ -19,6 +20,7 @@ export const BudgetEngineRepository = {
       icon: true,
       order: true,
       isSystem: true,
+      linkedFundId: true,
       archivedAt: true, // needed to filter in JS (MongoDB absent ≠ null)
     } as const;
 
@@ -73,6 +75,8 @@ export const BudgetEngineRepository = {
         categoryId: true,
         plannedAmount: true,
         isRecurring: true,
+        frequency: true,
+        months: true,
         isUnplanned: true,
         dueDay: true,
         carryOverEnabled: true,
@@ -113,6 +117,10 @@ export const BudgetEngineRepository = {
         categoryId: { in: categoryIds },
         budgetPeriodYear: year,
         budgetPeriodMonth: month,
+        // TRANSFER is never spend — without this, tagging a transfer with a category
+        // (e.g. a sinking-fund contribution) would silently inflate "Actual Spent".
+        // Transfers are tracked separately via a category's linked Fund balance instead.
+        type: { not: 'TRANSFER' },
         // MongoDB stores absent fields differently from explicit null.
         // isSet: false matches documents where voidedAt was never written.
         OR: [{ voidedAt: null }, { voidedAt: { isSet: false } }],
@@ -130,6 +138,8 @@ export const BudgetEngineRepository = {
     data: {
       plannedAmount?: number;
       isRecurring?: boolean;
+      frequency?: RecurringFrequency | null;
+      months?: number[];
       isUnplanned?: boolean;
       dueDay?: number | null;
       carryOverEnabled?: boolean;
@@ -150,6 +160,8 @@ export const BudgetEngineRepository = {
         categoryId,
         plannedAmount: data.plannedAmount ?? 0,
         isRecurring: data.isRecurring ?? false,
+        frequency: data.frequency ?? null,
+        months: data.months ?? [],
         isUnplanned: data.isUnplanned ?? false,
         carryOverEnabled: data.carryOverEnabled ?? false,
         ...(data.dueDay !== undefined && { dueDay: data.dueDay }),
@@ -162,6 +174,8 @@ export const BudgetEngineRepository = {
       update: {
         ...(data.plannedAmount !== undefined && { plannedAmount: data.plannedAmount }),
         ...(data.isRecurring !== undefined && { isRecurring: data.isRecurring }),
+        ...(data.frequency !== undefined && { frequency: data.frequency }),
+        ...(data.months !== undefined && { months: data.months }),
         ...(data.isUnplanned !== undefined && { isUnplanned: data.isUnplanned }),
         ...(data.carryOverEnabled !== undefined && { carryOverEnabled: data.carryOverEnabled }),
         ...(data.dueDay !== undefined && { dueDay: data.dueDay }),
@@ -180,6 +194,8 @@ export const BudgetEngineRepository = {
       select: {
         categoryId: true,
         plannedAmount: true,
+        frequency: true,
+        months: true,
         isUnplanned: true,
         dueDay: true,
         carryOverEnabled: true,

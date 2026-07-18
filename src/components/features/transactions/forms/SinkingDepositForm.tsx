@@ -29,7 +29,7 @@ export function SinkingDepositForm({
     label: `${f.label} (${((f.saved / f.target) * 100).toFixed(0)}% of ₹${f.target.toLocaleString('en-IN')})`,
   }));
 
-  const selectedFund = sinkingFunds.find((f) => f.id === values.sfId);
+  const selectedFund = sinkingFunds.find((f) => f.id === values.fundId);
 
   return (
     <div className="tx-form tx-form--sinking">
@@ -37,12 +37,12 @@ export function SinkingDepositForm({
       <SelectField
         label="Sinking Fund"
         id="tx-sf"
-        value={values.sfId}
+        value={values.fundId}
         options={fundOptions}
         placeholder="Select fund"
-        error={errors.sfId}
+        error={errors.fundId}
         required
-        onChange={(e) => onChange('sfId', e.target.value)}
+        onChange={(e) => onChange('fundId', e.target.value)}
       />
 
       {selectedFund && (

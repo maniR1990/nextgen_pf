@@ -182,7 +182,7 @@ export function AddTransactionModal({
       case 'REIMBURSEMENT':
         return <ReimbursementForm {...sharedFormProps} />;
       case 'TRANSFER':
-        return <TransferForm {...sharedFormProps} />;
+        return <TransferForm {...sharedFormProps} sinkingFunds={sinkingFunds} />;
       case 'ATM_WITHDRAWAL':
         return <ATMWithdrawalForm {...sharedFormProps} />;
       case 'REFUND':

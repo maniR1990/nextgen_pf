@@ -96,8 +96,9 @@ export interface CreateFinanceTransactionDto {
   giftFrom?: string;
   occasion?: string;
 
-  // Sinking
-  sfId?: string;
+  // Sinking / fund purpose-tag (also used by TRANSFER)
+  fundId?: string;
+  fundFlow?: 'IN' | 'OUT';
 
   // Expense extras
   isTaxDed?: boolean;

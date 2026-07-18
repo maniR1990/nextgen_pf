@@ -34,7 +34,7 @@ function makeValues(overrides: Partial<TransactionFormValues> = {}): Transaction
     tds: '',
     giftFrom: '',
     occasion: '',
-    sfId: '',
+    fundId: '',
     isTaxDed: false,
     isReimbursable: false,
     reimbDate: '',

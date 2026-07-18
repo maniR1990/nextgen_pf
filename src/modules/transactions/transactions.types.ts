@@ -61,7 +61,8 @@ export interface PatchTransactionDto {
   tds?: number;
   giftFrom?: string;
   occasion?: string;
-  sfId?: string;
+  fundId?: string;
+  fundFlow?: 'IN' | 'OUT';
   isTaxDed?: boolean;
   isReimbursable?: boolean;
   reimbDate?: string;

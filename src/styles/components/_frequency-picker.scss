@@ -1,0 +1,132 @@
+@use '../mixins' as m;
+
+// ── FrequencyPicker ─────────────────────────────────────────────────────────
+// Portal popover for selecting a recurring cadence. Used by Budget planning.
+
+.freq-picker {
+  z-index: 9999;
+  width: 176px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+  user-select: none;
+
+  &__header {
+    padding: 10px 12px 6px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  &__title {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
+    gap: 1px;
+  }
+
+  &__option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 6px 8px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: none;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.1s, color 0.1s;
+
+    &:hover:not(&--selected) { background: var(--color-bg-subtle); }
+
+    &--selected {
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+  }
+
+  &__footer {
+    padding: 8px 12px 10px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  &__clear {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-error, #dc2626);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+
+    &:hover { text-decoration: underline; }
+  }
+
+  &__hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+}
+
+// Compact trigger badge — replaces the old boolean recurring toggle.
+//
+// Collapses to zero width when not recurring and not hovered — it shares an 80px
+// actions column with 5 other hover-reveal icon buttons in BudgetCategoryRow; opacity
+// alone still reserves flex space, so several simultaneously-invisible-but-present
+// buttons push a permanently-visible one past the column edge into the next column.
+// Only the active (isRecurring) state, or hovering the row, gets real width.
+.freq-picker-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  width: 0;
+  height: 20px;
+  padding: 0;
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: width 0.12s, padding 0.12s, background 0.12s, border-color 0.12s, color 0.12s;
+
+  &:hover { background: var(--color-bg-subtle); border-color: var(--color-border); color: var(--color-text-primary); }
+
+  &--active {
+    width: auto;
+    padding: 0 6px;
+    color: #1d4ed8;
+    border-color: rgba(59, 130, 246, 0.25);
+    background: rgba(59, 130, 246, 0.08);
+  }
+
+  &--open {
+    width: auto;
+    padding: 0 6px;
+    color: #1d4ed8;
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.12);
+  }
+}
+
+.budget-row:hover .freq-picker-trigger {
+  width: auto;
+  padding: 0 6px;
+}

@@ -77,8 +77,9 @@ export const CreateTransactionSchema = z
     giftFrom: z.string().optional(),
     occasion: z.string().optional(),
 
-    // Sinking
-    sfId: z.string().optional(),
+    // Sinking / fund purpose-tag (also used by TRANSFER — see fundFlow below)
+    fundId: z.string().optional(),
+    fundFlow: z.enum(['IN', 'OUT']).optional(),
 
     // Expense extras
     isTaxDed: z.boolean().optional(),
@@ -138,11 +139,11 @@ export const CreateTransactionSchema = z
       });
     }
 
-    if (data.type === 'SINKING_DEPOSIT' && !data.sfId) {
+    if (data.type === 'SINKING_DEPOSIT' && !data.fundId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Please select a sinking fund',
-        path: ['sfId'],
+        path: ['fundId'],
       });
     }
 
@@ -254,7 +255,8 @@ export const PatchTransactionSchema = z.object({
   tds: z.number().min(0).optional(),
   giftFrom: z.string().optional(),
   occasion: z.string().optional(),
-  sfId: z.string().optional(),
+  fundId: z.string().optional(),
+  fundFlow: z.enum(['IN', 'OUT']).optional(),
   isTaxDed: z.boolean().optional(),
   isReimbursable: z.boolean().optional(),
   reimbDate: z.string().optional(),

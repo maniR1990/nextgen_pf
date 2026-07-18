@@ -79,6 +79,16 @@ export const FundsRepository = {
 
   findById: (id: string) => prisma.fund.findUniqueOrThrow({ where: { id }, select: FUND_SELECT }),
 
+  /** Lightweight batch lookup — just the target amount, for showing "of ₹X" progress
+   *  against a category's linked Fund without pulling the whole Fund record. */
+  findTargetAmountsByIds: (userId: string, ids: string[]) => {
+    if (ids.length === 0) return Promise.resolve([]);
+    return prisma.fund.findMany({
+      where: { userId, id: { in: ids } },
+      select: { id: true, targetAmount: true },
+    });
+  },
+
   findAccountsByIds: (userId: string, ids: string[]) => {
     if (ids.length === 0) return Promise.resolve([]);
     return prisma.account.findMany({

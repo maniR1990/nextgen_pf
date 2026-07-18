@@ -49,7 +49,7 @@ function mapTxToFormValues(tx: Record<string, unknown>): Partial<TransactionForm
     tds: tx.tds != null ? String(tx.tds) : '',
     giftFrom: (tx.giftFrom as string) ?? '',
     occasion: (tx.occasion as string) ?? '',
-    sfId: (tx.sfId as string) ?? '',
+    fundId: (tx.fundId as string) ?? '',
     isTaxDed: (tx.isTaxDed as boolean) ?? false,
     isReimbursable: (tx.isReimbursable as boolean) ?? false,
     reimbDate: (tx.reimbDate as string) ?? '',

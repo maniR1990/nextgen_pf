@@ -810,6 +810,8 @@ model Fund {
 
   linkedEvents     Event[]    @relation("EventLinkedFund")
 
+  taggedTransactions FinanceTransaction[] @relation("TransactionFund")
+
 
 
   @@index([userId])
@@ -906,6 +908,15 @@ model FinanceTransaction {
 
   fundGroupFlow FundGroupFlow?
 
+  // Purpose tag for a single Fund (distinct from fundGroupId above, which tags the
+  // FundGroup folder). A Fund's tracked balance is the net of fundFlow IN minus OUT
+  // across every transaction tagged with its id here — see Fund.currentAmount.
+  fundId        String?       @db.ObjectId
+
+  fund          Fund?         @relation("TransactionFund", fields: [fundId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  fundFlow      FundGroupFlow?
+
   merchantId      String?   @db.ObjectId
 
   reconciledAt    DateTime?
@@ -955,6 +966,10 @@ model FinanceTransaction {
   @@index([fundGroupId])
 
   @@index([userId, fundGroupId])
+
+  @@index([fundId])
+
+  @@index([userId, fundId])
 
 }
 
@@ -1059,6 +1074,14 @@ model Budget {
   notes            String?
 
   isRecurring      Boolean      @default(false)
+
+  // Cadence for a recurring line. Null = legacy behavior (every month, same as before
+  // this field existed). Non-monthly frequencies use `months` to say which calendar
+  // months this item is actually due in — seedRecurring() only copies the plan forward
+  // into months listed here, instead of blindly copying into every future month.
+  frequency        RecurringFrequency?
+
+  months           Int[]
 
   isUnplanned      Boolean      @default(false)
 

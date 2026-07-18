@@ -1,6 +1,7 @@
 import { FundAllocationNotFoundError, FundNotFoundError, NotFoundError } from '@/lib/api/errors';
 import { buildMeta } from '@/lib/api/pagination';
 import { FundGroupsRepository } from '@/modules/fund-groups/fund-groups.repository';
+import { TransactionRepository } from '@/modules/transactions/transactions.repository';
 import type { FundAllocation } from '@prisma/client';
 import { FundsRepository } from './funds.repository';
 import type {
@@ -203,7 +204,14 @@ async function enrichFund(
   const accountIds = fund.sources.map((s) => s.accountId);
   const accountMap = await loadAccountMap(userId, accountIds);
   const balanceMap = new Map([...accountMap.entries()].map(([id, a]) => [id, a.balance]));
-  const currentAmount = computeFundCurrentAmount(fund.sources, balanceMap);
+  // A Fund with no percentage/fixed claim configured is tracked purely by tagged
+  // transfers instead — see TransactionRepository.sumTransfersByFund. Funds that DO
+  // have sources[] configured keep using that math unchanged, to protect balances
+  // already relied on today.
+  const currentAmount =
+    fund.sources.length > 0
+      ? computeFundCurrentAmount(fund.sources, balanceMap)
+      : (await TransactionRepository.sumTransfersByFund(userId, [fund.id])).get(fund.id) ?? 0;
   const sources = buildSourceBreakdown(fund.sources, accountMap);
   const groupMap = await loadGroupMap(fund.groupId ? [fund.groupId] : []);
   const grp = fund.groupId ? groupMap.get(fund.groupId) : undefined;
@@ -241,9 +249,17 @@ async function enrichMany(
   const groupMap = await loadGroupMap(
     funds.map((f) => f.groupId).filter((id): id is string => !!id),
   );
+  const noSourceFundIds = funds.filter((f) => f.sources.length === 0).map((f) => f.id);
+  const transferBalances = await TransactionRepository.sumTransfersByFund(
+    userId,
+    noSourceFundIds,
+  );
 
   return funds.map((fund) => {
-    const currentAmount = computeFundCurrentAmount(fund.sources, balanceMap);
+    const currentAmount =
+      fund.sources.length > 0
+        ? computeFundCurrentAmount(fund.sources, balanceMap)
+        : (transferBalances.get(fund.id) ?? 0);
     const grp = fund.groupId ? groupMap.get(fund.groupId) : undefined;
     return {
       id: fund.id,

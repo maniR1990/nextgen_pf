@@ -13,6 +13,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 type PlanPatch = {
   planned?: number;
   isRecurring?: boolean;
+  frequency?: string | null;
+  months?: number[];
   isUnplanned?: boolean;
   /** true = mark settled (optionally with settledTransactionId); false = clear (undo). */
   settled?: boolean;
@@ -39,6 +41,8 @@ function patchNodeInTree(
         variancePct,
         progressPct,
         isRecurring: patch.isRecurring ?? node.isRecurring,
+        frequency: patch.frequency !== undefined ? patch.frequency : node.frequency,
+        months: patch.months ?? node.months,
         isUnplanned: patch.isUnplanned ?? node.isUnplanned,
         isSettled: patch.settled ?? node.isSettled,
         settledTransactionId:
