@@ -20,6 +20,8 @@ export interface TransactionDialogProps {
   /** When set, opens modal in edit mode with this transaction's data pre-filled. */
   editId?: string;
   prefillValues?: Partial<TransactionFormValues>;
+  /** Opens straight into "Split into multiple items" mode — see AddTransactionModal. */
+  initialMultiItem?: boolean;
 }
 
 function toPaymentSourceOption(s: FormOptions['sources'][number]): PaymentSourceOption {
@@ -77,6 +79,7 @@ export function TransactionDialog({
   onSuccess,
   editId,
   prefillValues,
+  initialMultiItem,
 }: TransactionDialogProps) {
   const qc = useQueryClient();
   const { sources, categories, categoryGroups, sinkingFunds, isLoading } =
@@ -134,6 +137,7 @@ export function TransactionDialog({
       onCreateCategory={handleCreateCategory}
       editId={editId}
       prefillValues={prefillValues}
+      initialMultiItem={initialMultiItem}
     />
   );
 }

@@ -22,6 +22,7 @@ import { useDuplicateDetect } from '@/components/features/transactions/hooks/use
 import { useTransactionForm } from '@/components/features/transactions/hooks/useTransactionForm';
 import { TX_TYPE_META } from '@/constants/finance';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
+import { useTransactionFormStore } from '@/store/transactionFormStore';
 import type { TransactionFormValues } from '@/store/transactionFormStore';
 import type { CategoryOption, PaymentSourceOption, SinkingFundOption } from '@/types/finance';
 import { useCallback, useEffect, useRef } from 'react';
@@ -36,6 +37,9 @@ interface AddTransactionModalProps {
   onCreateCategory?: (name: string, parentId: string | null, flowType?: string) => Promise<string>;
   editId?: string;
   prefillValues?: Partial<TransactionFormValues>;
+  /** Opens straight into "Split into multiple items" mode — the home-screen "Log bill"
+   *  shortcut uses this. Only meaningful on open; ignored once the modal is already up. */
+  initialMultiItem?: boolean;
 }
 
 const MERCHANT_TYPES = new Set([
@@ -58,6 +62,7 @@ export function AddTransactionModal({
   onCreateCategory,
   editId,
   prefillValues,
+  initialMultiItem,
 }: AddTransactionModalProps) {
   const {
     values,
@@ -128,7 +133,12 @@ export function AddTransactionModal({
       }
       prefillAppliedFor.current = null;
     }
-  }, [open, editId, prefillValues, prefill, reset]);
+    // prefill()/reset() both hardcode isMultiItem: false, so this must run after
+    // them, not before, or the "Log bill" shortcut's bulk mode gets clobbered.
+    if (initialMultiItem) {
+      useTransactionFormStore.getState().setMultiItem(true);
+    }
+  }, [open, editId, prefillValues, prefill, reset, initialMultiItem]);
 
   // Auto-close edit modal after successful update (no success screen for edits)
   useEffect(() => {
