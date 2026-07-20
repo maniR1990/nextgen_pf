@@ -47,7 +47,7 @@ export async function readV1Json<T>(res: Response): Promise<T> {
   return json.data;
 }
 
-async function fetchWithSession(path: string, init?: RequestInit): Promise<Response> {
+export async function fetchWithSession(path: string, init?: RequestInit): Promise<Response> {
   const options: RequestInit = { credentials: 'include', ...init };
   const res = await fetch(path, options);
   if (res.status !== 401) return res;

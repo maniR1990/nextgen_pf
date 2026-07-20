@@ -1,14 +1,17 @@
 'use client';
 
+import { apiGetV1 } from '@/lib/query/fetcher';
 import { queryKeys } from '@/lib/query/queryKeys';
 import type { AppHeaderData } from '@/lib/schemas/appHeader';
 import { useQuery } from '@tanstack/react-query';
 
 // Net worth is already computed server-side in the summary route — no second fetch needed.
-async function fetchHeaderData(): Promise<AppHeaderData> {
-  const res = await fetch('/api/v1/dashboard/summary', { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to fetch dashboard summary');
-  return (await res.json()).data as AppHeaderData;
+// Uses apiGetV1 (not a raw fetch) so an expired session here behaves the same as anywhere
+// else in the app — refresh-and-retry, or a redirect to login — instead of silently
+// throwing and leaving the header stuck on stale fallback data while other screens
+// correctly bounce to /login.
+function fetchHeaderData(): Promise<AppHeaderData> {
+  return apiGetV1<AppHeaderData>('/api/v1/dashboard/summary');
 }
 
 export function useAppHeaderData() {

@@ -1,6 +1,7 @@
 'use client';
 
 import { filtersToApiParams } from '@/hooks/useTransactionFilters';
+import { fetchWithSession } from '@/lib/query/fetcher';
 import type { TransactionListFilters } from '@/lib/query/queryKeys';
 import { queryKeys } from '@/lib/query/queryKeys';
 import type { FinanceTransactionRow } from '@/types/finance';
@@ -60,7 +61,10 @@ async function fetchTransactionPage(
   cursor?: string,
 ): Promise<{ rows: FinanceTransactionRow[]; hasMore: boolean; nextCursor: string | null }> {
   const params = filtersToApiParams(filters, cursor);
-  const res = await fetch(`/api/v1/transactions?${params}`, { credentials: 'include' });
+  // fetchWithSession (not a raw fetch) so an expired session here refreshes-and-retries or
+  // redirects to login like everywhere else, instead of just throwing "Failed to fetch
+  // transactions" and leaving this screen looking broken while others correctly recover.
+  const res = await fetchWithSession(`/api/v1/transactions?${params}`);
   if (!res.ok) throw new Error('Failed to fetch transactions');
   const json = (await res.json()) as V1ListResponse;
   return {
