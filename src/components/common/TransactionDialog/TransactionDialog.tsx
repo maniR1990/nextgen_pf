@@ -49,6 +49,27 @@ function toSinkingFundOption(f: FormOptions['sinkingFunds'][number]): SinkingFun
   return { id: f.id, label: f.label, target: f.target, saved: f.saved, monthly: f.monthly };
 }
 
+/**
+ * parentId is only ever null for a "main category" create (the picker's L1 column, e.g.
+ * adding "Personal Care" alongside "Groceries"). That should land as a level-1 child of
+ * the existing group matching flowType ("Expenses"/"Income"/…) — but the categories API
+ * defaults to creating a brand-new level-0 GROUP when no parentId is given at all, which
+ * is a different thing entirely (a sibling of "Expenses" itself, not a category inside
+ * it). Resolve the real group id from the already-loaded categoryGroups so the new
+ * category nests where the UI actually implies. PickerGroup.type is lowercase
+ * ('expense') while flowType arrives uppercase ('EXPENSE') from the form — compare
+ * case-insensitively.
+ */
+export function resolveCreateCategoryParentId(
+  categoryGroups: PickerGroup[],
+  parentId: string | null,
+  flowType?: string,
+): string | null {
+  if (parentId) return parentId;
+  if (!flowType) return null;
+  return categoryGroups.find((g) => g.type.toLowerCase() === flowType.toLowerCase())?.id ?? null;
+}
+
 export function TransactionDialog({
   open,
   onClose,
@@ -93,7 +114,12 @@ export function TransactionDialog({
     parentId: string | null,
     flowType?: string,
   ): Promise<string> {
-    const result = await createCategory.mutateAsync({ name, parentId, type: flowType });
+    const resolvedParentId = resolveCreateCategoryParentId(categoryGroups, parentId, flowType);
+    const result = await createCategory.mutateAsync({
+      name,
+      parentId: resolvedParentId,
+      type: flowType,
+    });
     return result.id;
   }
 

@@ -441,7 +441,26 @@ export function CascadingCategoryPicker({
             placeholder="Select category…"
             error={col1Error}
             loading={loading}
-            onCreate={onCreateL1}
+            onCreate={
+              onCreateL1
+                ? async (name) => {
+                    const newId = await onCreateL1(name);
+                    // handleL1Change looks the id up in allL1s (built from the `groups`
+                    // prop) to decide what to do — but `groups` won't include a category
+                    // that was just created until the parent's query refetches, so that
+                    // lookup misses and the id is silently never committed. A brand-new
+                    // top-level category has zero children by definition, so it's always
+                    // immediately selectable — commit it directly instead of routing
+                    // through the stale-lookup path. The later groups-refetch still runs
+                    // its own sync effect and reconciles activeL1Id/activeL2Id once the
+                    // real node is present.
+                    setActiveL1Id(newId);
+                    setActiveL2Id(null);
+                    onChange(newId);
+                    return newId;
+                  }
+                : undefined
+            }
             priorityParentLabel={sortedGroups[0]?.name}
           />
         </div>
@@ -461,7 +480,15 @@ export function CascadingCategoryPicker({
                 placeholder="Select subcategory…"
                 error={col2Error}
                 onCreate={
-                  onCreateL2 && activeL1Id ? (name) => onCreateL2(name, activeL1Id) : undefined
+                  onCreateL2 && activeL1Id
+                    ? async (name) => {
+                        const newId = await onCreateL2(name, activeL1Id);
+                        // Same stale-groups race as L1's onCreate above — commit directly.
+                        setActiveL2Id(newId);
+                        onChange(newId);
+                        return newId;
+                      }
+                    : undefined
                 }
               />
             </div>
@@ -485,7 +512,14 @@ export function CascadingCategoryPicker({
                 onChange={handleL3Change}
                 placeholder="Add specific item…"
                 onCreate={
-                  onCreateL3 && activeL2Id ? (name) => onCreateL3(name, activeL2Id) : undefined
+                  onCreateL3 && activeL2Id
+                    ? async (name) => {
+                        const newId = await onCreateL3(name, activeL2Id);
+                        // Same stale-groups race as L1's onCreate above — commit directly.
+                        onChange(newId);
+                        return newId;
+                      }
+                    : undefined
                 }
               />
             </div>
