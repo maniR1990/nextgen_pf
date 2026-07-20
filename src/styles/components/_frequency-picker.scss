@@ -16,6 +16,29 @@
   &__header {
     padding: 10px 12px 6px;
     border-bottom: 1px solid var(--color-border);
+
+    &--anchor {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+
+  &__back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    background: none;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+
+    &:hover { background: var(--color-bg-subtle); color: var(--color-text-primary); }
   }
 
   &__title {
@@ -24,6 +47,9 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--color-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__list {
@@ -34,7 +60,10 @@
   }
 
   &__option {
-    display: block;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
     width: 100%;
     text-align: left;
     padding: 6px 8px;
@@ -54,6 +83,52 @@
       background: #eff6ff;
       color: #1d4ed8;
       font-weight: 700;
+    }
+  }
+
+  &__option-months {
+    font-size: 10px;
+    font-weight: 500;
+    color: inherit;
+    opacity: 0.75;
+    white-space: nowrap;
+  }
+
+  // Anchor-month grid — 4x3, matches the compact popover width. Selected months (the
+  // full spaced-out due-months list, not just the anchor) get a filled dot; the
+  // suggested-but-unset anchor (today's month, before anything's been picked) gets a
+  // dashed ring instead so it reads as a hint, not a committed choice.
+  &__months {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    padding: 8px;
+  }
+
+  &__month {
+    padding: 6px 0;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: none;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+
+    &:hover:not(&--selected) { background: var(--color-bg-subtle); }
+
+    &--selected {
+      background: #eff6ff;
+      border-color: #1d4ed8;
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+
+    &--suggested:not(&--selected) {
+      border-style: dashed;
+      border-color: var(--color-text-muted);
     }
   }
 

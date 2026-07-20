@@ -881,6 +881,38 @@ $rem-over:       #dc2626;
     white-space: nowrap;
   }
 
+  // Editable "amount when due" annotation on non-monthly recurring rows — clicking it
+  // lets the user type the full due amount and auto-computes the monthly figure Planned
+  // actually stores (via monthlyEquivalent), instead of requiring manual pre-division.
+  &__due-amount-text {
+    display: inline-block;
+    font-size: 10px;
+    color: $planned-color;
+    opacity: 0.7;
+    white-space: nowrap;
+    cursor: pointer;
+    border-bottom: 1px dashed rgba(59, 130, 246, 0.4);
+    padding-bottom: 1px;
+    transition: opacity 0.15s;
+
+    &:hover, &:focus-visible { opacity: 1; }
+    &:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35); border-radius: 2px; }
+  }
+
+  &__due-input {
+    width: 70px;
+    text-align: right;
+    padding: 1px 4px;
+    border: 1.5px solid $planned-color;
+    border-radius: 4px;
+    font-size: 11px;
+    background: var(--color-bg-surface);
+    color: $planned-color;
+    font-weight: 600;
+    outline: none;
+    font-variant-numeric: tabular-nums;
+  }
+
   // Persistent edit affordance for touch (no :hover on mobile) — shown ≤520px only
   &__planned-edit-hint {
     display: none;

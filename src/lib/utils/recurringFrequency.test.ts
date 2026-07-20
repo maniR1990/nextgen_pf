@@ -4,6 +4,7 @@ import {
   FREQUENCY_INTERVAL_MONTHS,
   isDueInMonth,
   monthlyEquivalent,
+  monthsFromAnchor,
 } from './recurringFrequency';
 
 describe('monthlyEquivalent', () => {
@@ -58,5 +59,31 @@ describe('isDueInMonth', () => {
 
   it('fails safe: a non-monthly frequency with no months set is never due', () => {
     expect(isDueInMonth('QUARTERLY', [], 3)).toBe(false);
+  });
+});
+
+describe('monthsFromAnchor', () => {
+  it('spaces half-yearly evenly from the anchor month', () => {
+    expect(monthsFromAnchor('HALF_YEARLY', 3)).toEqual([3, 9]);
+  });
+
+  it('wraps around the year boundary', () => {
+    expect(monthsFromAnchor('QUARTERLY', 11)).toEqual([2, 5, 8, 11]);
+  });
+
+  it('returns a single month for annual', () => {
+    expect(monthsFromAnchor('ANNUAL', 7)).toEqual([7]);
+  });
+
+  it('returns every-2-months as six evenly spaced months', () => {
+    expect(monthsFromAnchor('EVERY_2_MONTHS', 1)).toEqual([1, 3, 5, 7, 9, 11]);
+  });
+
+  it('returns an empty list for MONTHLY (no explicit months needed)', () => {
+    expect(monthsFromAnchor('MONTHLY', 5)).toEqual([]);
+  });
+
+  it('returns an empty list for TWICE_MONTHLY (sub-month interval)', () => {
+    expect(monthsFromAnchor('TWICE_MONTHLY', 5)).toEqual([]);
   });
 });

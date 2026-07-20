@@ -3,7 +3,11 @@
 import { DayOfMonthPicker } from '@/components/common/DayOfMonthPicker';
 import { FrequencyPicker } from '@/components/common/FrequencyPicker';
 import { CATEGORY_MAX_LEVEL } from '@/constants/categories';
-import { FREQUENCY_INTERVAL_MONTHS } from '@/lib/utils/recurringFrequency';
+import {
+  dueAmountFromMonthly,
+  MONTH_LABELS_SHORT,
+  monthlyEquivalent,
+} from '@/lib/utils/recurringFrequency';
 import type { BudgetCategoryNode } from '@/modules/budget-engine/budget-engine.types';
 import type { RecurringFrequency } from '@prisma/client';
 import {
@@ -50,22 +54,15 @@ const FREQUENCY_LABELS: Record<RecurringFrequency, string> = {
   ANNUAL: 'Annual',
 };
 
-// A quarterly/half-yearly/annual plan needs to know WHICH calendar months it's due in —
-// without this, seedRecurring can't tell when to copy the plan forward (see
-// isDueInMonth). There's no UI yet to hand-pick individual months, so picking a
-// frequency here seeds a sensible default: evenly spaced months starting from the one
-// it was set in, e.g. picking Half-yearly in July defaults to [July, January].
-function defaultMonthsForFrequency(frequency: RecurringFrequency, fromMonth: number): number[] {
-  const interval = FREQUENCY_INTERVAL_MONTHS[frequency];
-  if (interval < 1) return []; // Monthly / twice-monthly don't need explicit months
-  const count = Math.round(12 / interval);
-  const months: number[] = [];
-  let m = fromMonth;
-  for (let i = 0; i < count; i++) {
-    months.push(m);
-    m = ((m - 1 + interval) % 12) + 1;
-  }
-  return months.sort((a, b) => a - b);
+function formatMonths(months: number[]): string {
+  return months.map((m) => MONTH_LABELS_SHORT[m - 1]).join(', ');
+}
+
+function frequencyDetail(frequency: RecurringFrequency | null | undefined, months: number[]): string {
+  if (!frequency) return 'Recurring';
+  const label = FREQUENCY_LABELS[frequency];
+  if (frequency === 'MONTHLY' || months.length === 0) return label;
+  return `${label} (${formatMonths(months)})`;
 }
 
 // #4 keyboard nav: after committing a planned value, click the next editable planned cell
@@ -296,9 +293,12 @@ export function BudgetCategoryRow({
   const [showAdd, setShowAdd] = useState(false);
   const [editingPlanned, setEditP] = useState(false);
   const [draftPlanned, setDraftP] = useState('');
+  const [editingDue, setEditDue] = useState(false);
+  const [draftDue, setDraftDue] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const dueInputRef = useRef<HTMLInputElement>(null);
   const renameRef = useRef<HTMLInputElement>(null);
 
   const isSaving = pendingCategoryId === node.id;
@@ -338,17 +338,34 @@ export function BudgetCategoryRow({
     if (moveNext) focusNextPlannedCell(node.id);
   }
 
-  async function handleFrequencyChange(frequency: RecurringFrequency | null) {
+  async function handleFrequencyChange(frequency: RecurringFrequency | null, months: number[]) {
     if (!frequency) {
       await onUpdate(node.id, { isRecurring: false, frequency: null, months: [] });
       return;
     }
-    const currentMonth = new Date().getMonth() + 1;
-    await onUpdate(node.id, {
-      isRecurring: true,
-      frequency,
-      months: defaultMonthsForFrequency(frequency, currentMonth),
-    });
+    await onUpdate(node.id, { isRecurring: true, frequency, months });
+  }
+
+  function startEditDue() {
+    const due =
+      node.frequency && node.frequency !== 'MONTHLY'
+        ? dueAmountFromMonthly(node.planned, node.frequency as RecurringFrequency)
+        : node.planned;
+    setDraftDue(due > 0 ? String(Math.round(due)) : '');
+    setEditDue(true);
+    setTimeout(() => dueInputRef.current?.select(), 30);
+  }
+
+  async function commitDue() {
+    setEditDue(false);
+    const trimmed = draftDue.trim();
+    if (trimmed !== '' && node.frequency && node.frequency !== 'MONTHLY') {
+      const v = Number(trimmed);
+      if (!Number.isNaN(v) && v >= 0) {
+        const monthly = Math.round(monthlyEquivalent(v, node.frequency as RecurringFrequency));
+        if (monthly !== node.planned) await onUpdate(node.id, { planned: monthly });
+      }
+    }
   }
 
   async function commitRename() {
@@ -428,11 +445,7 @@ export function BudgetCategoryRow({
           {node.isRecurring && (
             <span
               className="budget-row__badge budget-row__badge--rec"
-              title={
-                node.frequency
-                  ? FREQUENCY_LABELS[node.frequency as RecurringFrequency]
-                  : 'Recurring'
-              }
+              title={frequencyDetail(node.frequency as RecurringFrequency | null, node.months)}
             >
               ↻
             </span>
@@ -550,6 +563,55 @@ export function BudgetCategoryRow({
                     <span className="budget-row__amount--placeholder">+ Set budget</span>
                   )}
                 </span>
+                {/* Smoothing math, made editable: a quarterly/half-yearly/annual item is
+                    naturally thought of by its full due amount ("₹6,000 premium"), not its
+                    monthly-equivalent. This lets the user type the due amount directly and
+                    auto-computes the smoothed monthly figure that Planned actually stores —
+                    instead of forcing them to pre-divide it by hand. */}
+                {node.isRecurring && node.frequency && node.frequency !== 'MONTHLY' && (
+                  <span
+                    className="budget-row__due-amount"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {editingDue ? (
+                      <input
+                        ref={dueInputRef}
+                        className="budget-row__due-input"
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        value={draftDue}
+                        onChange={(e) => setDraftDue(e.target.value)}
+                        onBlur={() => void commitDue()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            void commitDue();
+                          }
+                          if (e.key === 'Escape') setEditDue(false);
+                        }}
+                      />
+                    ) : (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="budget-row__due-amount-text"
+                        title="Full amount when due — click to edit; Planned recalculates to the monthly equivalent"
+                        onClick={startEditDue}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            startEditDue();
+                          }
+                        }}
+                      >
+                        {node.planned > 0
+                          ? `≈${formatINR(Math.round(dueAmountFromMonthly(node.planned, node.frequency as RecurringFrequency)))} when due`
+                          : '+ Set amount when due'}
+                      </span>
+                    )}
+                  </span>
+                )}
                 {/* Money already set aside toward this category's linked Fund — separate
                     from Actual so a sinking-fund contribution never reads as if it were
                     spent. */}
@@ -646,7 +708,8 @@ export function BudgetCategoryRow({
             <div className="budget-row__actions-inner">
               <FrequencyPicker
                 value={node.isRecurring ? ((node.frequency as RecurringFrequency) ?? 'MONTHLY') : null}
-                onChange={(freq) => void handleFrequencyChange(freq)}
+                months={node.months}
+                onChange={(freq, months) => void handleFrequencyChange(freq, months)}
                 trigger={({ open, ref }) => (
                   <button
                     ref={ref}
@@ -660,7 +723,7 @@ export function BudgetCategoryRow({
                       .join(' ')}
                     title={
                       node.isRecurring && node.frequency
-                        ? `Recurring — ${FREQUENCY_LABELS[node.frequency as RecurringFrequency]}`
+                        ? `Recurring — ${frequencyDetail(node.frequency as RecurringFrequency, node.months)}`
                         : 'Mark as recurring'
                     }
                     aria-label={`Recurring frequency for ${node.name}`}

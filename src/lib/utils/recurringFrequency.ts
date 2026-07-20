@@ -40,3 +40,35 @@ export function isDueInMonth(
   if (!frequency || frequency === 'MONTHLY') return true;
   return months.includes(month);
 }
+
+export const MONTH_LABELS_SHORT = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/** Full due-months list for a frequency given a single anchor month (1-12) — the month the
+ *  first occurrence falls in. Evenly spaces the remaining occurrences from there, e.g.
+ *  anchor=March + HALF_YEARLY → [March, September]. MONTHLY/TWICE_MONTHLY don't need
+ *  explicit months (isDueInMonth treats them as always-due), so this returns []. */
+export function monthsFromAnchor(frequency: RecurringFrequency, anchorMonth: number): number[] {
+  const interval = FREQUENCY_INTERVAL_MONTHS[frequency];
+  if (interval <= 1) return [];
+  const count = Math.round(12 / interval);
+  const months: number[] = [];
+  let m = anchorMonth;
+  for (let i = 0; i < count; i++) {
+    months.push(m);
+    m = ((m - 1 + interval) % 12) + 1;
+  }
+  return months.sort((a, b) => a - b);
+}

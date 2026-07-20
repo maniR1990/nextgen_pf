@@ -381,7 +381,7 @@ describe('BudgetCategoryRow — frequency picker', () => {
     });
   });
 
-  it('picking a non-monthly frequency seeds a default set of due months', async () => {
+  it('picking a non-monthly frequency advances to a due-month picker instead of saving immediately', async () => {
     const user = userEvent.setup();
     const onUpdate = vi.fn().mockResolvedValue(undefined);
     const node = makeNode({ id: 'insurance', isRecurring: false, frequency: null });
@@ -398,11 +398,211 @@ describe('BudgetCategoryRow — frequency picker', () => {
     );
     await user.click(screen.getByLabelText(/recurring frequency for insurance/i));
     await user.click(screen.getByRole('option', { name: 'Quarterly' }));
-    expect(onUpdate).toHaveBeenCalledTimes(1);
-    const [, payload] = onUpdate.mock.calls[0];
-    expect(payload.isRecurring).toBe(true);
-    expect(payload.frequency).toBe('QUARTERLY');
-    expect(payload.months).toHaveLength(4);
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(screen.getByText(/which month/i)).toBeInTheDocument();
+  });
+
+  it('picking the anchor month saves the frequency with evenly spaced due months from that anchor', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn().mockResolvedValue(undefined);
+    const node = makeNode({ id: 'insurance', isRecurring: false, frequency: null });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={onUpdate}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    await user.click(screen.getByLabelText(/recurring frequency for insurance/i));
+    await user.click(screen.getByRole('option', { name: 'Quarterly' }));
+    await user.click(screen.getByRole('option', { name: 'Mar' }));
+    expect(onUpdate).toHaveBeenCalledWith('insurance', {
+      isRecurring: true,
+      frequency: 'QUARTERLY',
+      months: [3, 6, 9, 12],
+    });
+  });
+
+  it('the back button returns to the frequency list without saving', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn().mockResolvedValue(undefined);
+    const node = makeNode({ id: 'insurance', isRecurring: false, frequency: null });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={onUpdate}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    await user.click(screen.getByLabelText(/recurring frequency for insurance/i));
+    await user.click(screen.getByRole('option', { name: 'Quarterly' }));
+    await user.click(screen.getByLabelText(/back to frequency/i));
+    expect(screen.getByRole('option', { name: 'Quarterly' })).toBeInTheDocument();
+    expect(onUpdate).not.toHaveBeenCalled();
+  });
+
+  it('shows the existing due months next to an already-selected non-monthly frequency', async () => {
+    const user = userEvent.setup();
+    const node = makeNode({
+      id: 'insurance',
+      isRecurring: true,
+      frequency: 'HALF_YEARLY',
+      months: [3, 9],
+    });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    await user.click(screen.getByLabelText(/recurring frequency for insurance/i));
+    expect(screen.getByText('Mar, Sep')).toBeInTheDocument();
+  });
+});
+
+describe('BudgetCategoryRow — due-amount smoothing math', () => {
+  it('shows the full due amount computed from the stored monthly Planned value', () => {
+    const node = makeNode({
+      id: 'insurance',
+      planned: 1000,
+      isRecurring: true,
+      frequency: 'HALF_YEARLY',
+      months: [3, 9],
+    });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    expect(screen.getByText('≈₹6,000 when due')).toBeInTheDocument();
+  });
+
+  it('does not show a due-amount annotation for a plain monthly item', () => {
+    const node = makeNode({ id: 'groceries', planned: 500, isRecurring: true, frequency: 'MONTHLY' });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    expect(screen.queryByText(/when due/i)).not.toBeInTheDocument();
+  });
+
+  it('does not show a due-amount annotation for a non-recurring item', () => {
+    const node = makeNode({ id: 'groceries', planned: 500, isRecurring: false, frequency: null });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    expect(screen.queryByText(/when due/i)).not.toBeInTheDocument();
+  });
+
+  it('shows a placeholder when no amount is set yet', () => {
+    const node = makeNode({
+      id: 'insurance',
+      planned: 0,
+      isRecurring: true,
+      frequency: 'HALF_YEARLY',
+      months: [],
+    });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={noop}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    expect(screen.getByText('+ Set amount when due')).toBeInTheDocument();
+  });
+
+  it('editing the due amount recomputes and saves the smoothed monthly Planned value', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn().mockResolvedValue(undefined);
+    const node = makeNode({
+      id: 'insurance',
+      planned: 1000,
+      isRecurring: true,
+      frequency: 'HALF_YEARLY',
+      months: [3, 9],
+    });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={onUpdate}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    await user.click(screen.getByText('≈₹6,000 when due'));
+    const input = screen.getByDisplayValue('6000');
+    await user.clear(input);
+    await user.type(input, '12000{Enter}');
+    expect(onUpdate).toHaveBeenCalledWith('insurance', { planned: 2000 });
+  });
+
+  it('does not save when the due amount is unchanged', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn().mockResolvedValue(undefined);
+    const node = makeNode({
+      id: 'insurance',
+      planned: 1000,
+      isRecurring: true,
+      frequency: 'HALF_YEARLY',
+      months: [3, 9],
+    });
+    render(
+      <BudgetCategoryRow
+        node={node}
+        groupType="EXPENSE"
+        depth={1}
+        paceCtx={PACE_CTX}
+        onUpdate={onUpdate}
+        onRename={noop}
+        onDelete={noop}
+      />,
+    );
+    await user.click(screen.getByText('≈₹6,000 when due'));
+    const input = screen.getByDisplayValue('6000');
+    await user.type(input, '{Enter}');
+    expect(onUpdate).not.toHaveBeenCalled();
   });
 });
 
