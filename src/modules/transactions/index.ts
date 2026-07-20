@@ -7,6 +7,7 @@ export {
   v1ListTransactions,
   v1GetTransactionsSummary,
   v1CreateTransaction,
+  v1CreateBulkTransaction,
   v1GetTransaction,
   v1PatchTransaction,
   v1DeleteTransaction,

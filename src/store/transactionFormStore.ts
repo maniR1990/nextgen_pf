@@ -79,6 +79,20 @@ export interface TransactionFormValues {
 
 export type FormErrors = Partial<Record<keyof TransactionFormValues | '_form', string>>;
 
+// One bill, many line items — EXPENSE only. Kept separate from TransactionFormValues
+// (rather than folded into it) because it's meaningless for the other ten transaction
+// types; bolting it onto the shared shape would leak multi-item fields into every
+// Income/Transfer/Investment form for no reason.
+export interface BulkItemDraft {
+  id: string;
+  categoryId: string;
+  amount: string;
+}
+
+function makeBlankItem(): BulkItemDraft {
+  return { id: crypto.randomUUID(), categoryId: '', amount: '' };
+}
+
 export type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
 export interface SuccessData {
@@ -89,6 +103,8 @@ export interface SuccessData {
   date: string;
   method: string;
   budgetPeriodLabel: string;
+  /** Bulk-logged bills only — itemized breakdown shown in place of a single category line. */
+  items?: { label: string; amount: string }[];
 }
 
 const now = new Date();
@@ -156,6 +172,9 @@ interface TransactionFormState {
   submitState: SubmitState;
   successData: SuccessData | null;
   isDuplicateDismissed: boolean;
+  isMultiItem: boolean;
+  items: BulkItemDraft[];
+  invalidItemIds: string[];
 
   setField: <K extends keyof TransactionFormValues>(
     key: K,
@@ -169,6 +188,11 @@ interface TransactionFormState {
   setSuccessData: (data: SuccessData | null) => void;
   dismissDuplicate: () => void;
   reset: () => void;
+  setMultiItem: (on: boolean) => void;
+  addItem: () => void;
+  updateItem: (id: string, patch: Partial<Omit<BulkItemDraft, 'id'>>) => void;
+  removeItem: (id: string) => void;
+  setInvalidItemIds: (ids: string[]) => void;
 }
 
 export const useTransactionFormStore = createAppStore<TransactionFormState>(
@@ -179,6 +203,9 @@ export const useTransactionFormStore = createAppStore<TransactionFormState>(
     submitState: 'idle',
     successData: null,
     isDuplicateDismissed: false,
+    isMultiItem: false,
+    items: [],
+    invalidItemIds: [],
 
     setField: (key, value) =>
       set((s) => ({
@@ -197,6 +224,9 @@ export const useTransactionFormStore = createAppStore<TransactionFormState>(
         },
         errors: {},
         isDuplicateDismissed: false,
+        isMultiItem: false,
+        items: [],
+        invalidItemIds: [],
       })),
 
     prefill: (vals) =>
@@ -206,6 +236,9 @@ export const useTransactionFormStore = createAppStore<TransactionFormState>(
         submitState: 'idle',
         successData: null,
         isDuplicateDismissed: false,
+        isMultiItem: false,
+        items: [],
+        invalidItemIds: [],
       }),
 
     setErrors: (errors) => set({ errors }),
@@ -225,6 +258,31 @@ export const useTransactionFormStore = createAppStore<TransactionFormState>(
         submitState: 'idle',
         successData: null,
         isDuplicateDismissed: false,
+        isMultiItem: false,
+        items: [],
+        invalidItemIds: [],
       }),
+
+    setMultiItem: (on) =>
+      set((s) => ({
+        isMultiItem: on,
+        items: on && s.items.length === 0 ? [makeBlankItem()] : s.items,
+      })),
+
+    addItem: () => set((s) => ({ items: [...s.items, makeBlankItem()] })),
+
+    updateItem: (id, patch) =>
+      set((s) => ({
+        items: s.items.map((it) => (it.id === id ? { ...it, ...patch } : it)),
+        invalidItemIds: s.invalidItemIds.filter((invalidId) => invalidId !== id),
+      })),
+
+    removeItem: (id) =>
+      set((s) => ({
+        items: s.items.filter((it) => it.id !== id),
+        invalidItemIds: s.invalidItemIds.filter((invalidId) => invalidId !== id),
+      })),
+
+    setInvalidItemIds: (ids) => set({ invalidItemIds: ids }),
   }),
 );

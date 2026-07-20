@@ -89,6 +89,31 @@ export interface TransactionBody {
   };
 }
 
+export interface BulkTransactionItemBody {
+  categoryId: string;
+  amount: number;
+  note?: string;
+}
+
+export interface BulkTransactionBody {
+  type: 'EXPENSE';
+  merchant: string;
+  date: string;
+  budgetPeriodYear: number;
+  budgetPeriodMonth: number;
+  paymentSourceId: string;
+  paymentMethod: string;
+  notes?: string;
+  tags?: string[];
+  items: BulkTransactionItemBody[];
+}
+
+export interface BulkCreatedTransaction {
+  id: string;
+  amount: number;
+  category: { id: string; name: string } | null;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function invalidateAfterWrite(
@@ -139,6 +164,29 @@ export function useCreateTransaction() {
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : 'Failed to log transaction');
+    },
+  });
+}
+
+// ── Bulk create — one bill, many items ──────────────────────────────────────
+
+export function useCreateBulkTransaction() {
+  const qc = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: (body: BulkTransactionBody) => {
+      const idempotencyKey = crypto.randomUUID();
+      return apiPostV1<BulkCreatedTransaction[]>('/api/v1/transactions/bulk', body, {
+        'X-Idempotency-Key': idempotencyKey,
+      });
+    },
+    onSuccess: () => {
+      // Bulk items are always EXPENSE — never touch account-transfer invalidation.
+      invalidateAfterWrite(qc, {});
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to log items');
     },
   });
 }

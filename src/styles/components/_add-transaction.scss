@@ -736,6 +736,37 @@
   &__amount--debit  { color: var(--color-error); }
   &__amount--credit { color: var(--color-success); }
 
+  &__items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5);
+    width: 100%;
+    max-width: 400px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-subtle);
+    text-align: left;
+  }
+
+  &__items-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 2px;
+  }
+
+  &__items-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+  }
+
+  &__items-name { color: var(--color-text); }
+  &__items-amount { color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+
   &__actions {
     display: flex;
     gap: var(--space-3);
@@ -1438,5 +1469,229 @@
 
     &--planned  { background: var(--comp-badge-active-bg); color: var(--color-brand); border-color: var(--comp-badge-active-border); }
     &--recurring { background: var(--comp-badge-beta-bg); color: var(--color-accent); border-color: var(--comp-badge-beta-border); }
+  }
+}
+
+// ── Split into multiple items — toggle + item rows ─────────────────────────────
+
+.tx-form__multi-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+}
+
+.tx-form__multi-toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tx-form__multi-toggle-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.tx-form__multi-toggle-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.tx-form__switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+  flex-shrink: 0;
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+    z-index: 1;
+  }
+
+  &-track {
+    position: absolute;
+    inset: 0;
+    background: var(--color-border);
+    border-radius: var(--radius-full);
+    transition: background var(--transition-fast);
+  }
+
+  &-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-bg-surface);
+    transition: transform var(--transition-fast);
+  }
+
+  input:checked + .tx-form__switch-track { background: var(--color-brand); }
+  input:checked + .tx-form__switch-track .tx-form__switch-thumb { transform: translateX(16px); }
+  input:focus-visible + .tx-form__switch-track { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+}
+
+.multi-item-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  &__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  &__label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  &__total {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  &__rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  &__row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+
+    @media (max-width: 480px) { flex-wrap: wrap; }
+  }
+
+  &__row-category {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__row-amount {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    width: 92px;
+    flex-shrink: 0;
+    height: 38px;
+    padding: 0 var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-surface);
+
+    &:focus-within { outline: 2px solid var(--color-brand); outline-offset: -1px; }
+  }
+
+  &__currency {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__row-amount-input {
+    width: 100%;
+    border: none;
+    background: none;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+
+    &:focus { outline: none; }
+
+    &--error { color: var(--color-error, #dc2626); }
+  }
+
+  &__row-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-surface);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+
+    &:hover:not(:disabled) { background: var(--color-bg-subtle); color: var(--color-error, #dc2626); }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
+
+  // "Place under…" — the second compact step when a typed item doesn't already exist,
+  // replacing the row's normal category+amount fields until a parent is chosen.
+  &--resolving {
+    align-items: flex-start;
+  }
+
+  &__resolve {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5);
+    padding: var(--space-2) var(--space-2-5);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-subtle);
+  }
+
+  &__resolve-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  &__resolve-picker {
+    width: 100%;
+  }
+
+  &__resolve-cancel {
+    align-self: flex-start;
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--color-text-muted);
+    cursor: pointer;
+
+    &:hover { color: var(--color-text); text-decoration: underline; }
+  }
+
+  &__add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1-5);
+    padding: var(--space-2);
+    border: 1.5px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), color var(--transition-fast);
+
+    &:hover { border-color: var(--color-brand); color: var(--color-brand); }
   }
 }

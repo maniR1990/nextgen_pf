@@ -94,3 +94,24 @@ export interface FraudFacts {
   accountAgeDays: number;
   countryMatch: boolean;
 }
+
+export interface BulkCreateTransactionItemDto {
+  categoryId: string;
+  amount: number;
+  note?: string;
+}
+
+export interface BulkCreateTransactionDto {
+  userId: string;
+  idempotencyKey?: string;
+  type: 'EXPENSE';
+  merchant: string;
+  date: string;
+  budgetPeriodYear: number;
+  budgetPeriodMonth: number;
+  paymentSourceId: string;
+  paymentMethod: string;
+  notes?: string;
+  tags?: string[];
+  items: BulkCreateTransactionItemDto[];
+}

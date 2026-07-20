@@ -65,6 +65,8 @@ export function AddTransactionModal({
     submitState,
     successData,
     isDuplicateDismissed,
+    isMultiItem,
+    items,
     handleTypeChange,
     handleFieldChange,
     handleSubmit,
@@ -91,6 +93,21 @@ export function AddTransactionModal({
 
   const typeMeta = TX_TYPE_META[values.type];
   const isLoading = submitState === 'loading';
+
+  const bulkTotal = items.reduce((sum, it) => sum + (Number.parseFloat(it.amount) || 0), 0);
+  const submitLabel = isMultiItem
+    ? isLoading
+      ? 'Saving…'
+      : items.length === 0
+        ? 'Add an item to continue'
+        : `Log ${items.length} expense${items.length > 1 ? 's' : ''} · ₹${bulkTotal.toLocaleString('en-IN')}`
+    : editId
+      ? isLoading
+        ? 'Updating…'
+        : 'Update'
+      : isLoading
+        ? 'Saving…'
+        : `Log ${typeMeta.label}`;
 
   // Track which editId we've already prefilled so we don't clobber user edits
   // if prefillValues re-renders (e.g. background refetch of same transaction).
@@ -255,16 +272,10 @@ export function AddTransactionModal({
               type="button"
               className="btn btn--primary"
               onClick={handleFormSubmit}
-              disabled={isLoading}
+              disabled={isLoading || (isMultiItem && items.length === 0)}
               aria-busy={isLoading}
             >
-              {editId
-                ? isLoading
-                  ? 'Updating…'
-                  : 'Update'
-                : isLoading
-                  ? 'Saving…'
-                  : `Log ${typeMeta.label}`}
+              {submitLabel}
             </button>
           </Modal.Footer>
         </>

@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  useCreateBulkTransaction,
   useCreateTransaction,
   useDeleteTransaction,
   usePatchTransaction,
@@ -98,5 +99,77 @@ describe('useTransactions dashboard invalidation', () => {
 
     const keys = invalidateSpy.mock.calls.map((c) => c[0]?.queryKey);
     expect(keys).toContainEqual(queryKeys.dashboard.all);
+  });
+
+  it('invalidates dashboard queries on bulk create', async () => {
+    const { wrapper, invalidateSpy } = makeWrapper();
+    const { result } = renderHook(() => useCreateBulkTransaction(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        type: 'EXPENSE',
+        merchant: 'Sri Ganesh Grocers',
+        date: '2026-07-19',
+        budgetPeriodYear: 2026,
+        budgetPeriodMonth: 7,
+        paymentSourceId: 'acc1',
+        paymentMethod: 'UPI',
+        items: [
+          { categoryId: 'meat', amount: 805 },
+          { categoryId: 'milk', amount: 384 },
+        ],
+      });
+    });
+
+    const keys = invalidateSpy.mock.calls.map((c) => c[0]?.queryKey);
+    expect(keys).toContainEqual(queryKeys.dashboard.all);
+    expect(keys).toContainEqual(queryKeys.budget.all);
+  });
+});
+
+describe('useCreateBulkTransaction', () => {
+  it('posts to the bulk endpoint with an idempotency key', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useCreateBulkTransaction(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        type: 'EXPENSE',
+        merchant: 'Sri Ganesh Grocers',
+        date: '2026-07-19',
+        budgetPeriodYear: 2026,
+        budgetPeriodMonth: 7,
+        paymentSourceId: 'acc1',
+        paymentMethod: 'UPI',
+        items: [{ categoryId: 'meat', amount: 805 }],
+      });
+    });
+
+    expect(apiPostV1).toHaveBeenCalledWith(
+      '/api/v1/transactions/bulk',
+      expect.objectContaining({ items: [{ categoryId: 'meat', amount: 805 }] }),
+      expect.objectContaining({ 'X-Idempotency-Key': expect.any(String) }),
+    );
+  });
+
+  it('does NOT invalidate accounts (bulk items are always EXPENSE, never TRANSFER)', async () => {
+    const { wrapper, invalidateSpy } = makeWrapper();
+    const { result } = renderHook(() => useCreateBulkTransaction(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        type: 'EXPENSE',
+        merchant: 'Sri Ganesh Grocers',
+        date: '2026-07-19',
+        budgetPeriodYear: 2026,
+        budgetPeriodMonth: 7,
+        paymentSourceId: 'acc1',
+        paymentMethod: 'UPI',
+        items: [{ categoryId: 'meat', amount: 805 }],
+      });
+    });
+
+    const keys = invalidateSpy.mock.calls.map((c) => c[0]?.queryKey);
+    expect(keys).not.toContainEqual(queryKeys.accounts.all);
   });
 });

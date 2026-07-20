@@ -155,6 +155,19 @@ export const TransactionRepository = {
     });
   },
 
+  // Bulk-create idempotency replay: idempotencyKey is @unique, so only the anchor
+  // (first) row of a batch can carry the client's key — find it, then expand via
+  // billBatchId to return every sibling row created alongside it.
+  findByIdempotencyKey: (key: string) =>
+    prisma.financeTransaction.findUnique({ where: { idempotencyKey: key } }),
+
+  findByBatchId: (userId: string, billBatchId: string) =>
+    prisma.financeTransaction.findMany({
+      where: { userId, billBatchId },
+      include: TX_INCLUDE,
+      orderBy: { createdAt: 'asc' },
+    }),
+
   void: (id: string) =>
     prisma.financeTransaction.update({
       where: { id },

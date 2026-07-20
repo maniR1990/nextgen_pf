@@ -12,6 +12,7 @@ import { UserRepository } from '@/modules/users/users.repository';
 import { getPeriodTotals } from './period-spend';
 import { TX_INCLUDE, TransactionRepository } from './transactions.repository';
 import type {
+  BulkCreateTransactionDto,
   CreateTransactionDto,
   GetTransactionsQuery,
   ListWithCursorQuery,
@@ -181,6 +182,98 @@ export const TransactionService = {
         include: TX_INCLUDE,
       });
       await applyDeltas(tx, delta);
+      return created;
+    });
+  },
+
+  // ── Bulk create — one bill, many line items, one atomic write ─────────────
+  //
+  // All-or-nothing: every item shares one prisma.$transaction, so a bad category
+  // on item 8 of 12 rolls back the whole bill instead of leaving it half-logged.
+  //
+  // Fraud is evaluated ONCE against the bill TOTAL, not per item. The
+  // high-value-new-user rule trips on amount > ₹10,000 for accounts under 30 days
+  // old — a new account could split a ₹15,000 shop into twenty sub-₹10k lines and
+  // never trip that rule if it were checked per item. Checking the total closes
+  // that gap; per-item checks would just be redundant work against a rule that
+  // was never designed to reason about one line of a receipt in isolation.
+  //
+  // Duplicate-checking (findDuplicates) is deliberately NOT run here. It matches
+  // on {merchant, amount, date}, which is exactly what every OTHER item in this
+  // same bill also shares whenever two items happen to cost the same — it would
+  // flag legitimate lines against each other, not catch a real mistake. The
+  // actual risk bulk entry has — resubmitting the same "Log N expenses" click
+  // twice — is what idempotencyKey already exists to solve.
+  async createBulk(dto: BulkCreateTransactionDto) {
+    if (dto.idempotencyKey) {
+      const anchor = await TransactionRepository.findByIdempotencyKey(dto.idempotencyKey);
+      if (anchor && Date.now() - anchor.createdAt.getTime() < 600_000) {
+        return TransactionRepository.findByBatchId(dto.userId, anchor.billBatchId!);
+      }
+    }
+
+    const user = await UserRepository.findById(dto.userId).catch(() => {
+      throw new NotFoundError('User not found');
+    });
+    const accountAgeDays = Math.floor(
+      (Date.now() - new Date(user.createdAt).getTime()) / 86_400_000,
+    );
+
+    const billTotal = dto.items.reduce((sum, item) => sum + item.amount, 0);
+    await evaluateFraud({
+      amount: billTotal,
+      accountAgeDays,
+      countryMatch: true,
+      txType: dto.type,
+    });
+
+    const billBatchId = crypto.randomUUID();
+    const txDate = new Date(dto.date);
+
+    return prisma.$transaction(async (tx) => {
+      const created = [];
+      for (const [index, item] of dto.items.entries()) {
+        const txData = {
+          user: { connect: { id: dto.userId } },
+          type: dto.type as never,
+          date: txDate,
+          budgetPeriodYear: dto.budgetPeriodYear,
+          budgetPeriodMonth: dto.budgetPeriodMonth,
+          amount: item.amount,
+          currency: 'INR',
+          account: { connect: { id: dto.paymentSourceId } },
+          category: { connect: { id: item.categoryId } },
+          paymentMethod: dto.paymentMethod as never,
+          isPlanned: false,
+          isRecurring: false,
+          status: 'PENDING' as never,
+          merchant: dto.merchant,
+          notes: item.note ?? dto.notes,
+          tags: dto.tags ?? [],
+          billBatchId,
+          // Every row needs a real, distinct idempotencyKey — Mongo's unique index
+          // treats a MISSING field the same as an explicit null, and only tolerates
+          // one such document total, so omitting it on every non-anchor row (as if
+          // "no key" meant "skip the field") collides the moment a second item is
+          // written, either against item 1 of this same batch or any pre-existing row
+          // that also happened to lack one. The anchor (index 0) carries the client's
+          // exact key, for idempotency-replay lookups; every other row gets a key
+          // derived from it, unique per item, never looked up directly.
+          idempotencyKey:
+            index === 0 && dto.idempotencyKey ? dto.idempotencyKey : `${billBatchId}:${index}`,
+        };
+
+        const row = await tx.financeTransaction.create({ data: txData as never, include: TX_INCLUDE });
+
+        const delta = getBalanceDeltas({
+          type: dto.type,
+          amount: item.amount,
+          accountId: dto.paymentSourceId,
+        });
+        await applyDeltas(tx, delta);
+
+        created.push(row);
+      }
       return created;
     });
   },

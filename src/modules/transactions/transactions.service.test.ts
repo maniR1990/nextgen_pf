@@ -4,6 +4,8 @@ import {
   TxLockedError,
   ValidationError,
 } from '@/lib/api/errors';
+import { prisma } from '@/lib/db/prisma';
+import { evaluateFraud } from '@/lib/rules-engine/evaluator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransactionRepository } from './transactions.repository';
 import { TransactionService } from './transactions.service';
@@ -205,6 +207,139 @@ describe('TransactionService.createTransaction — balance', () => {
         fundGroupFlow: 'IN',
       }),
     ).rejects.toThrow(ValidationError);
+  });
+});
+
+// ── createBulk — one bill, many items ───────────────────────────────────────
+
+describe('TransactionService.createBulk', () => {
+  const bulkDto = {
+    userId: 'u1',
+    type: 'EXPENSE' as const,
+    merchant: 'Sri Ganesh Grocers',
+    date: '2026-07-19',
+    budgetPeriodYear: 2026,
+    budgetPeriodMonth: 7,
+    paymentSourceId: 'acc1',
+    paymentMethod: 'UPI',
+    items: [
+      { categoryId: 'meat', amount: 805 },
+      { categoryId: 'milk', amount: 384 },
+      { categoryId: 'butter', amount: 140 },
+    ],
+  };
+
+  beforeEach(() => {
+    let seq = 0;
+    mockPrismaTx.financeTransaction.create.mockImplementation(
+      ({ data }: { data: Record<string, unknown> }) => {
+        seq += 1;
+        return Promise.resolve({ id: `tx${seq}`, ...data });
+      },
+    );
+  });
+
+  it('creates exactly one row per item inside a single $transaction call', async () => {
+    await TransactionService.createBulk(bulkDto);
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(mockPrismaTx.financeTransaction.create).toHaveBeenCalledTimes(3);
+  });
+
+  it('stamps the same billBatchId on every created row', async () => {
+    const created = await TransactionService.createBulk(bulkDto);
+    const batchIds = created.map((row: { billBatchId: string }) => row.billBatchId);
+    expect(new Set(batchIds).size).toBe(1);
+    expect(batchIds[0]).toBeTruthy();
+  });
+
+  it('applies one balance delta per item, all against the same account', async () => {
+    await TransactionService.createBulk(bulkDto);
+    expect(mockPrismaTx.account.update).toHaveBeenCalledTimes(3);
+    const decrements = mockPrismaTx.account.update.mock.calls.map(
+      (c: unknown[]) => (c[0] as { data: { balance: { increment: number } } }).data.balance
+        .increment,
+    );
+    expect(decrements.reduce((a: number, b: number) => a + b, 0)).toBe(-(805 + 384 + 140));
+  });
+
+  it('evaluates fraud once against the bill TOTAL, not per item', async () => {
+    await TransactionService.createBulk(bulkDto);
+    expect(evaluateFraud).toHaveBeenCalledTimes(1);
+    expect(evaluateFraud).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 805 + 384 + 140 }),
+    );
+  });
+
+  it('stores the exact client key only on the first (anchor) row', async () => {
+    const created = await TransactionService.createBulk({
+      ...bulkDto,
+      idempotencyKey: 'key-1',
+    });
+    expect(created[0].idempotencyKey).toBe('key-1');
+    expect(created[1].idempotencyKey).not.toBe('key-1');
+    expect(created[2].idempotencyKey).not.toBe('key-1');
+  });
+
+  it('never omits idempotencyKey on any row — a missing field is treated as null by Mongo\'s unique index and would collide across rows', async () => {
+    const created = await TransactionService.createBulk({ ...bulkDto, idempotencyKey: 'key-1' });
+    for (const row of created as Array<{ idempotencyKey: unknown }>) {
+      expect(row.idempotencyKey).toBeTruthy();
+    }
+  });
+
+  it('gives every row a distinct idempotencyKey even without a client-supplied key', async () => {
+    const created = await TransactionService.createBulk(bulkDto);
+    const keys = (created as Array<{ idempotencyKey: string }>).map((r) => r.idempotencyKey);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(keys.every(Boolean)).toBe(true);
+  });
+
+  it('replays the existing batch instead of creating again when the idempotency key was already used within 10 minutes', async () => {
+    vi.mocked(TransactionRepository.findByIdempotencyKey).mockResolvedValue({
+      id: 'tx1',
+      billBatchId: 'batch-1',
+      createdAt: new Date(),
+    } as never);
+    vi.mocked(TransactionRepository.findByBatchId).mockResolvedValue([
+      { id: 'tx1' },
+      { id: 'tx2' },
+      { id: 'tx3' },
+    ] as never);
+
+    const result = await TransactionService.createBulk({ ...bulkDto, idempotencyKey: 'key-1' });
+
+    expect(result).toHaveLength(3);
+    expect(mockPrismaTx.financeTransaction.create).not.toHaveBeenCalled();
+  });
+
+  it('creates a fresh batch when a matching idempotency key exists but is older than 10 minutes', async () => {
+    vi.mocked(TransactionRepository.findByIdempotencyKey).mockResolvedValue({
+      id: 'tx1',
+      billBatchId: 'batch-1',
+      createdAt: new Date(Date.now() - 700_000),
+    } as never);
+
+    await TransactionService.createBulk({ ...bulkDto, idempotencyKey: 'key-1' });
+
+    expect(mockPrismaTx.financeTransaction.create).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not create anything when fraud evaluation blocks the bill', async () => {
+    vi.mocked(evaluateFraud).mockRejectedValueOnce(new Error('blocked'));
+    await expect(TransactionService.createBulk(bulkDto)).rejects.toThrow('blocked');
+    expect(mockPrismaTx.financeTransaction.create).not.toHaveBeenCalled();
+  });
+
+  it('uses each item categoryId and amount, and the shared merchant/date/account for every row', async () => {
+    const created = await TransactionService.createBulk(bulkDto);
+    for (const row of created as Array<Record<string, unknown>>) {
+      expect(row.merchant).toBe('Sri Ganesh Grocers');
+      expect((row.account as { connect: { id: string } }).connect.id).toBe('acc1');
+    }
+    expect((created[0].category as { connect: { id: string } }).connect.id).toBe('meat');
+    expect(created[0].amount).toBe(805);
+    expect((created[1].category as { connect: { id: string } }).connect.id).toBe('milk');
+    expect(created[1].amount).toBe(384);
   });
 });
 

@@ -919,6 +919,15 @@ model FinanceTransaction {
 
   merchantId      String?   @db.ObjectId
 
+  // Correlates transactions created together from one multi-item bill log (see
+  // TransactionService.createBulk). Plain String, not @db.ObjectId — there is no
+  // parent "Bill" row to reference; every field a bill needs (merchant, date,
+  // account) is already duplicated on each item, so grouping by this id alone
+  // reconstructs the whole bill with no join. Permanently null for every normal
+  // single-entry transaction — never treat null as a group, always filter
+  // { billBatchId: { not: null } } before grouping by it.
+  billBatchId     String?
+
   reconciledAt    DateTime?
 
   refundOrigTxId  String?   @db.ObjectId
@@ -956,6 +965,8 @@ model FinanceTransaction {
   @@index([accountId])
 
   @@index([categoryId])
+
+  @@index([userId, billBatchId])
 
   @@index([eventId])
 

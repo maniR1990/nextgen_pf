@@ -18,6 +18,7 @@ export function SuccessState({ data, onLogAnother, onClose }: SuccessStateProps)
       : meta.amountSign === 'credit'
         ? 'success-state__amount--credit'
         : '';
+  const hasItems = !!data.items?.length;
 
   return (
     <div className="success-state" role="status" aria-live="polite">
@@ -25,7 +26,9 @@ export function SuccessState({ data, onLogAnother, onClose }: SuccessStateProps)
         <CheckCircle className="success-state__icon" size={48} aria-hidden />
       </div>
 
-      <h2 className="success-state__heading">Transaction logged!</h2>
+      <h2 className="success-state__heading">
+        {hasItems && data.items!.length > 1 ? 'Expenses logged!' : 'Transaction logged!'}
+      </h2>
 
       <div className="success-state__card">
         <div className="success-state__row">
@@ -57,6 +60,18 @@ export function SuccessState({ data, onLogAnother, onClose }: SuccessStateProps)
           </div>
         )}
       </div>
+
+      {hasItems && (
+        <div className="success-state__items">
+          <span className="success-state__items-label">Items logged</span>
+          {data.items!.map((item, i) => (
+            <div key={`${item.label}-${i}`} className="success-state__items-row">
+              <span className="success-state__items-name">{item.label}</span>
+              <span className="success-state__items-amount">{item.amount}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="success-state__actions">
         <button type="button" className="btn btn--primary" onClick={onLogAnother}>

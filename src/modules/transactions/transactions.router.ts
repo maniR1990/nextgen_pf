@@ -4,6 +4,7 @@ import { v1Created, v1FromApiError, v1Ok, v1Paginated } from '@/lib/api/v1/envel
 import { getLogger } from '@/lib/logger';
 import { getIncomePeriodData } from '@/lib/utils/incomePeriod';
 import {
+  BulkCreateTransactionSchema,
   CheckDuplicateSchema,
   CreateTransactionSchema,
   ListTransactionsQuerySchema,
@@ -147,6 +148,29 @@ export const v1CreateTransaction = compose(
     return v1Created(transaction);
   } catch (err) {
     log.error('v1CreateTransaction', { err });
+    if (isApiError(err)) return v1FromApiError(err);
+    const msg = err instanceof Error ? err.message : 'Unexpected error';
+    return v1FromApiError({ message: msg, status: 500, code: 'INTERNAL_ERROR' });
+  }
+});
+
+// Bulk create deliberately does NOT use the generic withIdempotency() middleware —
+// that middleware replays a single row by idempotencyKey, but idempotencyKey is
+// @unique so only the anchor row of a batch can ever carry it. TransactionService
+// .createBulk does its own key lookup and expands the anchor into the full batch via
+// billBatchId — see the comment on createBulk for the full reasoning.
+export const v1CreateBulkTransaction = compose(
+  withAuth(),
+  withValidation(BulkCreateTransactionSchema),
+)(async (req, ctx) => {
+  try {
+    const body = await req.json();
+    const idempotencyKey = req.headers.get('x-idempotency-key') ?? undefined;
+    const dto = { ...body, userId: ctx.session!.id, idempotencyKey };
+    const transactions = await TransactionService.createBulk(dto);
+    return v1Created(transactions);
+  } catch (err) {
+    log.error('v1CreateBulkTransaction', { err });
     if (isApiError(err)) return v1FromApiError(err);
     const msg = err instanceof Error ? err.message : 'Unexpected error';
     return v1FromApiError({ message: msg, status: 500, code: 'INTERNAL_ERROR' });

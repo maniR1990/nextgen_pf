@@ -1,5 +1,22 @@
 import { z } from 'zod';
 
+const PAYMENT_METHOD_VALUES = [
+  'UPI',
+  'NEFT',
+  'IMPS',
+  'RTGS',
+  'CARD_SWIPE',
+  'CARD_ONLINE',
+  'CASH',
+  'CHEQUE',
+  'AUTO_DEBIT',
+  'ATM',
+  'GIFT_CARD',
+  'POINTS',
+  'COUPON',
+  'STORE_CREDIT',
+] as const;
+
 const budgetPeriodSchema = z.object({
   year: z.number().int().min(2020).max(2100),
   month: z.number().int().min(1).max(12),
@@ -34,22 +51,7 @@ export const CreateTransactionSchema = z
     budgetPeriodMonth: z.number().int().min(1).max(12),
     amount: z.number().positive('Amount must be greater than ₹0'),
     paymentSourceId: z.string().min(1, 'Payment source required'),
-    paymentMethod: z.enum([
-      'UPI',
-      'NEFT',
-      'IMPS',
-      'RTGS',
-      'CARD_SWIPE',
-      'CARD_ONLINE',
-      'CASH',
-      'CHEQUE',
-      'AUTO_DEBIT',
-      'ATM',
-      'GIFT_CARD',
-      'POINTS',
-      'COUPON',
-      'STORE_CREDIT',
-    ]),
+    paymentMethod: z.enum(PAYMENT_METHOD_VALUES),
     isPlanned: z.boolean(),
     isRecurring: z.boolean(),
     status: z.enum(['PENDING', 'CLEARED', 'VOID', 'RECONCILED']).default('PENDING'),
@@ -220,24 +222,7 @@ export const PatchTransactionSchema = z.object({
   budgetPeriodMonth: z.number().int().min(1).max(12).optional(),
   amount: z.number().positive().optional(),
   paymentSourceId: z.string().min(1).optional(),
-  paymentMethod: z
-    .enum([
-      'UPI',
-      'NEFT',
-      'IMPS',
-      'RTGS',
-      'CARD_SWIPE',
-      'CARD_ONLINE',
-      'CASH',
-      'CHEQUE',
-      'AUTO_DEBIT',
-      'ATM',
-      'GIFT_CARD',
-      'POINTS',
-      'COUPON',
-      'STORE_CREDIT',
-    ])
-    .optional(),
+  paymentMethod: z.enum(PAYMENT_METHOD_VALUES).optional(),
   isPlanned: z.boolean().optional(),
   isRecurring: z.boolean().optional(),
   merchant: z.string().max(120).optional(),
@@ -282,3 +267,32 @@ export const CheckDuplicateSchema = z.object({
   amount: z.number().positive(),
   date: z.string().min(1),
 });
+
+// ── Bulk create — one bill, many line items ────────────────────────────────────
+// Shared bill-level fields are supplied once (merchant/date/account/payment method
+// are the same for every item on one receipt); only categoryId + amount vary per
+// line. v1 is EXPENSE-only by design — see TransactionService.createBulk.
+
+export const BulkTransactionItemSchema = z.object({
+  categoryId: z.string().min(1, 'Category is required'),
+  amount: z.number().positive('Amount must be greater than ₹0'),
+  note: z.string().max(200).optional(),
+});
+
+export const BulkCreateTransactionSchema = z.object({
+  type: z.literal('EXPENSE'),
+  merchant: z.string().min(1, 'Merchant or description is required'),
+  date: z.string().min(1, 'Date is required'),
+  budgetPeriodYear: z.number().int().min(2020),
+  budgetPeriodMonth: z.number().int().min(1).max(12),
+  paymentSourceId: z.string().min(1, 'Payment source required'),
+  paymentMethod: z.enum(PAYMENT_METHOD_VALUES),
+  notes: z.string().max(500).optional(),
+  tags: z.array(z.string()).optional(),
+  items: z
+    .array(BulkTransactionItemSchema)
+    .min(1, 'At least one item is required')
+    .max(50, 'A single bill can log at most 50 items'),
+});
+
+export type BulkCreateTransactionInput = z.infer<typeof BulkCreateTransactionSchema>;

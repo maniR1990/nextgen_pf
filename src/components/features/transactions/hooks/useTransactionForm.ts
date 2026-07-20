@@ -3,8 +3,12 @@
 import { useToast } from '@/components/common/ToastProvider/useToast';
 import type { TxType } from '@/constants/finance';
 import { TX_TYPE_META } from '@/constants/finance';
-import { useCreateTransaction, usePatchTransaction } from '@/hooks/useTransactions';
-import type { TransactionBody } from '@/hooks/useTransactions';
+import {
+  useCreateBulkTransaction,
+  useCreateTransaction,
+  usePatchTransaction,
+} from '@/hooks/useTransactions';
+import type { BulkTransactionBody, TransactionBody } from '@/hooks/useTransactions';
 import { CreateTransactionSchema } from '@/modules/transactions/transactions.schema';
 import { useTransactionFormStore } from '@/store/transactionFormStore';
 import type { FormErrors, SuccessData } from '@/store/transactionFormStore';
@@ -100,6 +104,7 @@ export function useTransactionForm(editId?: string) {
   // Mutations — invalidation is handled inside each mutation's onSuccess/onError.
   // This hook only drives Zustand store state (UI: loading, success, errors).
   const createTx = useCreateTransaction();
+  const createBulkTx = useCreateBulkTransaction();
   const patchTx = usePatchTransaction(editId ?? '');
 
   const handleTypeChange = useCallback((type: TxType) => store.setType(type), [store]);
@@ -194,9 +199,91 @@ export function useTransactionForm(editId?: string) {
     return errors;
   }, [store]);
 
+  // ── Submit (create, bulk) ────────────────────────────────────────────────────
+  // One bill, many items — merchant/date/account/method are shared, only
+  // categoryId + amount vary per item. Validated separately from the single-
+  // transaction path since it has no per-item fields in CreateTransactionSchema.
+
+  const handleBulkSubmit = useCallback(async (): Promise<boolean> => {
+    const { values, items } = store;
+    const invalidIds = items
+      .filter((it) => !it.categoryId || !(Number.parseFloat(it.amount) > 0))
+      .map((it) => it.id);
+
+    const sharedErrors: FormErrors = {};
+    if (!values.merchant.trim()) sharedErrors.merchant = 'Merchant or description is required';
+    if (!values.sourceId) sharedErrors.sourceId = 'Payment source required';
+    if (items.length === 0) {
+      sharedErrors._form = 'Add at least one item';
+    } else if (invalidIds.length > 0) {
+      sharedErrors._form = 'Every item needs a category and an amount';
+    }
+
+    if (Object.keys(sharedErrors).length > 0) {
+      store.setErrors(sharedErrors);
+      store.setInvalidItemIds(invalidIds);
+      return false;
+    }
+    store.setInvalidItemIds([]);
+    store.setSubmitState('loading');
+
+    try {
+      const body: BulkTransactionBody = {
+        type: 'EXPENSE',
+        merchant: values.merchant,
+        date: values.date,
+        budgetPeriodYear: values.budgetPeriodYear,
+        budgetPeriodMonth: values.budgetPeriodMonth,
+        paymentSourceId: values.sourceId,
+        paymentMethod: values.method,
+        notes: values.notes || undefined,
+        tags: values.tags
+          ? values.tags
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
+        items: items.map((it) => ({
+          categoryId: it.categoryId,
+          amount: Number.parseFloat(it.amount),
+        })),
+      };
+      const created = await createBulkTx.mutateAsync(body);
+
+      const total = items.reduce((sum, it) => sum + (Number.parseFloat(it.amount) || 0), 0);
+      const d = new Date(values.date);
+      const monthLabel = d.toLocaleString('en-IN', { month: 'short', year: 'numeric' });
+
+      store.setSuccessData({
+        amount: `₹${total.toLocaleString('en-IN')}`,
+        merchant: `${values.merchant} · ${items.length} item${items.length > 1 ? 's' : ''}`,
+        type: 'EXPENSE',
+        date: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+        method: values.method,
+        budgetPeriodLabel: `${monthLabel} budget`,
+        // Item labels come from the server's response (real category names), not the
+        // client's picker state — the response is the authoritative record of what was
+        // actually saved, and it's already fetched here for free.
+        items: created.map((row) => ({
+          label: row.category?.name ?? 'Uncategorized',
+          amount: `₹${row.amount.toLocaleString('en-IN')}`,
+        })),
+      });
+      store.setSubmitState('success');
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      store.setErrors({ _form: message });
+      store.setSubmitState('error');
+      return false;
+    }
+  }, [store, createBulkTx]);
+
   // ── Submit (create) ─────────────────────────────────────────────────────────
 
   const handleSubmit = useCallback(async (): Promise<boolean> => {
+    if (store.isMultiItem) return handleBulkSubmit();
+
     const errors = validate();
     if (Object.keys(errors).length > 0) {
       store.setErrors(errors);
@@ -278,7 +365,9 @@ export function useTransactionForm(editId?: string) {
     submitState: store.submitState,
     successData: store.successData,
     isDuplicateDismissed: store.isDuplicateDismissed,
-    isSubmitting: createTx.isPending || patchTx.isPending,
+    isMultiItem: store.isMultiItem,
+    items: store.items,
+    isSubmitting: createTx.isPending || createBulkTx.isPending || patchTx.isPending,
     handleTypeChange,
     handleFieldChange,
     handleSubmit,
