@@ -1,5 +1,6 @@
 'use client';
 
+import { AccountCreationModal } from '@/components/common/AccountCreationModal';
 import { NavigationProgress } from '@/components/common/NavigationProgress';
 import { SessionExpiredModal } from '@/components/common/SessionExpiredModal';
 import { TransactionDialog } from '@/components/common/TransactionDialog';
@@ -38,6 +39,7 @@ function QuickActionHandler({ onQuickLog }: { onQuickLog: (bulk: boolean) => voi
 const FALLBACK_DATA = {
   netWorth: 0,
   netWorthChangePct: 0,
+  hasAccounts: false,
   readyToAssign: 0,
   budgetPeriodLabel: '—',
   monthSpend: 0,
@@ -116,6 +118,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <NavigationProgress />
       </Suspense>
       <SessionExpiredModal />
+      <AccountCreationModal />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { MiniDateStrip } from '@/components/common/MiniDateStrip';
 import { SelectField } from '@/components/common/SelectField';
 import { RecurringConfig } from '@/components/features/transactions/RecurringConfig';
 import { PAYMENT_METHODS, TX_TYPE_META } from '@/constants/finance';
+import { useAccountWizardStore } from '@/store/accountWizardStore';
 import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption } from '@/types/finance';
 
@@ -45,6 +46,7 @@ export function CommonFormFields({
   showRecurring,
 }: CommonFormFieldsProps) {
   const sourceOptions = (paymentSources ?? []).map((s) => ({ value: s.id, label: s.name }));
+  const openAccountWizard = useAccountWizardStore((s) => s.open);
   const typeMeta = TX_TYPE_META[values.type];
   const resolvedShowMethod = showMethod ?? typeMeta.hasMethod;
   const resolvedShowPlanned = showPlanned ?? typeMeta.hasPlanned;
@@ -79,16 +81,27 @@ export function CommonFormFields({
       {visibleKeyFields > 0 && (
         <div className={visibleKeyFields === 2 ? 'tx-form__row tx-form__row--2' : undefined}>
           {showAccount && (
-            <SelectField
-              label="Account"
-              id="tx-source"
-              value={values.sourceId}
-              options={sourceOptions}
-              placeholder="Select account"
-              error={errors.sourceId}
-              required
-              onChange={(e) => onChange('sourceId', e.target.value)}
-            />
+            <div className="tx-form__account-field">
+              <SelectField
+                label="Account"
+                id="tx-source"
+                value={values.sourceId}
+                options={sourceOptions}
+                placeholder={sourceOptions.length === 0 ? 'No accounts yet' : 'Select account'}
+                error={errors.sourceId}
+                required
+                disabled={sourceOptions.length === 0}
+                onChange={(e) => onChange('sourceId', e.target.value)}
+              />
+              {sourceOptions.length === 0 && (
+                <p className="tx-form__account-nudge">
+                  You need an account to log transactions against.{' '}
+                  <button type="button" className="tx-form__account-nudge-btn" onClick={openAccountWizard}>
+                    + Add an account
+                  </button>
+                </p>
+              )}
+            </div>
           )}
 
           {resolvedShowMethod && (

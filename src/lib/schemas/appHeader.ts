@@ -128,6 +128,9 @@ export interface AppHeaderData {
   // Pulse strip — financial
   netWorth: number;
   netWorthChangePct: number;
+  /** False for a brand-new user with no accounts yet — suppresses alert styling on
+   *  zero-value metrics that would otherwise read as a false alarm (see PulseStrip). */
+  hasAccounts?: boolean;
   readyToAssign: number;
   budgetPeriodLabel: string;
   monthSpend: number;

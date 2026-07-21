@@ -32,7 +32,9 @@ export function PulseStrip({
             ? (data[m.changeKey as keyof AppHeaderData] as number | undefined)
             : undefined;
           const meta = m.metaKey ? String(data[m.metaKey as keyof AppHeaderData] ?? '') : undefined;
-          const isZeroAlert = m.alertWhenZero && value === '₹0';
+          // Suppress the alert for a brand-new user with no accounts yet — ₹0 there means
+          // "you haven't started," not "something needs your attention."
+          const isZeroAlert = m.alertWhenZero && value === '₹0' && data.hasAccounts !== false;
 
           return (
             <div key={m.id} className="pulse-strip__metric">

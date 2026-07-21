@@ -50,7 +50,8 @@ export function AppFooter({
             const meta = metric.metaKey
               ? String(data[metric.metaKey as keyof AppHeaderData] ?? '')
               : undefined;
-            const isZeroAlert = metric.alertWhenZero && value === '₹0';
+            // Suppress the alert for a brand-new user with no accounts yet — see PulseStrip.
+            const isZeroAlert = metric.alertWhenZero && value === '₹0' && data.hasAccounts !== false;
 
             const content = (
               <>

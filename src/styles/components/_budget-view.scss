@@ -243,6 +243,37 @@ $rem-over:       #dc2626;
     flex-wrap: wrap;
   }
 
+  // First-visit nudge for a month with nothing planned yet — offers to copy recurring
+  // items forward instead of leaving the user to discover the "Auto-fill" toolbar button.
+  &__seed-prompt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-subtle);
+    margin-top: 10px;
+
+    &-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 13px;
+      color: var(--color-text-secondary);
+
+      strong { color: var(--color-text-primary); }
+    }
+
+    &-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+  }
+
   // Row1/row2 groupings only matter on mobile (see media query) — on desktop they're
   // invisible to layout, so every child still behaves as a direct flex item of
   // .budget-view__toolbar. The explicit order values below restore the original visual

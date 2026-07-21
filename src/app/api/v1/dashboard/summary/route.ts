@@ -105,6 +105,7 @@ const handleSummary = compose(withAuth())(async (_req, ctx) => {
 
       netWorth,
       netWorthChangePct: 0,
+      hasAccounts: nwAccounts.length > 0,
       readyToAssign: fundsSummary.totalUnallocated,
       unallocated: fundsSummary.totalUnallocated,
       assigned: fundsSummary.totalAllocated,

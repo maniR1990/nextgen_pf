@@ -1,6 +1,7 @@
 'use client';
 
 import { MonthPicker } from '@/components/common/MonthPicker/MonthPicker';
+import { useToast } from '@/components/common/ToastProvider/useToast';
 import { PaymentSchedulePanel } from '@/components/common/PaymentSchedulePanel';
 import { derivePayments, getStatus } from '@/components/common/PaymentSchedulePanel/derivePayments';
 import type { PaymentStatus } from '@/components/common/PaymentSchedulePanel/derivePayments';
@@ -286,6 +287,41 @@ export function BudgetView() {
 
   const { data, isLoading, isError } = useBudgetSummary(year, month);
   const { mutate: seed, isPending: isSeeding } = useSeedRecurring(year, month);
+  const toast = useToast();
+
+  // First-visit nudge: this month has nothing planned anywhere yet. Rather than rely on
+  // the user discovering the "Auto-fill recurring" toolbar button on their own, offer it
+  // once, up front. "Not now" is remembered per-month so it doesn't nag on a month the
+  // user genuinely wants to leave blank.
+  const isMonthEmpty = !!data && data.groups.length > 0 && data.groups.every((g) => g.planned === 0);
+  const seedPromptKey = `budget:seed-prompt-dismissed:${year}-${month}`;
+  const [promptDismissed, setPromptDismissed] = useState(false);
+
+  useEffect(() => {
+    setPromptDismissed(
+      typeof window !== 'undefined' && window.localStorage.getItem(seedPromptKey) === '1',
+    );
+  }, [seedPromptKey]);
+
+  function dismissSeedPrompt() {
+    window.localStorage.setItem(seedPromptKey, '1');
+    setPromptDismissed(true);
+  }
+
+  function handleSeedFromPrompt() {
+    seed(undefined, {
+      onSuccess: (result) => {
+        dismissSeedPrompt();
+        toast.success(
+          result.seeded > 0
+            ? `Copied ${result.seeded} recurring item${result.seeded > 1 ? 's' : ''} from last month`
+            : 'No recurring items to copy — starting fresh this month',
+        );
+      },
+    });
+  }
+
+  const showSeedPrompt = !isLoading && !isError && isMonthEmpty && !promptDismissed;
 
   const updatePlan = useUpdateBudgetPlan(year, month);
   const addCategory = useAddBudgetCategory(year, month);
@@ -515,6 +551,28 @@ export function BudgetView() {
           </div>
         </div>
       </div>
+
+      {showSeedPrompt && (
+        <div className="budget-view__seed-prompt" role="status">
+          <div className="budget-view__seed-prompt-text">
+            <strong>{monthLabel} hasn't been set up yet.</strong>
+            <span>Copy your recurring bills forward, or start this month fresh.</span>
+          </div>
+          <div className="budget-view__seed-prompt-actions">
+            <button
+              type="button"
+              className="btn btn--sm btn--primary"
+              onClick={handleSeedFromPrompt}
+              disabled={isSeeding}
+            >
+              {isSeeding ? 'Copying…' : 'Copy recurring items'}
+            </button>
+            <button type="button" className="btn btn--sm btn--ghost" onClick={dismissSeedPrompt}>
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Summary bar with payments card + expandable dropdown ── */}
       {!isLoading && !isError && data && (

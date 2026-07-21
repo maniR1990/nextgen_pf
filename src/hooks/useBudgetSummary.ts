@@ -85,7 +85,7 @@ export function useBudgetSummary(year: number, month: number) {
 export function useSeedRecurring(year: number, month: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => apiPostV1(`/api/v1/budget/${year}/${month}/seed`, {}),
+    mutationFn: () => apiPostV1<{ seeded: number }>(`/api/v1/budget/${year}/${month}/seed`, {}),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.budget.summary(year, month) });
     },
