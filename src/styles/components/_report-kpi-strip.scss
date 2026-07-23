@@ -4,7 +4,9 @@
 // Horizontal 5-cell summary bar that sits below the AppHeader on /dashboard/reports.
 // Desktop: 5 equal columns with vertical dividers.
 // Tablet (< md): 2-column grid, bottom dividers between rows.
-// Mobile (< sm): single-column stack, no dividers.
+// Mobile (< sm): horizontal-scroll strip of compact cards, not a 5x stacked column —
+// this is glanceable secondary context, not the page's primary task, so it must not
+// push the actual work (the filter tool below it) below the fold on a phone.
 
 .report-kpi-strip {
   display: grid;
@@ -17,7 +19,16 @@
   }
 
   @include m.respond-below(sm) {
-    grid-template-columns: 1fr;
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 }
 
@@ -56,12 +67,15 @@
   }
 
   @include m.respond-below(sm) {
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
-    padding: var(--space-3) var(--space-4);
+    flex: 0 0 140px;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border-right: 1px solid var(--color-border);
+    border-bottom: none;
+    scroll-snap-align: start;
 
     &:last-child {
-      border-bottom: none;
+      border-right: none;
     }
   }
 }
@@ -101,8 +115,10 @@
     font-size: var(--font-size-lg);
   }
 
+  // Deliberately NOT upsized back to xl here (unlike before) — on a horizontal-scroll
+  // strip every pixel of height matters more than on a stacked single column.
   @include m.respond-below(sm) {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-base);
   }
 }
 
@@ -114,6 +130,10 @@
   flex-wrap: wrap;
   gap: var(--space-1);
   min-height: 20px;
+
+  @include m.respond-below(sm) {
+    min-height: 0;
+  }
 }
 
 .report-kpi-strip__sub-text {
