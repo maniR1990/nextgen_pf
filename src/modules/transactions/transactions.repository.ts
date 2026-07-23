@@ -188,6 +188,48 @@ export const TransactionRepository = {
       _sum: { amount: true },
     }),
 
+  // Ad-hoc report query — any combination of category/type/account, with or without a
+  // period (omitting year+month means "all time"). Backs the Reports page's filter
+  // widget. Returns actual + recurring-actual in one round trip since both share the
+  // same where clause modulo isRecurring.
+  sumFiltered: async (
+    userId: string,
+    filters: {
+      year?: number;
+      month?: number;
+      categoryId?: string;
+      type?: TxType;
+      accountId?: string;
+    },
+  ) => {
+    const where: Prisma.FinanceTransactionWhereInput = {
+      userId,
+      status: { not: 'VOID' },
+      ...(filters.year !== undefined &&
+        filters.month !== undefined && {
+          budgetPeriodYear: filters.year,
+          budgetPeriodMonth: filters.month,
+        }),
+      ...(filters.categoryId && { categoryId: filters.categoryId }),
+      ...(filters.type && { type: filters.type as never }),
+      ...(filters.accountId && { accountId: filters.accountId }),
+    };
+
+    const [totals, recurringTotals] = await Promise.all([
+      prisma.financeTransaction.aggregate({ where, _sum: { amount: true }, _count: true }),
+      prisma.financeTransaction.aggregate({
+        where: { ...where, isRecurring: true },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    return {
+      actual: totals._sum.amount ?? 0,
+      count: totals._count,
+      recurringActual: recurringTotals._sum.amount ?? 0,
+    };
+  },
+
   // Whole-period totals by type — used for the Income/Expense/Net summary card. Must NOT
   // be derived from a paginated list: any period with more rows than the page size would
   // silently under-count until every page is loaded.

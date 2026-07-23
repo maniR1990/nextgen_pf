@@ -1,0 +1,117 @@
+@use '../mixins' as m;
+
+.report-filter-widget {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+
+  // Every filter + action in one fluid row that wraps naturally as space runs out,
+  // rather than jumping between fixed grid layouts at hard breakpoints — the same
+  // control set reflows from a single desktop row down to a stacked mobile column
+  // without a separate "tablet" step to maintain.
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  &__field {
+    flex: 1 1 150px;
+    min-width: 0;
+    width: 100%;
+  }
+
+  &__field--category {
+    flex-basis: 200px;
+
+    // Keeps the picker's accessible label (for screen readers and label-based test
+    // queries) without showing visible text — none of the sibling native selects show
+    // a visible label either, just an aria-label, so this stays visually consistent.
+    .cat-picker__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  }
+
+  &__action-btn {
+    flex: 0 0 auto;
+
+    @include m.respond-below(sm) {
+      flex: 1 1 auto;
+    }
+  }
+
+  &__empty {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-align: center;
+    padding: var(--space-2) 0;
+  }
+
+  // auto-fit rather than a fixed column count — the 4th "of income" card only appears
+  // once a specific month is selected, so the grid needs to flex between 3 and 4 items
+  // without a separate layout for each case.
+  &__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: var(--space-2);
+  }
+
+  &__metric {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-0-5);
+    background: var(--color-bg-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    min-width: 0;
+
+    @include m.respond-below(sm) {
+      padding: var(--space-1-5) var(--space-2);
+    }
+  }
+
+  &__metric-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__metric-value {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-variation-semibold);
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @include m.respond-below(sm) {
+      font-size: var(--font-size-base);
+    }
+  }
+
+  &__metric-sub {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__caption {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+}

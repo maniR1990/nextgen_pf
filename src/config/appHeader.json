@@ -9,8 +9,7 @@
     { "id": "budget", "label": "Budget", "href": "/dashboard/budget" },
     { "id": "transactions", "label": "Transactions", "href": "/dashboard/transactions" },
     { "id": "goals", "label": "Goals", "href": "/dashboard/goals" },
-    { "id": "reports", "label": "Reports", "href": "/dashboard/reports" },
-    { "id": "settings", "label": "Settings", "href": "/dashboard/settings" }
+    { "id": "reports", "label": "Reports", "href": "/dashboard/reports" }
   ],
   "pulseStrip": {
     "collapseAfterScrollPx": 40,
@@ -77,7 +76,7 @@
       { "id": "transactions", "label": "Transactions", "icon": "receipt-text", "href": "/dashboard/transactions" },
       { "id": "fab", "label": "", "icon": "plus", "isFab": true },
       { "id": "budget", "label": "Budget", "icon": "bar-chart", "href": "/dashboard/budget" },
-      { "id": "settings", "label": "Settings", "icon": "settings", "href": "/dashboard/settings" }
+      { "id": "reports", "label": "Reports", "icon": "pie-chart", "href": "/dashboard/reports" }
     ],
     "fabRadial": {
       "radiusPx": 80,

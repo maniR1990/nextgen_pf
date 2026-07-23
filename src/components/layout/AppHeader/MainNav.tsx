@@ -1,7 +1,7 @@
 'use client';
 
 import type { AppHeaderConfig, AppHeaderNavItem } from '@/lib/schemas/appHeader';
-import { LogOut, Plus, Search, User } from 'lucide-react';
+import { LogOut, Plus, Search, Settings, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -132,6 +132,15 @@ export function MainNav({ brand, items, userInitials, onSearch, onLogTransaction
                   <User size={14} aria-hidden />
                   Profile
                 </button>
+                <Link
+                  href="/dashboard/settings"
+                  className="main-nav__user-menu-item"
+                  role="menuitem"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Settings size={14} aria-hidden />
+                  Settings
+                </Link>
                 <button
                   type="button"
                   className="main-nav__user-menu-item main-nav__user-menu-item--danger"

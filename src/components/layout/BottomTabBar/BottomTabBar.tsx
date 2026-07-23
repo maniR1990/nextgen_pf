@@ -1,7 +1,7 @@
 'use client';
 
 import type { MobileConfig } from '@/lib/schemas/appHeader';
-import { BarChart2, Home, Plus, ReceiptText, Settings, Target, User } from 'lucide-react';
+import { BarChart2, Home, PieChart, Plus, ReceiptText, Target, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -19,7 +19,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   user: <User size={20} aria-hidden />,
   plus: <Plus size={24} aria-hidden />,
   'receipt-text': <ReceiptText size={20} aria-hidden />,
-  settings: <Settings size={20} aria-hidden />,
+  'pie-chart': <PieChart size={20} aria-hidden />,
 };
 
 export function BottomTabBar({ config, onFabAction }: BottomTabBarProps) {
