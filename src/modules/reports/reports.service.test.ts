@@ -1,4 +1,5 @@
 import { BudgetEngineService } from '@/modules/budget-engine';
+import { CategoriesRepository } from '@/modules/categories/categories.repository';
 import { getPeriodTotals } from '@/modules/transactions/period-spend';
 import { TransactionRepository } from '@/modules/transactions/transactions.repository';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,6 +8,7 @@ import { ReportsService } from './reports.service';
 vi.mock('@/modules/budget-engine');
 vi.mock('@/modules/transactions/transactions.repository');
 vi.mock('@/modules/transactions/period-spend');
+vi.mock('@/modules/categories/categories.repository');
 
 function node(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -77,14 +79,17 @@ beforeEach(() => {
   });
   vi.mocked(BudgetEngineService.getMonthlySummary).mockResolvedValue(SUMMARY as never);
   vi.mocked(getPeriodTotals).mockResolvedValue({ totalIncome: 85000 } as never);
+  // Empty flat list by default — collectDescendantIds then resolves each selected id to
+  // just itself, i.e. an exact match, which is what most tests below actually want.
+  vi.mocked(CategoriesRepository.findAccessible).mockResolvedValue([] as never);
 });
 
 describe('ReportsService.getFilteredReport', () => {
-  it('looks up the matching category node for planned when categoryId + month are set', async () => {
+  it('looks up the matching category node for planned when categoryIds + month are set', async () => {
     const result = await ReportsService.getFilteredReport('u1', {
       year: 2026,
       month: 7,
-      categoryId: 'cat1',
+      categoryIds: ['cat1'],
     });
 
     expect(result.planned).toBe(5000);
@@ -108,7 +113,7 @@ describe('ReportsService.getFilteredReport', () => {
     const result = await ReportsService.getFilteredReport('u1', {
       year: 2026,
       month: 7,
-      categoryId: 'child',
+      categoryIds: ['child'],
     });
 
     expect(result.planned).toBe(300);
@@ -154,7 +159,7 @@ describe('ReportsService.getFilteredReport', () => {
     const result = await ReportsService.getFilteredReport('u1', {
       year: 2026,
       month: 7,
-      categoryId: 'does-not-exist',
+      categoryIds: ['does-not-exist'],
     });
 
     expect(result.planned).toBe(0);
@@ -175,44 +180,6 @@ describe('ReportsService.getFilteredReport', () => {
     expect(result.recurringActual).toBe(0);
   });
 
-  it('compares actual against the same filters for the prior calendar month', async () => {
-    vi.mocked(TransactionRepository.sumFiltered).mockImplementation(async (_userId, filters) => {
-      if (filters.month === 6) return { actual: 3500, count: 4, recurringActual: 0 };
-      return { actual: 4200, count: 6, recurringActual: 1500 };
-    });
-
-    const result = await ReportsService.getFilteredReport('u1', { year: 2026, month: 7 });
-
-    expect(result.previousActual).toBe(3500);
-    // (4200 - 3500) / 3500 * 100 = 20%
-    expect(result.previousChangePct).toBe(20);
-  });
-
-  it('rolls a January query back to December of the prior year for the trend comparison', async () => {
-    vi.mocked(TransactionRepository.sumFiltered).mockImplementation(async (_userId, filters) => {
-      if (filters.year === 2025 && filters.month === 12) {
-        return { actual: 1000, count: 1, recurringActual: 0 };
-      }
-      return { actual: 4200, count: 6, recurringActual: 1500 };
-    });
-
-    const result = await ReportsService.getFilteredReport('u1', { year: 2026, month: 1 });
-
-    expect(result.previousActual).toBe(1000);
-  });
-
-  it('has no previous-period baseline the first time a filter combo is ever used', async () => {
-    vi.mocked(TransactionRepository.sumFiltered).mockImplementation(async (_userId, filters) => {
-      if (filters.month === 6) return { actual: 0, count: 0, recurringActual: 0 };
-      return { actual: 4200, count: 6, recurringActual: 1500 };
-    });
-
-    const result = await ReportsService.getFilteredReport('u1', { year: 2026, month: 7 });
-
-    expect(result.previousActual).toBe(0);
-    expect(result.previousChangePct).toBeNull();
-  });
-
   it("computes pctOfIncome from that month's total income", async () => {
     vi.mocked(getPeriodTotals).mockResolvedValue({ totalIncome: 20000 } as never);
 
@@ -227,13 +194,121 @@ describe('ReportsService.getFilteredReport', () => {
     expect(result.incomeForPeriod).toBe(20000);
   });
 
-  it('leaves previousActual and pctOfIncome null for an all-time query', async () => {
+  it('leaves pctOfIncome and incomeForPeriod null for an all-time query', async () => {
     const result = await ReportsService.getFilteredReport('u1', {});
 
-    expect(result.previousActual).toBeNull();
-    expect(result.previousChangePct).toBeNull();
     expect(result.pctOfIncome).toBeNull();
     expect(result.incomeForPeriod).toBeNull();
     expect(getPeriodTotals).not.toHaveBeenCalled();
+  });
+
+  it('expands a selected parent category to include every descendant when computing actual', async () => {
+    vi.mocked(CategoriesRepository.findAccessible).mockResolvedValue([
+      { id: 'groceries', parentId: null },
+      { id: 'supermarket', parentId: 'groceries' },
+      { id: 'local-market', parentId: 'groceries' },
+      { id: 'unrelated', parentId: null },
+    ] as never);
+
+    await ReportsService.getFilteredReport('u1', {
+      year: 2026,
+      month: 7,
+      categoryIds: ['groceries'],
+    });
+
+    const call = vi.mocked(TransactionRepository.sumFiltered).mock.calls[0]!;
+    expect(call[1].categoryIds).toEqual(
+      expect.arrayContaining(['groceries', 'supermarket', 'local-market']),
+    );
+    expect(call[1].categoryIds).toHaveLength(3);
+  });
+
+  it('unions descendant ids across several selected categories, e.g. Groceries + Household', async () => {
+    vi.mocked(CategoriesRepository.findAccessible).mockResolvedValue([
+      { id: 'groceries', parentId: null },
+      { id: 'supermarket', parentId: 'groceries' },
+      { id: 'household', parentId: null },
+      { id: 'cleaning-supplies', parentId: 'household' },
+    ] as never);
+
+    await ReportsService.getFilteredReport('u1', {
+      year: 2026,
+      month: 7,
+      categoryIds: ['groceries', 'household'],
+    });
+
+    const call = vi.mocked(TransactionRepository.sumFiltered).mock.calls[0]!;
+    expect(call[1].categoryIds).toEqual(
+      expect.arrayContaining(['groceries', 'supermarket', 'household', 'cleaning-supplies']),
+    );
+    expect(call[1].categoryIds).toHaveLength(4);
+  });
+
+  it('sums planned across every selected root category', async () => {
+    const nested = {
+      ...SUMMARY,
+      groups: [
+        {
+          ...SUMMARY.groups[0],
+          categories: [
+            node({ id: 'groceries', name: 'Groceries', planned: 5000 }),
+            node({ id: 'household', name: 'Household', planned: 2000 }),
+          ],
+        },
+      ],
+    };
+    vi.mocked(BudgetEngineService.getMonthlySummary).mockResolvedValue(nested as never);
+
+    const result = await ReportsService.getFilteredReport('u1', {
+      year: 2026,
+      month: 7,
+      categoryIds: ['groceries', 'household'],
+    });
+
+    expect(result.planned).toBe(7000);
+  });
+
+  it('does not double-count planned when both a parent and its own child are selected', async () => {
+    // Belt-and-suspenders test for the API being reachable directly, bypassing the
+    // picker's own ancestor/descendant exclusion — "groceries" (parent) and
+    // "supermarket" (its child) selected together should sum only groceries' already
+    // rolled-up planned amount, not both.
+    vi.mocked(CategoriesRepository.findAccessible).mockResolvedValue([
+      { id: 'groceries', parentId: null },
+      { id: 'supermarket', parentId: 'groceries' },
+    ] as never);
+    const nested = {
+      ...SUMMARY,
+      groups: [
+        {
+          ...SUMMARY.groups[0],
+          categories: [
+            node({
+              id: 'groceries',
+              name: 'Groceries',
+              planned: 5000,
+              children: [node({ id: 'supermarket', name: 'Supermarket', planned: 3000 })],
+            }),
+          ],
+        },
+      ],
+    };
+    vi.mocked(BudgetEngineService.getMonthlySummary).mockResolvedValue(nested as never);
+
+    const result = await ReportsService.getFilteredReport('u1', {
+      year: 2026,
+      month: 7,
+      categoryIds: ['groceries', 'supermarket'],
+    });
+
+    // Not 5000 + 3000 = 8000 — "supermarket" is dropped as redundant once "groceries"
+    // (its ancestor) is also selected, since groceries' own .planned already includes it.
+    expect(result.planned).toBe(5000);
+  });
+
+  it('does not resolve descendants at all when no category is selected', async () => {
+    await ReportsService.getFilteredReport('u1', { year: 2026, month: 7 });
+
+    expect(CategoriesRepository.findAccessible).not.toHaveBeenCalled();
   });
 });

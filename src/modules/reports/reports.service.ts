@@ -1,5 +1,7 @@
 import { BudgetEngineService } from '@/modules/budget-engine';
 import type { BudgetCategoryNode } from '@/modules/budget-engine/budget-engine.types';
+import { CategoriesRepository } from '@/modules/categories/categories.repository';
+import { collectDescendantIds, isDescendant } from '@/modules/categories/lib/category-tree';
 import { getPeriodTotals } from '@/modules/transactions/period-spend';
 import { TransactionRepository } from '@/modules/transactions/transactions.repository';
 import type { ReportFilterQuery } from './reports.schema';
@@ -23,12 +25,6 @@ export interface ReportFilterResult {
   planned: number | null;
   variance: number | null;
   pctOfPlanned: number | null;
-  /** Same filters, previous calendar month. null for an "all time" query — there's no
-   *  single previous period to compare against. */
-  previousActual: number | null;
-  /** (actual - previousActual) / previousActual * 100, one decimal. null when there's
-   *  no previous-period baseline to compare against (previousActual is null or 0). */
-  previousChangePct: number | null;
   /** actual as a % of that month's total income — the "share of income" / savings-rate
    *  figure a financial review actually cares about, not just a raw rupee total. Null
    *  for an "all time" query (no single month's income to divide by) or when that
@@ -45,10 +41,30 @@ export const ReportsService = {
     userId: string,
     filters: ReportFilterQuery,
   ): Promise<ReportFilterResult> {
-    const { actual, count, recurringActual } = await TransactionRepository.sumFiltered(
-      userId,
-      filters,
-    );
+    // A selected category almost never has transactions tagged with its own id directly
+    // — real spend lives on the leaf categories underneath it ("Groceries" itself is
+    // rarely picked at entry time; "Supermarket" under it is). So picking "Groceries" in
+    // a report has to mean "Groceries + everything under it," not an exact-id match —
+    // and picking several categories at once (e.g. "Groceries" + "Household") unions
+    // each one's own subtree together.
+    let categoryIds: string[] | undefined;
+    let flatCategories: Awaited<ReturnType<typeof CategoriesRepository.findAccessible>> | undefined;
+    if (filters.categoryIds && filters.categoryIds.length > 0) {
+      flatCategories = await CategoriesRepository.findAccessible(userId, {});
+      const expanded = new Set<string>();
+      for (const rootId of filters.categoryIds) {
+        for (const id of collectDescendantIds(flatCategories, rootId)) expanded.add(id);
+      }
+      categoryIds = Array.from(expanded);
+    }
+
+    const { actual, count, recurringActual } = await TransactionRepository.sumFiltered(userId, {
+      year: filters.year,
+      month: filters.month,
+      type: filters.type,
+      accountId: filters.accountId,
+      categoryIds,
+    });
 
     let planned: number | null = null;
     if (filters.year !== undefined && filters.month !== undefined && !filters.accountId) {
@@ -57,8 +73,23 @@ export const ReportsService = {
         filters.year,
         filters.month,
       );
-      if (filters.categoryId) {
-        planned = findNode(summary.groups.flatMap((g) => g.categories), filters.categoryId)?.planned ?? 0;
+      if (filters.categoryIds && filters.categoryIds.length > 0 && flatCategories) {
+        // Each selected id's own `.planned` is already the budget-engine's rolled-up sum
+        // for that node's whole subtree — summing per selected root (not per expanded
+        // descendant) avoids double-counting a child that's also inside a selected
+        // parent's rollup. The picker already prevents selecting a category alongside its
+        // own ancestor/descendant, but the API is reachable directly too, so this drops
+        // any selected id that's covered by another selected id before summing — defense
+        // in depth, not just a UI nicety.
+        const roots = filters.categoryIds;
+        const independentIds = roots.filter(
+          (id) => !roots.some((other) => other !== id && isDescendant(flatCategories!, other, id)),
+        );
+        const allNodes = summary.groups.flatMap((g) => g.categories);
+        planned = independentIds.reduce(
+          (sum, id) => sum + (findNode(allNodes, id)?.planned ?? 0),
+          0,
+        );
       } else if (filters.type) {
         planned = summary.groups
           .filter((g) => g.type === filters.type)
@@ -71,32 +102,11 @@ export const ReportsService = {
     const variance = planned !== null ? actual - planned : null;
     const pctOfPlanned = planned !== null && planned > 0 ? Math.round((actual / planned) * 100) : null;
 
-    let previousActual: number | null = null;
-    let previousChangePct: number | null = null;
     let pctOfIncome: number | null = null;
     let incomeForPeriod: number | null = null;
 
     if (filters.year !== undefined && filters.month !== undefined) {
-      // JS Date rolls a month index of -1 back into December of the prior year, so this
-      // works correctly across a January boundary without a separate branch.
-      const prevDate = new Date(filters.year, filters.month - 2, 1);
-      const prevYear = prevDate.getFullYear();
-      const prevMonth = prevDate.getMonth() + 1;
-
-      const [prev, periodTotals] = await Promise.all([
-        TransactionRepository.sumFiltered(userId, {
-          ...filters,
-          year: prevYear,
-          month: prevMonth,
-        }),
-        getPeriodTotals(userId, filters.year, filters.month),
-      ]);
-
-      previousActual = prev.actual;
-      previousChangePct =
-        previousActual > 0
-          ? Math.round(((actual - previousActual) / previousActual) * 1000) / 10
-          : null;
+      const periodTotals = await getPeriodTotals(userId, filters.year, filters.month);
       pctOfIncome =
         periodTotals.totalIncome > 0
           ? Math.round((actual / periodTotals.totalIncome) * 1000) / 10
@@ -111,8 +121,6 @@ export const ReportsService = {
       planned,
       variance,
       pctOfPlanned,
-      previousActual,
-      previousChangePct,
       pctOfIncome,
       incomeForPeriod,
     };

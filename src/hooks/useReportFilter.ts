@@ -5,7 +5,7 @@ import { queryKeys } from '@/lib/query/queryKeys';
 import { useQuery } from '@tanstack/react-query';
 
 export interface ReportFilterParams {
-  categoryId?: string;
+  categoryIds?: string[];
   type?: string;
   accountId?: string;
   year?: number;
@@ -20,15 +20,15 @@ export interface ReportFilterResult {
   planned: number | null;
   variance: number | null;
   pctOfPlanned: number | null;
-  previousActual: number | null;
-  previousChangePct: number | null;
   pctOfIncome: number | null;
   incomeForPeriod: number | null;
 }
 
 function buildQuery(params: ReportFilterParams): string {
   const sp = new URLSearchParams();
-  if (params.categoryId) sp.set('categoryId', params.categoryId);
+  if (params.categoryIds && params.categoryIds.length > 0) {
+    sp.set('categoryIds', params.categoryIds.join(','));
+  }
   if (params.type) sp.set('type', params.type);
   if (params.accountId) sp.set('accountId', params.accountId);
   if (params.year !== undefined && params.month !== undefined) {

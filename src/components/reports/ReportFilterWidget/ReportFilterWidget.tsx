@@ -1,10 +1,10 @@
 'use client';
 
-import { CategoryPicker } from '@/components/common/CategoryPicker';
 import { useFormOptions } from '@/components/common/TransactionDialog/hooks/useFormOptions';
 import { useReportFilter } from '@/hooks/useReportFilter';
 import { formatINR } from '@/lib/utils/format';
 import { useEffect, useMemo, useState } from 'react';
+import { CategoryMultiSelect } from './CategoryMultiSelect';
 
 const TYPE_OPTIONS = [
   { value: 'all', label: 'All types' },
@@ -45,21 +45,6 @@ function ratioLabel(type: string): string {
   return 'Spent from income';
 }
 
-// Plain rupee comparison instead of a percentage — "23% more" asks the reader to do
-// math in their head; "₹1,650 more than last month" is the actual answer already.
-function trendText(actual: number, previousActual: number): string {
-  const diff = actual - previousActual;
-  if (diff === 0) return 'Same as last month';
-  return `${formatINR(Math.abs(diff))} ${diff > 0 ? 'more' : 'less'} than last month`;
-}
-
-function trendColor(type: string, actual: number, previousActual: number): string | undefined {
-  if (actual === previousActual) return undefined;
-  const increaseIsGood = type === 'INCOME' || type === 'INVESTMENT';
-  const increased = actual > previousActual;
-  return increased === increaseIsGood ? 'var(--color-success)' : 'var(--color-error)';
-}
-
 function buildMonthOptions() {
   const now = new Date();
   const options: { value: string; label: string }[] = [];
@@ -74,22 +59,36 @@ function buildMonthOptions() {
   return options;
 }
 
-const DEFAULT_CATEGORY = 'all';
 const DEFAULT_TYPE = 'all';
 const DEFAULT_ACCOUNT = 'all';
 
 export function ReportFilterWidget() {
-  const { categories, sources } = useFormOptions();
+  const { reportCategories, sources } = useFormOptions();
   const monthOptions = useMemo(buildMonthOptions, []);
   const defaultMonth = monthOptions[0]!.value;
+  const defaultParamsKey = `|${DEFAULT_TYPE}|${DEFAULT_ACCOUNT}|${defaultMonth}`;
 
-  const [categoryId, setCategoryId] = useState(DEFAULT_CATEGORY);
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [type, setType] = useState(DEFAULT_TYPE);
   const [accountId, setAccountId] = useState(DEFAULT_ACCOUNT);
   const [month, setMonth] = useState(defaultMonth);
 
+  // Sorted so picking two categories in either order still counts as the same filter
+  // combo — otherwise toggling them off and back on in a different order would falsely
+  // read as "changed" even though nothing about the query actually did.
+  const categoryIdsKey = [...categoryIds].sort().join(',');
+
+  // What's actually on screen right now — the filter combo the last "Check total" (or
+  // Reset, or the initial auto-check) actually ran with. Diverges from the live filter
+  // state the moment the user touches a dropdown, and that divergence is exactly the
+  // signal used below to hide the now-unrelated numbers instead of leaving them up
+  // looking like they answer a question the user hasn't asked yet.
+  const [checkedParamsKey, setCheckedParamsKey] = useState(defaultParamsKey);
+  const currentParamsKey = `${categoryIdsKey}|${type}|${accountId}|${month}`;
+  const isStale = currentParamsKey !== checkedParamsKey;
+
   const isDirty =
-    categoryId !== DEFAULT_CATEGORY ||
+    categoryIds.length > 0 ||
     type !== DEFAULT_TYPE ||
     accountId !== DEFAULT_ACCOUNT ||
     month !== defaultMonth;
@@ -98,7 +97,7 @@ export function ReportFilterWidget() {
     month === 'all' ? [undefined, undefined] : month.split('-').map(Number);
 
   const { data, isFetching, refetch, isFetched } = useReportFilter({
-    categoryId: categoryId === 'all' ? undefined : categoryId,
+    categoryIds: categoryIds.length > 0 ? categoryIds : undefined,
     type: type === 'all' ? undefined : type,
     accountId: accountId === 'all' ? undefined : accountId,
     year,
@@ -114,11 +113,20 @@ export function ReportFilterWidget() {
     refetch();
   }, []);
 
+  function handleCheck() {
+    setCheckedParamsKey(currentParamsKey);
+    refetch();
+  }
+
   function handleReset() {
-    setCategoryId(DEFAULT_CATEGORY);
+    setCategoryIds([]);
     setType(DEFAULT_TYPE);
     setAccountId(DEFAULT_ACCOUNT);
     setMonth(defaultMonth);
+    // Mark the defaults as "checked" immediately, not after the deferred refetch below
+    // resolves — otherwise the result briefly (and wrongly) reads as stale right after
+    // a reset, which is the one moment it's guaranteed not to be.
+    setCheckedParamsKey(defaultParamsKey);
     // Re-check immediately with the restored defaults — a reset that leaves stale
     // results on screen from the filters you just cleared isn't actually a reset.
     setTimeout(() => refetch(), 0);
@@ -138,12 +146,12 @@ export function ReportFilterWidget() {
     <section className="report-filter-widget" aria-label="Filter transactions">
       <div className="report-filter-widget__row">
         <div className="report-filter-widget__field report-filter-widget__field--category">
-          <CategoryPicker
-            label="Category"
-            options={categories}
-            value={categoryId === 'all' ? null : categoryId}
-            onChange={(id) => setCategoryId(id ?? 'all')}
+          <CategoryMultiSelect
+            options={reportCategories}
+            value={categoryIds}
+            onChange={setCategoryIds}
             placeholder="All categories"
+            ariaLabel="Category"
           />
         </div>
 
@@ -190,7 +198,7 @@ export function ReportFilterWidget() {
         <button
           type="button"
           className="btn btn--primary btn--sm report-filter-widget__action-btn"
-          onClick={() => refetch()}
+          onClick={handleCheck}
           disabled={isFetching}
         >
           {isFetching ? 'Checking…' : 'Check total'}
@@ -206,7 +214,11 @@ export function ReportFilterWidget() {
         </button>
       </div>
 
-      {noMatches ? (
+      {isStale ? (
+        <p className="report-filter-widget__empty">
+          Filters changed — press Check total to see updated results.
+        </p>
+      ) : noMatches ? (
         <p className="report-filter-widget__empty">No transactions match these filters.</p>
       ) : (
         data && (
@@ -223,14 +235,6 @@ export function ReportFilterWidget() {
                 <span className="report-filter-widget__metric-value">
                   {formatINR(data.actual)}
                 </span>
-                {data.previousActual !== null && (
-                  <span
-                    className="report-filter-widget__metric-sub"
-                    style={{ color: trendColor(type, data.actual, data.previousActual) }}
-                  >
-                    {trendText(data.actual, data.previousActual)}
-                  </span>
-                )}
               </div>
               <div className="report-filter-widget__metric">
                 <span className="report-filter-widget__metric-label">Variance</span>

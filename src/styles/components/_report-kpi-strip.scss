@@ -37,8 +37,8 @@
 .report-kpi-strip__cell {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1-5);
-  padding: var(--space-4) var(--space-4);
+  gap: var(--space-1);
+  padding: var(--space-2-5) var(--space-3);
   border-right: 1px solid var(--color-border);
   min-width: 0;
 
@@ -48,7 +48,7 @@
 
   // 2-column layout: remove right border on even cells, add bottom border on non-last rows
   @include m.respond-below(md) {
-    padding: var(--space-3);
+    padding: var(--space-2) var(--space-2-5);
     border-bottom: 1px solid var(--color-border);
 
     &:nth-child(even) {
@@ -96,7 +96,7 @@
 // ─── Value ────────────────────────────────────────────────────────────────────
 
 .report-kpi-strip__value {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-variation-bold);
   color: var(--color-text);
   line-height: 1.15;
@@ -112,13 +112,13 @@
   }
 
   @include m.respond-below(md) {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-base);
   }
 
-  // Deliberately NOT upsized back to xl here (unlike before) — on a horizontal-scroll
+  // Deliberately NOT upsized back to lg here (unlike before) — on a horizontal-scroll
   // strip every pixel of height matters more than on a stacked single column.
   @include m.respond-below(sm) {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
   }
 }
 
@@ -129,10 +129,22 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-1);
-  min-height: 20px;
+  min-height: 16px;
 
   @include m.respond-below(sm) {
     min-height: 0;
+  }
+
+  // Scoped to this strip only — the shared Badge/Chip default padding reads fine as a
+  // standalone control, but stacked inside an already-compact KPI cell it's the biggest
+  // remaining source of bulk.
+  .badge,
+  .chip {
+    --comp-badge-padding-x: var(--space-2);
+    --comp-badge-padding-y: var(--space-0-5);
+    --comp-chip-padding-x: var(--space-2);
+    --comp-chip-padding-y: var(--space-0-5);
+    font-size: var(--font-size-xs);
   }
 }
 
@@ -151,7 +163,7 @@
 
 .report-kpi-strip--loading {
   .report-kpi-strip__cell {
-    gap: var(--space-2);
-    padding-block: var(--space-4);
+    gap: var(--space-1-5);
+    padding-block: var(--space-2-5);
   }
 }

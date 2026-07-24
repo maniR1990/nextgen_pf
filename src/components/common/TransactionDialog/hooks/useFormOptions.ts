@@ -13,6 +13,7 @@ import type { CategoryTreeNode } from '@/modules/categories/categories.types';
 import {
   buildPickerGroups,
   mapCategoryTreeToPickerOptions,
+  mapCategoryTreeToReportPickerOptions,
 } from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import { useQuery } from '@tanstack/react-query';
@@ -26,6 +27,9 @@ export interface FormOptions {
   categories: FormCategoryOption[];
   /** Optional — if omitted the hook derives groups from the tree query. */
   categoryGroups?: PickerGroup[];
+  /** Optional — every category is selectable (including parents with children), for
+   *  report filtering rather than transaction entry. If omitted the hook derives it. */
+  reportCategories?: FormCategoryOption[];
   sinkingFunds: FormSinkingFundOption[];
 }
 
@@ -90,10 +94,19 @@ export function useFormOptions(initialData?: FormOptions) {
     [treeQuery.data, initialData?.categoryGroups],
   );
 
+  const reportCategories = useMemo(
+    () =>
+      treeQuery.data
+        ? mapCategoryTreeToReportPickerOptions(treeQuery.data)
+        : (initialData?.reportCategories ?? []),
+    [treeQuery.data, initialData?.reportCategories],
+  );
+
   return {
     sources: sources.data ?? [],
     categories,
     categoryGroups,
+    reportCategories,
     sinkingFunds: sinkingFunds.data ?? [],
     isLoading: sources.isLoading || treeQuery.isLoading || sinkingFunds.isLoading,
     isError: sources.isError || treeQuery.isError || sinkingFunds.isError,

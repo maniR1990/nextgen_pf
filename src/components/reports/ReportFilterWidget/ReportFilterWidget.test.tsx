@@ -26,6 +26,18 @@ function mockFormOptions() {
     sources: [{ id: 'acc1', name: 'HDFC Savings', type: 'BANK_SAVINGS', currentBalance: 0 }],
     categories: [{ id: 'cat1', label: 'Groceries', depth: 1, type: 'EXPENSE' }],
     categoryGroups: [],
+    reportCategories: [
+      { id: 'cat1', label: 'Groceries', depth: 1, type: 'EXPENSE', parentId: null },
+      { id: 'cat2', label: 'Household', depth: 1, type: 'EXPENSE', parentId: null },
+      {
+        id: 'cat1a',
+        label: 'Supermarket',
+        parentLabel: 'Groceries',
+        depth: 2,
+        type: 'EXPENSE',
+        parentId: 'cat1',
+      },
+    ],
     sinkingFunds: [],
     isLoading: false,
     isError: false,
@@ -73,8 +85,6 @@ describe('ReportFilterWidget', () => {
       planned: 0,
       variance: 0,
       pctOfPlanned: null,
-      previousActual: null,
-      previousChangePct: null,
       pctOfIncome: null,
       incomeForPeriod: null,
     });
@@ -92,8 +102,6 @@ describe('ReportFilterWidget', () => {
       planned: 8000,
       variance: 650,
       pctOfPlanned: 108,
-      previousActual: null,
-      previousChangePct: null,
       pctOfIncome: null,
       incomeForPeriod: null,
     });
@@ -114,8 +122,6 @@ describe('ReportFilterWidget', () => {
       planned: null,
       variance: null,
       pctOfPlanned: null,
-      previousActual: null,
-      previousChangePct: null,
       pctOfIncome: null,
       incomeForPeriod: null,
     });
@@ -125,7 +131,7 @@ describe('ReportFilterWidget', () => {
     expect(naValues).toHaveLength(2);
   });
 
-  it('shows the vs-last-month trend and the income-ratio card when a specific month is set', () => {
+  it('shows the income-ratio card when a specific month is set, and nothing about other months', () => {
     mockFormOptions();
     mockResult({
       actual: 8650,
@@ -134,16 +140,14 @@ describe('ReportFilterWidget', () => {
       planned: 8000,
       variance: 650,
       pctOfPlanned: 108,
-      previousActual: 7000,
-      previousChangePct: 23.6,
       pctOfIncome: 10.2,
       incomeForPeriod: 85000,
     });
     render(<ReportFilterWidget />);
 
-    expect(screen.getByText('₹1,650 more than last month')).toBeInTheDocument();
     expect(screen.getByText('₹8,650 / ₹85,000')).toBeInTheDocument();
     expect(screen.getByText('Spent from income')).toBeInTheDocument();
+    expect(screen.queryByText(/last month/i)).not.toBeInTheDocument();
   });
 
   it('labels the actual/ratio cards for Income and Investment differently than Expense', async () => {
@@ -155,8 +159,6 @@ describe('ReportFilterWidget', () => {
       planned: 20000,
       variance: 0,
       pctOfPlanned: 100,
-      previousActual: 15000,
-      previousChangePct: 33.3,
       pctOfIncome: 24,
       incomeForPeriod: 83333,
     });
@@ -164,6 +166,7 @@ describe('ReportFilterWidget', () => {
     render(<ReportFilterWidget />);
 
     await user.selectOptions(screen.getByLabelText('Transaction type'), 'INVESTMENT');
+    await user.click(screen.getByRole('button', { name: /check total/i }));
 
     expect(screen.getByText('Actual invested')).toBeInTheDocument();
     expect(screen.getByText('Invested from income')).toBeInTheDocument();
@@ -214,6 +217,114 @@ describe('ReportFilterWidget', () => {
     await user.click(screen.getByRole('button', { name: /clear selection/i }));
 
     expect(screen.getByLabelText('Category')).toHaveTextContent('All categories');
+  });
+
+  it('lets the user select several categories together, e.g. Groceries and Household', async () => {
+    mockFormOptions();
+    mockResult(undefined);
+    const user = userEvent.setup();
+    render(<ReportFilterWidget />);
+
+    await user.click(screen.getByLabelText('Category'));
+    await user.click(screen.getByRole('option', { name: 'Groceries' }));
+    await user.click(screen.getByRole('option', { name: 'Household' }));
+
+    expect(screen.getByLabelText('Category')).toHaveTextContent('Groceries +1 more');
+
+    const groceriesOption = screen.getByRole('option', { name: 'Groceries' });
+    const householdOption = screen.getByRole('option', { name: 'Household' });
+    expect(groceriesOption).toHaveAttribute('aria-selected', 'true');
+    expect(householdOption).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('hides a category once its parent is selected, since the parent already covers it', async () => {
+    mockFormOptions();
+    mockResult(undefined);
+    const user = userEvent.setup();
+    render(<ReportFilterWidget />);
+
+    await user.click(screen.getByLabelText('Category'));
+    expect(screen.getByRole('option', { name: 'Supermarket' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('option', { name: 'Groceries' }));
+
+    expect(screen.queryByRole('option', { name: 'Supermarket' })).not.toBeInTheDocument();
+    // The other, unrelated top-level category stays fully pickable.
+    expect(screen.getByRole('option', { name: 'Household' })).toBeInTheDocument();
+  });
+
+  it("hides a category's parent once the category itself is selected, in either order", async () => {
+    mockFormOptions();
+    mockResult(undefined);
+    const user = userEvent.setup();
+    render(<ReportFilterWidget />);
+
+    await user.click(screen.getByLabelText('Category'));
+    await user.click(screen.getByRole('option', { name: 'Supermarket' }));
+
+    expect(screen.queryByRole('option', { name: 'Groceries' })).not.toBeInTheDocument();
+  });
+
+  it('hides a stale result the moment a filter changes, instead of leaving mismatched numbers on screen', async () => {
+    mockFormOptions();
+    mockResult({
+      actual: 8650,
+      count: 3,
+      recurringActual: 1500,
+      planned: 8000,
+      variance: 650,
+      pctOfPlanned: 108,
+      pctOfIncome: null,
+      incomeForPeriod: null,
+    });
+    const user = userEvent.setup();
+    render(<ReportFilterWidget />);
+
+    expect(screen.getByText('₹8,650')).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText('Transaction type'), 'EXPENSE');
+
+    expect(screen.queryByText('₹8,650')).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Filters changed — press Check total to see updated results.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the result again once Check total is pressed after a filter change', async () => {
+    mockFormOptions();
+    mockResult({
+      actual: 8650,
+      count: 3,
+      recurringActual: 1500,
+      planned: 8000,
+      variance: 650,
+      pctOfPlanned: 108,
+      pctOfIncome: null,
+      incomeForPeriod: null,
+    });
+    const user = userEvent.setup();
+    render(<ReportFilterWidget />);
+
+    await user.selectOptions(screen.getByLabelText('Transaction type'), 'EXPENSE');
+    expect(screen.queryByText('₹8,650')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /check total/i }));
+
+    expect(screen.getByText('₹8,650')).toBeInTheDocument();
+  });
+
+  it('does not show the stale-filters prompt right after Reset, since defaults are freshly checked', async () => {
+    mockFormOptions();
+    mockResult(undefined);
+    const user = userEvent.setup();
+    render(<ReportFilterWidget />);
+
+    await user.selectOptions(screen.getByLabelText('Transaction type'), 'EXPENSE');
+    await user.click(screen.getByRole('button', { name: /reset/i }));
+
+    expect(
+      screen.queryByText('Filters changed — press Check total to see updated results.'),
+    ).not.toBeInTheDocument();
   });
 
   it('lets the user search categories by typing, not just scroll a long list', async () => {

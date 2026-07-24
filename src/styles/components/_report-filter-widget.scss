@@ -15,30 +15,41 @@
     flex-wrap: wrap;
     align-items: stretch;
     gap: var(--space-2);
+
+    @include m.respond-below(sm) {
+      gap: var(--space-1-5);
+    }
   }
 
   &__field {
     flex: 1 1 150px;
     min-width: 0;
     width: 100%;
+
+    // Scoped shrink of the shared input control for this widget only — the component's
+    // own default size stays roomier everywhere else in the app; this is the one spot
+    // cramming 4 controls + 2 buttons into a single mobile-width row. The <select> here
+    // carries both classes itself (no descendant relationship), hence the `&`.
+    @include m.respond-below(sm) {
+      &.input-field__control {
+        min-height: var(--space-9);
+        padding: var(--space-1-5) var(--space-2);
+        font-size: var(--font-size-sm);
+      }
+    }
   }
 
   &__field--category {
     flex-basis: 200px;
 
-    // Keeps the picker's accessible label (for screen readers and label-based test
-    // queries) without showing visible text — none of the sibling native selects show
-    // a visible label either, just an aria-label, so this stays visually consistent.
-    .cat-picker__label {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
+    // CategoryMultiSelect's trigger IS a true descendant of this wrapper div, unlike the
+    // native <select>s above, so this one stays a descendant selector.
+    @include m.respond-below(sm) {
+      .cat-multiselect__trigger {
+        min-height: var(--space-9);
+        padding: var(--space-1-5) var(--space-2);
+        font-size: var(--font-size-sm);
+      }
     }
   }
 
@@ -47,6 +58,12 @@
 
     @include m.respond-below(sm) {
       flex: 1 1 auto;
+
+      // Compound selector (two classes) so this reliably beats .btn--sm's own padding
+      // regardless of stylesheet import order, rather than fighting a specificity tie.
+      &.btn--sm {
+        --btn-padding: var(--space-1) var(--space-2);
+      }
     }
   }
 
@@ -83,6 +100,7 @@
   &__metric-label {
     font-size: var(--font-size-xs);
     font-weight: var(--font-variation-semibold);
+    line-height: 1.3;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--color-text-muted);
@@ -94,23 +112,26 @@
   &__metric-value {
     font-size: var(--font-size-xl);
     font-weight: var(--font-variation-semibold);
+    line-height: 1.2;
     color: var(--color-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 
     @include m.respond-below(sm) {
-      font-size: var(--font-size-base);
+      font-size: var(--font-size-sm);
     }
   }
 
   &__metric-sub {
     font-size: var(--font-size-xs);
+    line-height: 1.3;
     color: var(--color-text-muted);
   }
 
   &__caption {
     font-size: var(--font-size-sm);
+    line-height: 1.4;
     color: var(--color-text-muted);
     margin: 0;
   }

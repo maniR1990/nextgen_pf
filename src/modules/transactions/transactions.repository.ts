@@ -197,7 +197,9 @@ export const TransactionRepository = {
     filters: {
       year?: number;
       month?: number;
-      categoryId?: string;
+      /** Already expanded to include descendant category ids by the caller — see
+       *  ReportsService.getFilteredReport. A plain `{ in: [...] }` match here. */
+      categoryIds?: string[];
       type?: TxType;
       accountId?: string;
     },
@@ -210,7 +212,8 @@ export const TransactionRepository = {
           budgetPeriodYear: filters.year,
           budgetPeriodMonth: filters.month,
         }),
-      ...(filters.categoryId && { categoryId: filters.categoryId }),
+      ...(filters.categoryIds &&
+        filters.categoryIds.length > 0 && { categoryId: { in: filters.categoryIds } }),
       ...(filters.type && { type: filters.type as never }),
       ...(filters.accountId && { accountId: filters.accountId }),
     };

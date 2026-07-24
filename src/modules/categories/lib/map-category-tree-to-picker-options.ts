@@ -5,6 +5,11 @@ export interface CategoryPickerFlatOption {
   id: string;
   label: string;
   parentLabel?: string;
+  /** The category's actual parent id (not just its display name) — name alone can't
+   *  answer "is A an ancestor/descendant of B" reliably (names aren't guaranteed unique
+   *  across different branches of the tree). Used by the report multi-select to prevent
+   *  selecting a category together with one of its own ancestors or descendants. */
+  parentId: string | null;
   depth: number;
   type: string;
   icon?: string;
@@ -53,6 +58,7 @@ function pushOption(
     id: node.id,
     label: node.name,
     parentLabel,
+    parentId: node.parentId,
     depth,
     type: fromCategoryFlowType(node.type),
     icon: node.icon ?? undefined,
@@ -87,6 +93,40 @@ export function mapCategoryTreeToPickerOptions(
 ): CategoryPickerFlatOption[] {
   const options: CategoryPickerFlatOption[] = [];
   walkTree(nodes, options);
+  return options;
+}
+
+// Reporting needs the opposite bias from transaction entry: entry wants only leaf
+// categories (you log a purchase as "Supermarket", never the broad "Groceries" bucket),
+// but a report needs to let someone pick "Groceries" itself and see every subcategory's
+// spend rolled into it. So an L1 node is always selectable here, whether or not it has
+// children — and if it does, its children stay individually selectable too.
+function walkTreeForReports(
+  nodes: CategoryTreeNode[],
+  options: CategoryPickerFlatOption[],
+  groupName?: string,
+  categoryName?: string,
+) {
+  for (const node of nodes) {
+    if (node.level === 0) {
+      walkTreeForReports(node.children, options, node.name);
+    } else if (node.level === 1) {
+      pushOption(options, node, groupName, 1);
+      if (node.children.length > 0) {
+        walkTreeForReports(node.children, options, groupName, node.name);
+      }
+    } else if (node.level === 2) {
+      pushOption(options, node, categoryName, 2);
+    }
+  }
+}
+
+/** Flatten category tree for report filtering — every level is selectable, not leaf-only. */
+export function mapCategoryTreeToReportPickerOptions(
+  nodes: CategoryTreeNode[],
+): CategoryPickerFlatOption[] {
+  const options: CategoryPickerFlatOption[] = [];
+  walkTreeForReports(nodes, options);
   return options;
 }
 
