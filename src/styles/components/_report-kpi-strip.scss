@@ -137,13 +137,20 @@
 
   // Scoped to this strip only — the shared Badge/Chip default padding reads fine as a
   // standalone control, but stacked inside an already-compact KPI cell it's the biggest
-  // remaining source of bulk.
+  // remaining source of bulk. The two components previously read as mismatched sizes
+  // here specifically because .chip carries a 40px touch-target min-height below the
+  // `md` breakpoint (correct for a tappable control, irrelevant for these — they're
+  // plain status indicators, action="none") while .badge has no such floor at all; that
+  // min-height, not the padding, was what made "Salary" balloon next to "86.2%".
   .badge,
   .chip {
     --comp-badge-padding-x: var(--space-2);
     --comp-badge-padding-y: var(--space-0-5);
     --comp-chip-padding-x: var(--space-2);
     --comp-chip-padding-y: var(--space-0-5);
+    --comp-chip-min-height: auto;
+    min-height: auto;
+    min-width: 28px;
     font-size: var(--font-size-xs);
   }
 }
