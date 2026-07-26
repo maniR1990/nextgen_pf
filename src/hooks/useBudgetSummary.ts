@@ -184,7 +184,7 @@ export function useAddBudgetCategory(year: number, month: number) {
     }) => {
       const { id } = await apiPostV1<{ id: string }>('/api/v1/categories', { name, parentId });
       if (planned > 0 || isRecurring || isUnplanned) {
-        await apiPostV1(`/api/v1/budget/${year}/${month}/categories/${id}`, {
+        await apiPutV1(`/api/v1/budget/${year}/${month}/categories/${id}`, {
           planned,
           isRecurring,
           isUnplanned,

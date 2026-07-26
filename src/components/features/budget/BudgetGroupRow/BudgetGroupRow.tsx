@@ -1,7 +1,7 @@
 'use client';
 
 import type { BudgetGroup } from '@/modules/budget-engine/budget-engine.types';
-import { Check, ChevronRight, Plus, X } from 'lucide-react';
+import { Check, ChevronRight, Plus, RefreshCw, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { BudgetCategoryRow } from '../BudgetCategoryRow/BudgetCategoryRow';
 import type { PaceContext } from '../BudgetView/BudgetView';
@@ -56,11 +56,12 @@ function InlineAddRow({
   onCancel,
 }: {
   isSaving: boolean;
-  onSave: (name: string, planned: number) => Promise<void>;
+  onSave: (name: string, planned: number, isRecurring: boolean) => Promise<void>;
   onCancel: () => void;
 }) {
   const [name, setName] = useState('');
   const [planned, setPlanned] = useState('');
+  const [isRecurring, setRec] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     nameRef.current?.focus();
@@ -69,7 +70,7 @@ function InlineAddRow({
   async function save() {
     const t = name.trim();
     if (!t || isSaving) return;
-    await onSave(t, Number(planned) || 0);
+    await onSave(t, Number(planned) || 0, isRecurring);
   }
 
   return (
@@ -89,6 +90,10 @@ function InlineAddRow({
           }}
           disabled={isSaving}
         />
+        <label className="budget-row__add-flag">
+          <input type="checkbox" checked={isRecurring} onChange={(e) => setRec(e.target.checked)} />
+          <RefreshCw size={11} /> Recurring
+        </label>
       </div>
       {/* Col 2: planned amount */}
       <div className="budget-row__planned-cell" style={{ cursor: 'default' }}>
@@ -339,8 +344,8 @@ export function BudgetGroupRow({
           {showAddForm ? (
             <InlineAddRow
               isSaving={isAddingCategory}
-              onSave={async (name, planned) => {
-                await onAddCategory(group.id, name, planned, false, false);
+              onSave={async (name, planned, isRecurring) => {
+                await onAddCategory(group.id, name, planned, isRecurring, false);
                 setShowAddForm(false);
               }}
               onCancel={() => setShowAddForm(false)}
