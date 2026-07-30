@@ -127,6 +127,80 @@ describe('useTransactions dashboard invalidation', () => {
   });
 });
 
+// The Reports page (KPI strip, Budget Health Grid, Over-Budget/Unplanned table) reads
+// the same FinanceTransaction rows too — e.g. editing a transaction to mark it
+// "Unplanned" has to show up there immediately, not after its own staleTime lapses.
+describe('useTransactions reports invalidation', () => {
+  it('invalidates report queries on create', async () => {
+    const { wrapper, invalidateSpy } = makeWrapper();
+    const { result } = renderHook(() => useCreateTransaction(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync(body as never);
+    });
+
+    const keys = invalidateSpy.mock.calls.map((c) => c[0]?.queryKey);
+    expect(keys).toContainEqual(queryKeys.reports.all);
+  });
+
+  it('invalidates report queries on patch — e.g. marking a transaction Unplanned', async () => {
+    const { wrapper, invalidateSpy } = makeWrapper();
+    const { result } = renderHook(() => usePatchTransaction('tx1'), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({ ...body, isPlanned: false } as never);
+    });
+
+    const keys = invalidateSpy.mock.calls.map((c) => c[0]?.queryKey);
+    expect(keys).toContainEqual(queryKeys.reports.all);
+  });
+
+  it('invalidates report queries on delete', async () => {
+    const { wrapper, invalidateSpy } = makeWrapper();
+    const { result } = renderHook(() => useDeleteTransaction(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync('tx1');
+    });
+
+    const keys = invalidateSpy.mock.calls.map((c) => c[0]?.queryKey);
+    expect(keys).toContainEqual(queryKeys.reports.all);
+  });
+
+  it('invalidates report queries on void', async () => {
+    const { wrapper, invalidateSpy } = makeWrapper();
+    const { result } = renderHook(() => useVoidTransaction(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync('tx1');
+    });
+
+    const keys = invalidateSpy.mock.calls.map((c) => c[0]?.queryKey);
+    expect(keys).toContainEqual(queryKeys.reports.all);
+  });
+
+  it('invalidates report queries on bulk create', async () => {
+    const { wrapper, invalidateSpy } = makeWrapper();
+    const { result } = renderHook(() => useCreateBulkTransaction(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        type: 'EXPENSE',
+        merchant: 'Sri Ganesh Grocers',
+        date: '2026-07-19',
+        budgetPeriodYear: 2026,
+        budgetPeriodMonth: 7,
+        paymentSourceId: 'acc1',
+        paymentMethod: 'UPI',
+        items: [{ categoryId: 'meat', amount: 805 }],
+      });
+    });
+
+    const keys = invalidateSpy.mock.calls.map((c) => c[0]?.queryKey);
+    expect(keys).toContainEqual(queryKeys.reports.all);
+  });
+});
+
 describe('useCreateBulkTransaction', () => {
   it('posts to the bulk endpoint with an idempotency key', async () => {
     const { wrapper } = makeWrapper();

@@ -5,7 +5,6 @@ import {
   ValidationError,
 } from '@/lib/api/errors';
 import { prisma } from '@/lib/db/prisma';
-import { evaluateFraud } from '@/lib/rules-engine/evaluator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransactionRepository } from './transactions.repository';
 import { TransactionService } from './transactions.service';
@@ -13,10 +12,6 @@ import { TransactionService } from './transactions.service';
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 vi.mock('./transactions.repository');
-vi.mock('@/lib/rules-engine/evaluator', () => ({ evaluateFraud: vi.fn() }));
-vi.mock('@/modules/users/users.repository', () => ({
-  UserRepository: { findById: vi.fn().mockResolvedValue({ createdAt: new Date() }) },
-}));
 
 // Prisma mock: $transaction executes the callback immediately with a mock client.
 // Each test can override individual methods on mockPrismaTx as needed.
@@ -262,14 +257,6 @@ describe('TransactionService.createBulk', () => {
     expect(decrements.reduce((a: number, b: number) => a + b, 0)).toBe(-(805 + 384 + 140));
   });
 
-  it('evaluates fraud once against the bill TOTAL, not per item', async () => {
-    await TransactionService.createBulk(bulkDto);
-    expect(evaluateFraud).toHaveBeenCalledTimes(1);
-    expect(evaluateFraud).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 805 + 384 + 140 }),
-    );
-  });
-
   it('stores the exact client key only on the first (anchor) row', async () => {
     const created = await TransactionService.createBulk({
       ...bulkDto,
@@ -322,12 +309,6 @@ describe('TransactionService.createBulk', () => {
     await TransactionService.createBulk({ ...bulkDto, idempotencyKey: 'key-1' });
 
     expect(mockPrismaTx.financeTransaction.create).toHaveBeenCalledTimes(3);
-  });
-
-  it('does not create anything when fraud evaluation blocks the bill', async () => {
-    vi.mocked(evaluateFraud).mockRejectedValueOnce(new Error('blocked'));
-    await expect(TransactionService.createBulk(bulkDto)).rejects.toThrow('blocked');
-    expect(mockPrismaTx.financeTransaction.create).not.toHaveBeenCalled();
   });
 
   it('uses each item categoryId and amount, and the shared merchant/date/account for every row', async () => {

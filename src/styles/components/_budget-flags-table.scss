@@ -15,11 +15,80 @@
   margin-top: var(--space-4);
   min-width: 0;
 
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    // flex-end, not center — &__tab relies on sitting flush against this row's own
+    // bottom border (see its margin-bottom: -1px) so the active tab's underline reads
+    // as one continuous line with the divider. Center-aligning against the taller
+    // search/sort controls would float the tabs above that border instead.
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+
+    @include m.respond-below(sm) {
+      align-items: stretch;
+    }
+  }
+
   &__tabs {
     display: flex;
     gap: var(--space-4);
-    margin-bottom: var(--space-2);
-    border-bottom: 1px solid var(--color-border);
+  }
+
+  &__controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-bottom: var(--space-1-5);
+
+    @include m.respond-below(sm) {
+      width: 100%;
+      flex-wrap: wrap;
+    }
+  }
+
+  &__search {
+    position: relative;
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+
+  &__search-icon {
+    position: absolute;
+    left: var(--space-2);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  &__search-input {
+    width: 100%;
+    min-height: 32px;
+    padding: var(--space-1) var(--space-2) var(--space-1) var(--space-6);
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+
+    &:focus-visible {
+      @include m.focus-ring;
+    }
+  }
+
+  &__sort {
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
   }
 
   &__tab {

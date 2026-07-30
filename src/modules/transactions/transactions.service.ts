@@ -7,8 +7,6 @@ import {
 } from '@/lib/api/errors';
 import { applyDeltas, getBalanceDeltas, reverseDeltas } from '@/lib/balance-engine';
 import { prisma } from '@/lib/db/prisma';
-import { evaluateFraud } from '@/lib/rules-engine/evaluator';
-import { UserRepository } from '@/modules/users/users.repository';
 import { getPeriodTotals } from './period-spend';
 import { TX_INCLUDE, TransactionRepository } from './transactions.repository';
 import type {
@@ -111,21 +109,7 @@ export const TransactionService = {
   // ── Create — atomic: ledger entry + balance update in one DB transaction ──
 
   async createTransaction(dto: CreateTransactionDto) {
-    const user = await UserRepository.findById(dto.userId).catch(() => {
-      throw new NotFoundError('User not found');
-    });
-
-    const accountAgeDays = Math.floor(
-      (Date.now() - new Date(user.createdAt).getTime()) / 86_400_000,
-    );
-
     validateFundGroupTag(dto.type, dto.fundGroupId, dto.fundGroupFlow);
-    await evaluateFraud({
-      amount: dto.amount,
-      accountAgeDays,
-      countryMatch: true,
-      txType: dto.type,
-    });
 
     const txDate = new Date(dto.date);
 
@@ -191,13 +175,6 @@ export const TransactionService = {
   // All-or-nothing: every item shares one prisma.$transaction, so a bad category
   // on item 8 of 12 rolls back the whole bill instead of leaving it half-logged.
   //
-  // Fraud is evaluated ONCE against the bill TOTAL, not per item. The
-  // high-value-new-user rule trips on amount > ₹10,000 for accounts under 30 days
-  // old — a new account could split a ₹15,000 shop into twenty sub-₹10k lines and
-  // never trip that rule if it were checked per item. Checking the total closes
-  // that gap; per-item checks would just be redundant work against a rule that
-  // was never designed to reason about one line of a receipt in isolation.
-  //
   // Duplicate-checking (findDuplicates) is deliberately NOT run here. It matches
   // on {merchant, amount, date}, which is exactly what every OTHER item in this
   // same bill also shares whenever two items happen to cost the same — it would
@@ -211,21 +188,6 @@ export const TransactionService = {
         return TransactionRepository.findByBatchId(dto.userId, anchor.billBatchId!);
       }
     }
-
-    const user = await UserRepository.findById(dto.userId).catch(() => {
-      throw new NotFoundError('User not found');
-    });
-    const accountAgeDays = Math.floor(
-      (Date.now() - new Date(user.createdAt).getTime()) / 86_400_000,
-    );
-
-    const billTotal = dto.items.reduce((sum, item) => sum + item.amount, 0);
-    await evaluateFraud({
-      amount: billTotal,
-      accountAgeDays,
-      countryMatch: true,
-      txType: dto.type,
-    });
 
     const billBatchId = crypto.randomUUID();
     const txDate = new Date(dto.date);

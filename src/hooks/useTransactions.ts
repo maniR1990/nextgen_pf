@@ -124,6 +124,11 @@ function invalidateAfterWrite(
   void qc.invalidateQueries({ queryKey: queryKeys.transactions.summaries() });
   void qc.invalidateQueries({ queryKey: queryKeys.budget.all });
   void qc.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+  // Reports (KPI strip, Budget Health Grid, Over-Budget/Unplanned table) read the same
+  // underlying transaction data but were never invalidated here — editing a transaction
+  // (e.g. marking it unplanned) would silently leave the Reports page showing whatever
+  // it last fetched until its own staleTime happened to expire.
+  void qc.invalidateQueries({ queryKey: queryKeys.reports.all });
   if (opts.id) {
     void qc.invalidateQueries({ queryKey: queryKeys.transactions.detail(opts.id) });
   }
@@ -238,11 +243,7 @@ export function useVoidTransaction() {
   return useMutation({
     mutationFn: (id: string) => apiPostV1<void>(`/api/v1/transactions/${id}/void`, {}),
     onSuccess: (_data, id) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.detail(id) });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.lists() });
-      void qc.invalidateQueries({ queryKey: queryKeys.transactions.summaries() });
-      void qc.invalidateQueries({ queryKey: queryKeys.budget.all });
-      void qc.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      invalidateAfterWrite(qc, { id });
       toast.success('Transaction voided');
     },
     onError: (err) => {
