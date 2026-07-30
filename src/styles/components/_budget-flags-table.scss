@@ -185,13 +185,17 @@
   }
 
   // ── Mobile cards ───────────────────────────────────────────────────────────
+  // One shared box with a hairline divider between rows — same compact pattern as
+  // .budget-health__card/__row above — instead of a separate bordered card (plus gap)
+  // per row, which reads noticeably looser at the same row count.
 
   &__mobile-cards {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
     margin: 0;
-    padding: 0;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
     list-style: none;
 
     @include m.respond-to(md) {
@@ -202,10 +206,17 @@
   &__card {
     display: flex;
     flex-direction: column;
-    gap: var(--space-0-5);
-    padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    gap: 2px;
+    // Sets the row's own font-size so &__excess/&__amount (shared with the desktop
+    // table, no font-size of their own) inherit --font-size-sm here instead of
+    // falling back to the page's larger base size — that mismatch was why the
+    // amount read bigger than everything in the Budget Health card above it.
+    font-size: var(--font-size-sm);
+    padding-block: var(--space-1);
+
+    & + & {
+      border-top: 1px solid var(--color-border);
+    }
   }
 
   &__card-top {

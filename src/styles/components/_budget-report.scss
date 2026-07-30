@@ -11,8 +11,8 @@
 
 // ─── Sticky filter bar ────────────────────────────────────────────────────────
 // One row: date nav (far left) · account/category/type (middle) · reset/export
-// (far right). Sticks just below the fixed AppHeader so it stays reachable while
-// the sections below scroll underneath it.
+// (far right, same line — see &__actions). Sticks just below the fixed AppHeader
+// so it stays reachable while the sections below scroll underneath it.
 
 .budget-report-filters {
   position: sticky;
@@ -32,6 +32,8 @@
     position: static;
     flex-direction: column;
     align-items: stretch;
+    gap: var(--space-1-5);
+    padding: var(--space-1-5) var(--space-2);
   }
 }
 
@@ -44,6 +46,7 @@
 
   @include m.respond-below(md) {
     flex-wrap: wrap;
+    gap: var(--space-1-5);
   }
 }
 
@@ -62,10 +65,10 @@
   align-items: center;
   gap: var(--space-1-5);
   flex-shrink: 0;
-
-  @include m.respond-below(md) {
-    justify-content: flex-end;
-  }
+  // Hugs the end of whichever flex line it's on — the same line as the other
+  // filters on desktop (one row, space-between-style), and next to "All types"
+  // once the row wraps on mobile, rather than dropping to a row of its own.
+  margin-left: auto;
 }
 
 .budget-report-filters__export {
@@ -76,5 +79,24 @@
   &:disabled {
     cursor: not-allowed;
     opacity: 0.6;
+  }
+}
+
+@include m.respond-below(md) {
+  // The date pill keeps its own natural (non-stretched) width and centers itself
+  // in the column layout, instead of inheriting the column's stretch-to-full-width
+  // default and sitting flush left.
+  .month-nav-control {
+    align-self: center;
+  }
+
+  // Every control in the bar shrinks together — scoped to this bar only (both
+  // .input-field__control and .cat-multiselect__trigger are shared components used
+  // full-size elsewhere in the app).
+  .budget-report-filters__select.input-field__control,
+  .budget-report-filters__category .cat-multiselect__trigger {
+    min-height: var(--space-8);
+    padding: var(--space-1) var(--space-1-5);
+    font-size: var(--font-size-sm);
   }
 }

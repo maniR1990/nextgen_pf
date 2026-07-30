@@ -81,21 +81,25 @@ export function BudgetReportFilterBar({
             </option>
           ))}
         </select>
-      </div>
 
-      <div className="budget-report-filters__actions">
-        <button type="button" className="btn btn--secondary btn--sm" onClick={onReset}>
-          Reset
-        </button>
-        <button
-          type="button"
-          className="btn btn--secondary btn--sm budget-report-filters__export"
-          disabled
-          title="Export is coming soon"
-        >
-          <Download size={13} aria-hidden />
-          <span>Export</span>
-        </button>
+        {/* Lives in the same wrapping row as the filters (not a separate row below) —
+            margin-left: auto in CSS hugs it to the end of whichever line it lands on,
+            so it sits flush after "All types" on desktop and wraps down next to it
+            (instead of Type alone) once the row is too narrow to fit everything. */}
+        <div className="budget-report-filters__actions">
+          <button type="button" className="btn btn--secondary btn--sm" onClick={onReset}>
+            Reset
+          </button>
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm budget-report-filters__export"
+            disabled
+            title="Export is coming soon"
+          >
+            <Download size={13} aria-hidden />
+            <span>Export</span>
+          </button>
+        </div>
       </div>
     </div>
   );
