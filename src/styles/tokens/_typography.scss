@@ -2,8 +2,10 @@
 // Never use directly in components — map through semantic → component tokens only.
 
 // ─── Font families ────────────────────────────────────────────────────────────
-// Geist CSS variables are injected onto <html> by layout.tsx via geist/font/sans and geist/font/mono.
-$font-family-base: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+// Sans: self-hosted "Inter Variable" (see @fontsource-variable/inter imports in
+// layout.tsx) — a single variable font file spanning every weight, 100–900.
+// Mono: Geist Mono, injected onto <html> by layout.tsx via geist/font/mono.
+$font-family-base: 'Inter Variable', 'Inter', system-ui, sans-serif;
 $font-sans: $font-family-base;
 $font-mono: var(--font-geist-mono), 'Geist Mono', monospace;
 

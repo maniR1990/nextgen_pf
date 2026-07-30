@@ -1,18 +1,20 @@
 @use '../mixins' as m;
 
 // ─── Report KPI Strip ─────────────────────────────────────────────────────────
-// Horizontal 5-cell summary bar that sits below the AppHeader on /dashboard/reports.
-// Desktop: 5 equal columns with vertical dividers.
+// Compact 4-cell cash-flow summary for /dashboard/reports: Total Income, Total
+// Expenses, Total Invested, Available Balance.
+// Desktop: 4 equal columns with vertical dividers.
 // Tablet (< md): 2-column grid, bottom dividers between rows.
-// Mobile (< sm): horizontal-scroll strip of compact cards, not a 5x stacked column —
+// Mobile (< sm): horizontal-scroll strip of compact cards, not a 4x stacked column —
 // this is glanceable secondary context, not the page's primary task, so it must not
-// push the actual work (the filter tool below it) below the fold on a phone.
+// push the actual work (the health grid / over-budget table) below the fold on a phone.
 
 .report-kpi-strip {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   background: var(--color-bg-surface);
-  border-bottom: 1px solid var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 
   @include m.respond-below(md) {
     grid-template-columns: repeat(2, 1fr);
@@ -37,8 +39,8 @@
 .report-kpi-strip__cell {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-2-5) var(--space-3);
+  gap: var(--space-0-5);
+  padding: var(--space-2) var(--space-2-5);
   border-right: 1px solid var(--color-border);
   min-width: 0;
 
@@ -48,29 +50,21 @@
 
   // 2-column layout: remove right border on even cells, add bottom border on non-last rows
   @include m.respond-below(md) {
-    padding: var(--space-2) var(--space-2-5);
     border-bottom: 1px solid var(--color-border);
 
     &:nth-child(even) {
       border-right: none;
     }
 
-    // Last row (items 4–5) gets no bottom border
+    // Last row (items 3–4) gets no bottom border
     &:nth-last-child(-n+2) {
       border-bottom: none;
-    }
-
-    // If 5th cell is alone in its row (odd total), also clear right border
-    &:last-child {
-      border-right: none;
     }
   }
 
   @include m.respond-below(sm) {
-    flex: 0 0 140px;
-    gap: var(--space-1);
-    padding: var(--space-2) var(--space-3);
-    border-right: 1px solid var(--color-border);
+    flex: 0 0 130px;
+    padding: var(--space-2);
     border-bottom: none;
     scroll-snap-align: start;
 
@@ -80,13 +74,17 @@
   }
 }
 
+.report-kpi-strip__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
 // ─── Label ────────────────────────────────────────────────────────────────────
 
 .report-kpi-strip__label {
   font-size: var(--font-size-xs);
-  font-weight: var(--font-variation-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -99,7 +97,7 @@
   font-size: var(--font-size-lg);
   font-weight: var(--font-variation-bold);
   color: var(--color-text);
-  line-height: 1.15;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 
@@ -107,63 +105,38 @@
     color: var(--color-success);
   }
 
-  &--money {
-    color: var(--color-text);
-  }
-
-  @include m.respond-below(md) {
-    font-size: var(--font-size-base);
-  }
-
-  // Deliberately NOT upsized back to lg here (unlike before) — on a horizontal-scroll
-  // strip every pixel of height matters more than on a stacked single column.
   @include m.respond-below(sm) {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
   }
 }
 
 // ─── Sub-line ─────────────────────────────────────────────────────────────────
 
 .report-kpi-strip__sub {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  min-height: 16px;
-
-  @include m.respond-below(sm) {
-    min-height: 0;
-  }
-
-  // Scoped to this strip only — the shared Badge/Chip default padding reads fine as a
-  // standalone control, but stacked inside an already-compact KPI cell it's the biggest
-  // remaining source of bulk. The two components previously read as mismatched sizes
-  // here specifically because .chip carries a 40px touch-target min-height below the
-  // `md` breakpoint (correct for a tappable control, irrelevant for these — they're
-  // plain status indicators, action="none") while .badge has no such floor at all; that
-  // min-height, not the padding, was what made "Salary" balloon next to "86.2%".
-  .badge,
-  .chip {
-    --comp-badge-padding-x: var(--space-2);
-    --comp-badge-padding-y: var(--space-0-5);
-    --comp-chip-padding-x: var(--space-2);
-    --comp-chip-padding-y: var(--space-0-5);
-    --comp-chip-min-height: auto;
-    min-height: auto;
-    min-width: 28px;
-    font-size: var(--font-size-xs);
-  }
-}
-
-.report-kpi-strip__sub-text {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &--success {
+    color: var(--color-success);
+  }
+  &--warning {
+    color: var(--color-warning);
+  }
+  &--error {
+    color: var(--color-error);
+  }
 }
 
-.report-kpi-strip__trend-icon {
+.report-kpi-strip__icon {
   flex-shrink: 0;
-  color: var(--color-success);
+  color: var(--color-text-muted);
+
+  &--success {
+    color: var(--color-success);
+  }
 }
 
 // ─── Skeleton modifier ────────────────────────────────────────────────────────
@@ -171,6 +144,5 @@
 .report-kpi-strip--loading {
   .report-kpi-strip__cell {
     gap: var(--space-1-5);
-    padding-block: var(--space-2-5);
   }
 }

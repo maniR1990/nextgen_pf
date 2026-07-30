@@ -52,11 +52,11 @@ function buildQuery(params: ReportFilterParams): string {
   return sp.toString();
 }
 
-/** enabled: false — this is an explicit "filter, then Check" query, not a live one. */
+/** Auto-fetches and refetches whenever any filter param changes — the query key is
+ *  derived straight from params, so there's no separate "run it" step to wire up. */
 export function useReportFilter(params: ReportFilterParams) {
   return useQuery({
     queryKey: queryKeys.reports.filter(params as Record<string, unknown>),
     queryFn: () => apiGetV1<ReportFilterResult>(`/api/v1/reports/filter?${buildQuery(params)}`),
-    enabled: false,
   });
 }

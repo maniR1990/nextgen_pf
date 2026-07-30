@@ -56,10 +56,10 @@
 @use 'app-header';
 @use 'transaction-filter-bar';
 @use 'month-nav-control';
-@use 'report-filter-bar';
-@use 'report-filter-widget';
 @use 'report-kpi-strip';
-@use 'budget-alerts';
+@use 'budget-report';
+@use 'budget-health';
+@use 'over-budget-table';
 @use 'app-footer';
 @use 'bottom-tab-bar';
 @use 'dashboard-calendar-widget';

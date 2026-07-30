@@ -145,6 +145,33 @@
       border-color: var(--comp-input-border-error);
       background: var(--comp-input-bg-error);
     }
+
+    // Room for the clear button — only when it's actually rendered, so an empty
+    // field's text stays centered under the same padding as every other input.
+    &--clearable {
+      padding-right: var(--space-8);
+    }
+  }
+
+  &__clear {
+    position: absolute;
+    right: var(--space-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: var(--radius-full, 999px);
+    background: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+
+    &:hover {
+      background: var(--color-bg-subtle);
+      color: var(--color-text);
+    }
   }
 
   &__chips-label {

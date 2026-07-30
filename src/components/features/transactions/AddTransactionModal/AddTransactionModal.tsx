@@ -147,11 +147,17 @@ export function AddTransactionModal({
     }
   }, [editId, submitState, onClose]);
 
-  // Default credit/debit account when options load so placeholder text is not mistaken for a selection.
+  // Default credit/debit account when options load so placeholder text is not mistaken for
+  // a selection — new transactions only. Editing must never default this: the prefill
+  // effect above sets the account the transaction actually used, but its store update
+  // isn't visible to this effect until next render, so without the editId guard this
+  // effect reads the pre-prefill empty sourceId in the same flush and immediately
+  // overwrites the real account with paymentSources[0] — always "the first account",
+  // never the one actually on the transaction.
   useEffect(() => {
-    if (!open || values.sourceId || paymentSources.length === 0) return;
+    if (!open || editId || values.sourceId || paymentSources.length === 0) return;
     handleFieldChange('sourceId', paymentSources[0].id);
-  }, [open, paymentSources, values.sourceId, handleFieldChange]);
+  }, [open, editId, paymentSources, values.sourceId, handleFieldChange]);
 
   const handleClose = () => {
     reset();

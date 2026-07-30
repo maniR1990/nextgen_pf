@@ -1,0 +1,88 @@
+@use '../mixins' as m;
+
+// ─── Budget Health Data Grid ──────────────────────────────────────────────────
+// Plain text rows, right-aligned values, no progress bars — one compact card per
+// flow type (Expenses/Investments/Income), or a single card once a type/category
+// filter narrows the result to one thing.
+
+.budget-health {
+  margin-top: var(--space-4);
+}
+
+.budget-health__title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-variation-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-2);
+}
+
+.budget-health__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+
+  &--single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @include m.respond-below(md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.budget-health__card {
+  min-width: 0;
+  padding: var(--space-2-5) var(--space-3);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+
+  &--loading {
+    height: 108px;
+  }
+}
+
+.budget-health__card-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-variation-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-1-5);
+  padding-bottom: var(--space-1-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.budget-health__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-block: var(--space-1);
+  font-size: var(--font-size-sm);
+
+  & + & {
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+.budget-health__label {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.budget-health__value {
+  flex-shrink: 0;
+  font-weight: var(--font-variation-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  text-align: right;
+}
+
+.budget-health__empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  padding: var(--space-3) 0;
+  margin: 0;
+}

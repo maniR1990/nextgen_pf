@@ -25,69 +25,38 @@ const mockData: ReportKpiData = {
 describe('ReportKpiBarInner', () => {
   afterEach(() => cleanup());
 
-  it('renders all 5 KPI cells', () => {
+  it('renders exactly 4 KPI cells — no separate Budget Remaining card', () => {
     const { container } = render(<ReportKpiBarInner data={mockData} />);
-    expect(container.querySelectorAll('.report-kpi-strip__cell')).toHaveLength(5);
+    expect(container.querySelectorAll('.report-kpi-strip__cell')).toHaveLength(4);
+    expect(screen.queryByText('Budget Remaining')).not.toBeInTheDocument();
   });
 
-  it('shows Total Income label and formatted INR value in green', () => {
+  it('shows Total Income label, formatted INR value, and its income source as plain text', () => {
     const { container } = render(<ReportKpiBarInner data={mockData} />);
     expect(screen.getByText('Total Income')).toBeInTheDocument();
     expect(container.querySelector('.report-kpi-strip__value--income')).toHaveTextContent(
       /₹2,23,000/,
     );
+    expect(screen.getByText('Salary + Gift')).toBeInTheDocument();
   });
 
-  it('shows income source as a success chip', () => {
+  it('shows Total Expenses with a plain "Burn rate: N%" subtitle, no badge', () => {
     const { container } = render(<ReportKpiBarInner data={mockData} />);
-    const chip = container.querySelector('.chip--success');
-    expect(chip).toBeInTheDocument();
-    expect(chip).toHaveTextContent('Salary + Gift');
+    expect(screen.getByText('Total Expenses')).toBeInTheDocument();
+    expect(container.querySelector('.report-kpi-strip__value')).toBeInTheDocument();
+    expect(screen.getByText('Burn rate: 38.1%')).toBeInTheDocument();
+    expect(container.querySelector('.badge')).not.toBeInTheDocument();
   });
 
-  it('shows Expenses Spent label with budget reference and percentage badge', () => {
-    const { container } = render(<ReportKpiBarInner data={mockData} />);
-    expect(screen.getByText('Expenses Spent')).toBeInTheDocument();
-    expect(screen.getByText(/38\.1%/)).toBeInTheDocument();
-    expect(container.querySelector('.badge--success')).toBeInTheDocument();
-  });
-
-  it('applies warning badge when expenses exceed 80% of budget', () => {
-    const { container } = render(
-      <ReportKpiBarInner data={{ ...mockData, expensesVariant: 'warning', expensesPct: 85 }} />,
-    );
-    expect(container.querySelector('.badge--warning')).toBeInTheDocument();
-    expect(screen.getByText(/85%/)).toBeInTheDocument();
-  });
-
-  it('applies error badge when expenses exceed budget', () => {
-    const { container } = render(
-      <ReportKpiBarInner data={{ ...mockData, expensesVariant: 'error', expensesPct: 105 }} />,
-    );
-    expect(container.querySelector('.badge--error')).toBeInTheDocument();
-  });
-
-  it('shows Invested label and investedLabel chip', () => {
-    const { container } = render(<ReportKpiBarInner data={mockData} />);
-    expect(screen.getByText('Invested')).toBeInTheDocument();
-    expect(container.querySelector('.report-kpi-strip__value--money')).toBeInTheDocument();
+  it('shows Total Invested and its SIP label', () => {
+    render(<ReportKpiBarInner data={mockData} />);
+    expect(screen.getByText('Total Invested')).toBeInTheDocument();
     expect(screen.getByText('3 SIPs')).toBeInTheDocument();
   });
 
-  it('shows Budget Remaining with days left text', () => {
+  it('shows Available Balance with its status text', () => {
     render(<ReportKpiBarInner data={mockData} />);
-    expect(screen.getByText('Budget Remaining')).toBeInTheDocument();
-    expect(screen.getByText(/19 days left/)).toBeInTheDocument();
-  });
-
-  it('shows 0 days left for past periods', () => {
-    render(<ReportKpiBarInner data={{ ...mockData, daysLeft: 0 }} />);
-    expect(screen.getByText(/period closed/i)).toBeInTheDocument();
-  });
-
-  it('shows Account Balance with status chip', () => {
-    render(<ReportKpiBarInner data={mockData} />);
-    expect(screen.getByText('Account Balance')).toBeInTheDocument();
+    expect(screen.getByText('Available Balance')).toBeInTheDocument();
     expect(screen.getByText('Healthy buffer')).toBeInTheDocument();
   });
 
@@ -100,9 +69,9 @@ describe('ReportKpiBarInner', () => {
 describe('ReportKpiBarSkeleton', () => {
   afterEach(() => cleanup());
 
-  it('renders 5 skeleton cells', () => {
+  it('renders 4 skeleton cells', () => {
     const { container } = render(<ReportKpiBarSkeleton />);
-    expect(container.querySelectorAll('.report-kpi-strip__cell')).toHaveLength(5);
+    expect(container.querySelectorAll('.report-kpi-strip__cell')).toHaveLength(4);
   });
 
   it('marks the container as aria-busy', () => {
@@ -112,7 +81,7 @@ describe('ReportKpiBarSkeleton', () => {
 
   it('renders skeleton shimmer elements inside cells', () => {
     const { container } = render(<ReportKpiBarSkeleton />);
-    expect(container.querySelectorAll('.skeleton').length).toBeGreaterThanOrEqual(5);
+    expect(container.querySelectorAll('.skeleton').length).toBeGreaterThanOrEqual(4);
   });
 
   it('has no a11y violations', async () => {

@@ -79,9 +79,6 @@ export function TransactionTimeline({
   showSummary = false,
   summary: summaryProp,
 }: TransactionTimelineProps) {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
   const [masked, setMasked] = useState(true);
   const sentinelRef = useInfiniteScroll(onLoadMore ?? (() => {}), hasMore);
   const computedSummary = useMemo(() => {
@@ -213,9 +210,11 @@ export function TransactionTimeline({
 
                 <div className="tx-timeline__cards-list">
                   {group.transactions.map((tx) => {
-                    const isCurrentPeriod =
-                      tx.budgetPeriodYear === currentYear && tx.budgetPeriodMonth === currentMonth;
-                    const showActions = isCurrentPeriod && (onEditClick || onDeleteClick);
+                    // Editing/deleting is a plain data-fix action, not tied to which
+                    // calendar month happens to be "now" — a transaction misassigned to
+                    // the wrong budget period (the common reason to open it) has to stay
+                    // editable regardless of today's date or which period is being viewed.
+                    const showActions = Boolean(onEditClick || onDeleteClick);
 
                     return (
                       <div

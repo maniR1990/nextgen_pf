@@ -1,0 +1,80 @@
+@use '../mixins' as m;
+
+// ─── Budget Report page shell ─────────────────────────────────────────────────
+
+.budget-report__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-variation-bold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-3);
+}
+
+// ─── Sticky filter bar ────────────────────────────────────────────────────────
+// One row: date nav (far left) · account/category/type (middle) · reset/export
+// (far right). Sticks just below the fixed AppHeader so it stays reachable while
+// the sections below scroll underneath it.
+
+.budget-report-filters {
+  position: sticky;
+  top: var(--app-header-height, 64px);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-3);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+
+  @include m.respond-below(md) {
+    position: static;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.budget-report-filters__group {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  gap: var(--space-2);
+  min-width: 0;
+
+  @include m.respond-below(md) {
+    flex-wrap: wrap;
+  }
+}
+
+.budget-report-filters__select {
+  flex: 1 1 130px;
+  min-width: 0;
+}
+
+.budget-report-filters__category {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.budget-report-filters__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  flex-shrink: 0;
+
+  @include m.respond-below(md) {
+    justify-content: flex-end;
+  }
+}
+
+.budget-report-filters__export {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}

@@ -2,6 +2,7 @@
 
 import { FormField } from '@/components/common/FormField';
 import { QUICK_AMOUNT_CHIPS } from '@/constants/finance';
+import { X } from 'lucide-react';
 import type { InputHTMLAttributes } from 'react';
 
 export interface AmountInputProps
@@ -41,7 +42,11 @@ export function AmountInput({
           type="number"
           min="0"
           step="0.01"
-          className={['amount-input__control', error && 'amount-input__control--error']
+          className={[
+            'amount-input__control',
+            value && 'amount-input__control--clearable',
+            error && 'amount-input__control--error',
+          ]
             .filter(Boolean)
             .join(' ')}
           value={value}
@@ -52,6 +57,18 @@ export function AmountInput({
           aria-label="Transaction amount in rupees"
           {...props}
         />
+        {/* A mis-tapped quick-amount chip or typo otherwise means backspacing the whole
+            number by hand — one tap back to empty instead. */}
+        {value && !disabled && (
+          <button
+            type="button"
+            className="amount-input__clear"
+            onClick={() => onChange('')}
+            aria-label="Clear amount"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
       {showChips && (
         <>

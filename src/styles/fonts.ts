@@ -1,3 +1,4 @@
-// Fonts are loaded via geist/font/sans and geist/font/mono in src/app/layout.tsx.
+// Sans is Inter Variable (@fontsource-variable/inter), mono is Geist Mono
+// (geist/font/mono) — both loaded in src/app/layout.tsx.
 // This file is intentionally empty.
 export {};

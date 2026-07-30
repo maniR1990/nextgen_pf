@@ -1,28 +1,38 @@
-import { ReportBudgetAlerts } from '@/components/reports/ReportBudgetAlerts';
-import { ReportFilterWidget } from '@/components/reports/ReportFilterWidget';
-import { ReportKpiBar, ReportKpiBarSkeleton } from '@/components/reports/ReportKpiBar';
-import type { SearchParams } from 'next/dist/server/request/search-params';
-import { Suspense } from 'react';
+'use client';
 
-interface ReportsPageProps {
-  searchParams: Promise<SearchParams>;
-}
+import { BudgetHealthGrid } from '@/components/reports/BudgetHealthGrid';
+import { BudgetReportFilterBar } from '@/components/reports/BudgetReportFilterBar';
+import { OverBudgetTable } from '@/components/reports/OverBudgetTable';
+import { ReportKpiBar } from '@/components/reports/ReportKpiBar';
+import { useReportFilters } from '@/hooks/useReportFilters';
 
-export default async function ReportsPage({ searchParams }: ReportsPageProps) {
-  const params = await searchParams;
-  const now = new Date();
-  const year = Number(params.year ?? now.getFullYear());
-  const month = Number(params.month ?? now.getMonth() + 1);
+export default function ReportsPage() {
+  const { filters, setFilters, monthLabel, goPrev, goNext, reset } = useReportFilters();
 
   return (
-    <div className="tx-page__content">
-      <Suspense fallback={<ReportKpiBarSkeleton />}>
-        <ReportKpiBar year={year} month={month} />
-      </Suspense>
+    <div className="tx-page__content budget-report">
+      <h1 className="budget-report__title">Budget Report</h1>
 
-      <ReportBudgetAlerts year={year} month={month} />
+      <BudgetReportFilterBar
+        filters={filters}
+        monthLabel={monthLabel}
+        onPrev={goPrev}
+        onNext={goNext}
+        onFilterChange={setFilters}
+        onReset={reset}
+      />
 
-      <ReportFilterWidget />
+      <ReportKpiBar year={filters.year} month={filters.month} />
+
+      <BudgetHealthGrid
+        year={filters.year}
+        month={filters.month}
+        type={filters.type}
+        accountId={filters.accountId}
+        categoryIds={filters.categoryIds}
+      />
+
+      <OverBudgetTable year={filters.year} month={filters.month} />
     </div>
   );
 }

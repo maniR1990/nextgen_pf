@@ -7,7 +7,6 @@ import { Suspense, useLayoutEffect, useRef } from 'react';
 import { ContextSubBar } from './ContextSubBar';
 import { MainNav } from './MainNav';
 import { PulseStrip } from './PulseStrip';
-import { ReportFilterBar } from './ReportFilterBar';
 import { SettingsFilterBar } from './SettingsFilterBar';
 import { TransactionFilterBar } from './TransactionFilterBar';
 
@@ -48,7 +47,6 @@ export function AppHeader({ config, data, onLogTransaction, onSearch }: AppHeade
   const subBarItems = getSubBarItems(config.contextSubBar.screens, pathname);
   const isTransactionsScreen = pathname.startsWith('/dashboard/transactions');
   const isSettingsScreen = pathname.startsWith('/dashboard/settings');
-  const isReportsScreen = pathname.startsWith('/dashboard/reports');
   const { pulseStrip } = config;
 
   return (
@@ -77,11 +75,10 @@ export function AppHeader({ config, data, onLogTransaction, onSearch }: AppHeade
         <Suspense fallback={null}>
           <SettingsFilterBar />
         </Suspense>
-      ) : isReportsScreen ? (
-        <Suspense fallback={null}>
-          <ReportFilterBar />
-        </Suspense>
       ) : (
+        // Reports supplies its own sticky title + filter bar inline in the page body
+        // (see BudgetReportFilterBar) — a second one here would be exactly the
+        // duplicate date/filter control this header used to have.
         <ContextSubBar items={subBarItems} data={data} />
       )}
     </header>
