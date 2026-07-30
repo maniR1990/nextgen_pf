@@ -1,3 +1,4 @@
+import { ReportBudgetAlerts } from '@/components/reports/ReportBudgetAlerts';
 import { ReportFilterWidget } from '@/components/reports/ReportFilterWidget';
 import { ReportKpiBar, ReportKpiBarSkeleton } from '@/components/reports/ReportKpiBar';
 import type { SearchParams } from 'next/dist/server/request/search-params';
@@ -18,6 +19,8 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
       <Suspense fallback={<ReportKpiBarSkeleton />}>
         <ReportKpiBar year={year} month={month} />
       </Suspense>
+
+      <ReportBudgetAlerts year={year} month={month} />
 
       <ReportFilterWidget />
     </div>

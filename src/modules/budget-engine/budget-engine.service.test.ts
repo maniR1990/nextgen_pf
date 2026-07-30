@@ -122,6 +122,7 @@ describe('BudgetEngineService.getMonthlySummary', () => {
       ['cat-archived'],
       2026,
       5,
+      true,
     );
     const leaf = result.groups[0]!.categories[0]!;
     expect(leaf.id).toBe('cat-archived');
@@ -142,6 +143,33 @@ describe('BudgetEngineService.getMonthlySummary', () => {
 
     const result = await BudgetEngineService.getMonthlySummary('u1', 2026, 8);
 
+    expect(result.groups[0]!.categories).toHaveLength(0);
+  });
+
+  it('does not treat a bare Budget plan (zero spend) as activity for the current or a future month', async () => {
+    // Regression: archiving a category that only ever had a planned amount — never
+    // actually spent against — must not have it immediately reappear in the very
+    // month being deleted from. Only real transactions should resurrect it there.
+    const ARCHIVED_CAT = { ...GROCERIES, id: 'cat-archived', archivedAt: new Date('2026-06-01') };
+    vi.mocked(BudgetEngineRepository.findCategoriesForUser).mockResolvedValue([
+      EXPENSE_GROUP,
+      ARCHIVED_CAT,
+    ] as never);
+    vi.mocked(BudgetEngineRepository.findBudgetPlans).mockResolvedValue([] as never);
+    vi.mocked(BudgetEngineRepository.findCategoriesWithActivityInPeriod).mockResolvedValue(
+      new Set() as never,
+    );
+    vi.mocked(BudgetEngineRepository.findSpendByCategory).mockResolvedValue([] as never);
+
+    const result = await BudgetEngineService.getMonthlySummary('u1', 2026, 8);
+
+    expect(BudgetEngineRepository.findCategoriesWithActivityInPeriod).toHaveBeenCalledWith(
+      'u1',
+      ['cat-archived'],
+      2026,
+      8,
+      false,
+    );
     expect(result.groups[0]!.categories).toHaveLength(0);
   });
 

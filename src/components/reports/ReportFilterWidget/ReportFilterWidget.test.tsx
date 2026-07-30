@@ -87,6 +87,7 @@ describe('ReportFilterWidget', () => {
       pctOfPlanned: null,
       pctOfIncome: null,
       incomeForPeriod: null,
+      byType: null,
     });
     render(<ReportFilterWidget />);
 
@@ -104,6 +105,7 @@ describe('ReportFilterWidget', () => {
       pctOfPlanned: 108,
       pctOfIncome: null,
       incomeForPeriod: null,
+      byType: null,
     });
     render(<ReportFilterWidget />);
 
@@ -124,11 +126,71 @@ describe('ReportFilterWidget', () => {
       pctOfPlanned: null,
       pctOfIncome: null,
       incomeForPeriod: null,
+      byType: null,
     });
     render(<ReportFilterWidget />);
 
     const naValues = screen.getAllByText('N/A');
     expect(naValues).toHaveLength(2);
+  });
+
+  it('shows a per-type breakdown instead of one blended total for "All types"', () => {
+    mockFormOptions();
+    mockResult({
+      actual: null,
+      count: 9,
+      recurringActual: null,
+      planned: null,
+      variance: null,
+      pctOfPlanned: null,
+      pctOfIncome: null,
+      incomeForPeriod: 85000,
+      byType: [
+        {
+          type: 'INCOME',
+          actual: 85000,
+          recurringActual: 0,
+          count: 1,
+          planned: 85000,
+          variance: 0,
+          pctOfIncome: 100,
+        },
+        {
+          type: 'EXPENSE',
+          actual: 8650,
+          recurringActual: 1500,
+          count: 7,
+          planned: 8000,
+          variance: 650,
+          pctOfIncome: 10.2,
+        },
+        {
+          type: 'INVESTMENT',
+          actual: 0,
+          recurringActual: 0,
+          count: 1,
+          planned: 2000,
+          variance: -2000,
+          pctOfIncome: 0,
+        },
+      ],
+    });
+    render(<ReportFilterWidget />);
+
+    expect(
+      screen.getByText('Income', { selector: '.report-filter-widget__breakdown-label' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Expense', { selector: '.report-filter-widget__breakdown-label' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Investment', { selector: '.report-filter-widget__breakdown-label' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Actual income')).toBeInTheDocument();
+    expect(screen.getByText('Actual spend')).toBeInTheDocument();
+    expect(screen.getByText('Actual invested')).toBeInTheDocument();
+    // Not a single blended "3,71,293.94"-style figure anywhere.
+    expect(screen.queryByText('₹3,71,294')).not.toBeInTheDocument();
   });
 
   it('shows the income-ratio card when a specific month is set, and nothing about other months', () => {
@@ -142,6 +204,7 @@ describe('ReportFilterWidget', () => {
       pctOfPlanned: 108,
       pctOfIncome: 10.2,
       incomeForPeriod: 85000,
+      byType: null,
     });
     render(<ReportFilterWidget />);
 
@@ -161,6 +224,7 @@ describe('ReportFilterWidget', () => {
       pctOfPlanned: 100,
       pctOfIncome: 24,
       incomeForPeriod: 83333,
+      byType: null,
     });
     const user = userEvent.setup();
     render(<ReportFilterWidget />);
@@ -276,6 +340,7 @@ describe('ReportFilterWidget', () => {
       pctOfPlanned: 108,
       pctOfIncome: null,
       incomeForPeriod: null,
+      byType: null,
     });
     const user = userEvent.setup();
     render(<ReportFilterWidget />);
@@ -301,6 +366,7 @@ describe('ReportFilterWidget', () => {
       pctOfPlanned: 108,
       pctOfIncome: null,
       incomeForPeriod: null,
+      byType: null,
     });
     const user = userEvent.setup();
     render(<ReportFilterWidget />);

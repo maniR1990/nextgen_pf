@@ -14,9 +14,9 @@ export interface MiniDateStripProps {
 }
 
 // How far back the strip renders before handing off to the full calendar —
-// most backdating is recent, so two weeks covers the common case without
-// needing the picker at all.
-const RECENT_WINDOW_DAYS = 14;
+// most logging happens same-day or within a few days, so the last 5 days
+// covers the common case without needing the picker at all.
+const RECENT_WINDOW_DAYS = 5;
 
 function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -179,10 +179,10 @@ export function MiniDateStrip({ value, onChange, error, label = 'Date', required
                 aria-pressed={isActive}
                 aria-label={formatCellLabel(d)}
               >
-                <span className="mini-date-strip__month">
-                  {d.toLocaleDateString('en-IN', { month: 'short' })}
-                </span>
                 <span className="mini-date-strip__num">{d.getDate()}</span>
+                <span className="mini-date-strip__weekday">
+                  {iso === todayIso ? 'Today' : d.toLocaleDateString('en-IN', { weekday: 'short' })}
+                </span>
               </button>
             );
           })}

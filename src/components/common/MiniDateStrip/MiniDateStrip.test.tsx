@@ -67,12 +67,13 @@ function setVisible(isos: string[]) {
 
 describe('MiniDateStrip', () => {
   describe('rendering the recent window', () => {
-    it('renders every day from 14 days ago through today', () => {
+    it('renders exactly the last 5 days, today included', () => {
       render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
-      expect(screen.getByRole('button', { name: dayName(5) })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: dayName(14) })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: dayName(18) })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: dayName(4) })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: dayName(13) })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: dayName(19) })).not.toBeInTheDocument();
+      expect(screen.getAllByRole('button', { name: /jul 2026$/i })).toHaveLength(5);
     });
 
     it('marks the cell matching value as active', () => {
@@ -81,6 +82,31 @@ describe('MiniDateStrip', () => {
         'aria-pressed',
         'true',
       );
+    });
+  });
+
+  describe('per-cell weekday label', () => {
+    it("shows today's cell as \"Today\" instead of its weekday name", () => {
+      render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
+      const todayCell = screen.getByRole('button', { name: dayName(18) });
+      expect(todayCell).toHaveTextContent('Today');
+      // Sat 18 Jul 2026 — "Sat" must not also appear on the today cell.
+      expect(todayCell).not.toHaveTextContent('Sat');
+    });
+
+    it('shows the short weekday name under the date for every other cell', () => {
+      render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
+      // Fri 17 Jul 2026
+      const cell = screen.getByRole('button', { name: dayName(17) });
+      expect(cell).toHaveTextContent('17');
+      expect(cell).toHaveTextContent('Fri');
+    });
+
+    it('never shows "Today" on a cell other than the actual current day', () => {
+      render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
+      for (const day of [14, 15, 16, 17]) {
+        expect(screen.getByRole('button', { name: dayName(day) })).not.toHaveTextContent('Today');
+      }
     });
   });
 
@@ -96,7 +122,7 @@ describe('MiniDateStrip', () => {
   describe('scrolling within the recent window', () => {
     it('scrolls the container back one cell when "‹" is clicked and today is not the oldest visible day', () => {
       render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
-      setVisible(['2026-07-14', '2026-07-15', '2026-07-16', '2026-07-17', '2026-07-18']);
+      setVisible(['2026-07-15', '2026-07-16', '2026-07-17', '2026-07-18']);
       const days = screen.getByRole('group', { name: /select a recent date/i });
       const scrollBySpy = vi.spyOn(days, 'scrollBy');
       fireEvent.click(screen.getByRole('button', { name: /show earlier days/i }));
@@ -110,8 +136,8 @@ describe('MiniDateStrip', () => {
     });
 
     it('leaves the forward arrow enabled while today is scrolled out of view', () => {
-      render(<MiniDateStrip value="2026-07-05" onChange={vi.fn()} />);
-      setVisible(['2026-07-04', '2026-07-05', '2026-07-06']);
+      render(<MiniDateStrip value="2026-07-14" onChange={vi.fn()} />);
+      setVisible(['2026-07-14', '2026-07-15', '2026-07-16']);
       expect(screen.getByRole('button', { name: /show later days/i })).not.toBeDisabled();
     });
   });
@@ -119,7 +145,7 @@ describe('MiniDateStrip', () => {
   describe('falling back to the full picker beyond the recent window', () => {
     it('opens the calendar instead of scrolling once the oldest day is already in view', () => {
       render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
-      setVisible(['2026-07-05', '2026-07-06', '2026-07-07']); // oldest allowed day (Jul 5) visible
+      setVisible(['2026-07-14', '2026-07-15', '2026-07-16']); // oldest allowed day (Jul 14) visible
       fireEvent.click(screen.getByRole('button', { name: /show earlier days/i }));
       expect(screen.getByRole('grid')).toBeInTheDocument();
     });
@@ -127,7 +153,7 @@ describe('MiniDateStrip', () => {
     it('picking a date from the fallback calendar calls onChange and closes the picker', () => {
       const onChange = vi.fn();
       render(<MiniDateStrip value="2026-07-18" onChange={onChange} />);
-      setVisible(['2026-07-05', '2026-07-06', '2026-07-07']);
+      setVisible(['2026-07-14', '2026-07-15', '2026-07-16']);
       fireEvent.click(screen.getByRole('button', { name: /show earlier days/i }));
       expect(screen.getByRole('grid')).toBeInTheDocument();
 
@@ -151,21 +177,6 @@ describe('MiniDateStrip', () => {
       render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
       setVisible(['2026-07-16', '2026-07-17', '2026-07-18']);
       expect(screen.queryByText(/selected:/i)).not.toBeInTheDocument();
-    });
-  });
-
-  describe('per-cell month label', () => {
-    it('shows the month abbreviation on every cell', () => {
-      render(<MiniDateStrip value="2026-07-18" onChange={vi.fn()} />);
-      expect(screen.getAllByText('Jul').length).toBe(14);
-    });
-
-    it("shows each cell's own month when the recent window spans a boundary", () => {
-      vi.setSystemTime(new Date(2026, 6, 3));
-      render(<MiniDateStrip value="2026-07-03" onChange={vi.fn()} />);
-      // 14-day window ending Jul 3 starts Jun 20 — 11 Jun cells, 3 Jul cells.
-      expect(screen.getAllByText('Jun').length).toBe(11);
-      expect(screen.getAllByText('Jul').length).toBe(3);
     });
   });
 

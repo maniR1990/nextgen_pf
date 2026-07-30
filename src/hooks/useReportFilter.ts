@@ -12,16 +12,30 @@ export interface ReportFilterParams {
   month?: number;
 }
 
-export interface ReportFilterResult {
+export interface ReportFilterTypeBreakdown {
+  type: 'INCOME' | 'EXPENSE' | 'INVESTMENT';
   actual: number;
-  count: number;
   recurringActual: number;
+  count: number;
+  planned: number | null;
+  variance: number | null;
+  pctOfIncome: number | null;
+}
+
+export interface ReportFilterResult {
+  count: number;
+  /** null when `byType` is populated — see ReportsService.getFilteredReport. */
+  actual: number | null;
+  recurringActual: number | null;
   /** null when not computable — see ReportsService.getFilteredReport. */
   planned: number | null;
   variance: number | null;
   pctOfPlanned: number | null;
   pctOfIncome: number | null;
   incomeForPeriod: number | null;
+  /** Populated instead of the single-number fields above when there's no single type or
+   *  category to anchor "actual" to — see ReportsService.getFilteredReport. */
+  byType: ReportFilterTypeBreakdown[] | null;
 }
 
 function buildQuery(params: ReportFilterParams): string {

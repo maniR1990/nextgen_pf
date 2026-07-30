@@ -45,6 +45,25 @@ function ratioLabel(type: string): string {
   return 'Spent from income';
 }
 
+const BREAKDOWN_LABEL: Record<'INCOME' | 'EXPENSE' | 'INVESTMENT', string> = {
+  INCOME: 'Income',
+  EXPENSE: 'Expense',
+  INVESTMENT: 'Investment',
+};
+
+// More income than planned is good; more spent or invested than planned is a deviation
+// from plan — mirrors the same good/bad convention used everywhere else in the budget UI.
+function breakdownVarianceColor(
+  type: 'INCOME' | 'EXPENSE' | 'INVESTMENT',
+  variance: number | null,
+): string | undefined {
+  if (variance == null || variance === 0) return undefined;
+  // Income and Investment: more than planned is good (earned/invested extra). Expense:
+  // less than planned is good (spent less than budgeted).
+  const isGood = type === 'EXPENSE' ? variance < 0 : variance > 0;
+  return isGood ? 'var(--color-success)' : 'var(--color-error)';
+}
+
 function buildMonthOptions() {
   const now = new Date();
   const options: { value: string; label: string }[] = [];
@@ -221,7 +240,64 @@ export function ReportFilterWidget() {
       ) : noMatches ? (
         <p className="report-filter-widget__empty">No transactions match these filters.</p>
       ) : (
-        data && (
+        data &&
+        (data.byType ? (
+          // "All types" with no category picked — Income, Expense, and Investment
+          // amounts don't mean the same thing, so there's no single honest number to
+          // show. One clearly-labeled row per type instead of one blended, confusing total.
+          <div className="report-filter-widget__result">
+            <div className="report-filter-widget__breakdown">
+              {data.byType.map((b) => (
+                <div key={b.type} className="report-filter-widget__breakdown-group">
+                  <span className="report-filter-widget__breakdown-label">
+                    {BREAKDOWN_LABEL[b.type]}
+                  </span>
+                  <div className="report-filter-widget__metrics">
+                    <div className="report-filter-widget__metric">
+                      <span className="report-filter-widget__metric-label">Planned</span>
+                      <span className="report-filter-widget__metric-value">
+                        {b.planned === null ? 'N/A' : formatINR(b.planned)}
+                      </span>
+                    </div>
+                    <div className="report-filter-widget__metric">
+                      <span className="report-filter-widget__metric-label">
+                        {actualLabel(b.type)}
+                      </span>
+                      <span className="report-filter-widget__metric-value">
+                        {formatINR(b.actual)}
+                      </span>
+                    </div>
+                    <div className="report-filter-widget__metric">
+                      <span className="report-filter-widget__metric-label">Variance</span>
+                      <span
+                        className="report-filter-widget__metric-value"
+                        style={{ color: breakdownVarianceColor(b.type, b.variance) }}
+                      >
+                        {b.variance === null
+                          ? 'N/A'
+                          : `${b.variance >= 0 ? '+' : ''}${formatINR(b.variance)}`}
+                      </span>
+                    </div>
+                    {data.incomeForPeriod !== null && (
+                      <div className="report-filter-widget__metric">
+                        <span className="report-filter-widget__metric-label">
+                          {ratioLabel(b.type)}
+                        </span>
+                        <span className="report-filter-widget__metric-value">
+                          {formatINR(b.actual)} / {formatINR(data.incomeForPeriod)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="report-filter-widget__caption">
+                    {b.count} matching item{b.count === 1 ? '' : 's'}
+                    {b.recurringActual > 0 && ` · ${formatINR(b.recurringActual)} recurring`}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
           <div className="report-filter-widget__result">
             <div className="report-filter-widget__metrics">
               <div className="report-filter-widget__metric">
@@ -233,7 +309,7 @@ export function ReportFilterWidget() {
               <div className="report-filter-widget__metric">
                 <span className="report-filter-widget__metric-label">{actualLabel(type)}</span>
                 <span className="report-filter-widget__metric-value">
-                  {formatINR(data.actual)}
+                  {formatINR(data.actual as number)}
                 </span>
               </div>
               <div className="report-filter-widget__metric">
@@ -251,17 +327,18 @@ export function ReportFilterWidget() {
                 <div className="report-filter-widget__metric">
                   <span className="report-filter-widget__metric-label">{ratioLabel(type)}</span>
                   <span className="report-filter-widget__metric-value">
-                    {formatINR(data.actual)} / {formatINR(data.incomeForPeriod)}
+                    {formatINR(data.actual as number)} / {formatINR(data.incomeForPeriod)}
                   </span>
                 </div>
               )}
             </div>
             <p className="report-filter-widget__caption">
               {data.count} matching item{data.count === 1 ? '' : 's'}
-              {data.recurringActual > 0 && ` · ${formatINR(data.recurringActual)} recurring`}
+              {(data.recurringActual ?? 0) > 0 &&
+                ` · ${formatINR(data.recurringActual as number)} recurring`}
             </p>
           </div>
-        )
+        ))
       )}
     </section>
   );

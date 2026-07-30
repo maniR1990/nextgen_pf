@@ -135,4 +135,26 @@
     color: var(--color-text-muted);
     margin: 0;
   }
+
+  // One labeled group per transaction type ("all types" case) — each group is a full
+  // metrics grid of its own so Income/Expense/Investment never blend into one number.
+  &__breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__breakdown-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5);
+  }
+
+  &__breakdown-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+  }
 }

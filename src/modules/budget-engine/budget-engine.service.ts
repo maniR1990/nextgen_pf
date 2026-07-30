@@ -15,6 +15,11 @@ function validatePeriod(year: number, month: number) {
   if (monthsAhead > MAX_FUTURE_MONTHS) throw new BudgetPeriodInvalidError();
 }
 
+function isPastPeriod(year: number, month: number): boolean {
+  const now = new Date();
+  return year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
+}
+
 type RawCategory = {
   id: string;
   name: string;
@@ -32,13 +37,20 @@ type RawCategoryWithArchive = RawCategory & { archivedAt: Date | null };
 
 /**
  * An archived category only belongs in a given month's tree if it has real
- * history (a Budget plan or transactions) IN THAT EXACT month — otherwise
- * archiving it would either resurrect it into months it never touched (in
- * particular every future month) or, if left unfiltered entirely, vanish
- * from months where it has genuine past data. Ancestors of a historically-
- * active archived category are pulled in too (regardless of their own
- * activity) so the tree-building step below never orphans it for lacking a
- * parent — e.g. archiving a whole subtree together archives the parent too.
+ * history IN THAT EXACT month — otherwise archiving it would either
+ * resurrect it into months it never touched (in particular every future
+ * month) or, if left unfiltered entirely, vanish from months where it has
+ * genuine past data. Ancestors of a historically-active archived category
+ * are pulled in too (regardless of their own activity) so the tree-building
+ * step below never orphans it for lacking a parent — e.g. archiving a whole
+ * subtree together archives the parent too.
+ *
+ * "Real history" for a past month includes a bare Budget plan even with zero
+ * actual spend (that's still meaningful record of what was planned). For the
+ * current or a future month, only actual transactions count — a leftover
+ * Budget plan with no spend isn't history yet, it's just the record the user
+ * is deleting, and letting it alone resurrect the category would mean
+ * deleting a never-used budget line does nothing visible.
  */
 function resolveVisibleCategories(
   allCategories: RawCategoryWithArchive[],
@@ -130,6 +142,7 @@ export const BudgetEngineService = {
             archivedIds,
             year,
             month,
+            isPastPeriod(year, month),
           )
         : new Set<string>();
     const rawCategories = resolveVisibleCategories(allCategories, activeInPeriod);

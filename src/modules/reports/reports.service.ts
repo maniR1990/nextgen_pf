@@ -15,13 +15,47 @@ function findNode(nodes: BudgetCategoryNode[], id: string): BudgetCategoryNode |
   return undefined;
 }
 
-export interface ReportFilterResult {
+/**
+ * Only leaf categories carry a user-set `planned` and `isUnplanned` — a parent's own
+ * `.planned`/`.actual` are computed rollups of its children (see BudgetCategoryRow), so
+ * flagging a parent here would either double-count a child already flagged underneath it
+ * or flag a rollup nobody actually set. The synthetic "Uncategorized" row is skipped too:
+ * it has no real category id, so there's nothing a report row could link to.
+ */
+function collectLeaves(
+  nodes: BudgetCategoryNode[],
+  parentName: string | null = null,
+): Array<{ node: BudgetCategoryNode; parentName: string | null }> {
+  const out: Array<{ node: BudgetCategoryNode; parentName: string | null }> = [];
+  for (const node of nodes) {
+    if (node.isVirtual) continue;
+    if (node.children.length === 0) out.push({ node, parentName });
+    else out.push(...collectLeaves(node.children, node.name));
+  }
+  return out;
+}
+
+export interface ReportFilterTypeBreakdown {
+  type: 'INCOME' | 'EXPENSE' | 'INVESTMENT';
   actual: number;
-  count: number;
   recurringActual: number;
+  count: number;
+  planned: number | null;
+  variance: number | null;
+  pctOfIncome: number | null;
+}
+
+export interface ReportFilterResult {
+  /** Total matching transactions across every type — a plain count is never ambiguous,
+   *  so this stays populated even when `byType` is (see below). */
+  count: number;
+  /** Null when `byType` is populated instead — see `byType`. */
+  actual: number | null;
+  recurringActual: number | null;
   /** null when not computable: Budget plans have no account dimension (so an account
    *  filter narrows below what a plan represents) and are only tracked per calendar
-   *  month (so "all time" has no single plan to sum). */
+   *  month (so "all time" has no single plan to sum). Also null when `byType` is
+   *  populated instead. */
   planned: number | null;
   variance: number | null;
   pctOfPlanned: number | null;
@@ -34,9 +68,84 @@ export interface ReportFilterResult {
    *  plain "₹X of ₹Y income" instead of a bare percentage. Null under the same
    *  conditions as pctOfIncome. */
   incomeForPeriod: number | null;
+  /** Populated instead of the single-number fields above only when no `type` filter is
+   *  set AND no category is selected — i.e. a query with nothing to anchor "actual" to
+   *  a single kind of money. Income, Expense, and Investment amounts mean different
+   *  things (money in vs. money out vs. money set aside), so blending them into one
+   *  rupee total is not a real number — it's just noise that happens to add up. Once a
+   *  category is picked, its whole subtree already belongs to exactly one type, so
+   *  there's nothing left to blend and the single-number fields above apply as normal. */
+  byType: ReportFilterTypeBreakdown[] | null;
+}
+
+export interface BudgetFlagCategory {
+  id: string;
+  name: string;
+  /** Immediate parent's name, for a "Parent › Category" label — null for a top-level
+   *  (L1) category, which needs no extra context. */
+  parentName: string | null;
+  amount: number;
+}
+
+export interface OverBudgetCategory extends BudgetFlagCategory {
+  planned: number;
+  /** amount - planned, i.e. how far over budget — always > 0 in this list. */
+  over: number;
+}
+
+export interface BudgetFlagsResult {
+  unplannedTotal: number;
+  /** Sorted by amount, highest first. */
+  unplanned: BudgetFlagCategory[];
+  overBudgetTotal: number;
+  /** Sorted by `over`, highest first. */
+  overBudget: OverBudgetCategory[];
 }
 
 export const ReportsService = {
+  /**
+   * Two things worth a user's attention that neither the KPI strip nor the filter tool
+   * surfaces on their own: spend flagged "unplanned" (a one-off the user marked in the
+   * Budget page, not part of the regular plan) and categories that have actually gone
+   * over their planned amount this month. Scoped to EXPENSE only — "unplanned income" or
+   * "over-planned investment" isn't a warning in the same sense a budget overrun is.
+   */
+  async getBudgetFlags(userId: string, year: number, month: number): Promise<BudgetFlagsResult> {
+    const summary = await BudgetEngineService.getMonthlySummary(userId, year, month);
+    const leaves = summary.groups
+      .filter((g) => g.type === 'EXPENSE')
+      .flatMap((g) => collectLeaves(g.categories));
+
+    const unplanned = leaves
+      .filter(({ node }) => node.isUnplanned && node.actual > 0)
+      .map(({ node, parentName }) => ({
+        id: node.id,
+        name: node.name,
+        parentName,
+        amount: node.actual,
+      }))
+      .sort((a, b) => b.amount - a.amount);
+
+    const overBudget = leaves
+      .filter(({ node }) => node.planned > 0 && node.actual > node.planned)
+      .map(({ node, parentName }) => ({
+        id: node.id,
+        name: node.name,
+        parentName,
+        amount: node.actual,
+        planned: node.planned,
+        over: node.actual - node.planned,
+      }))
+      .sort((a, b) => b.over - a.over);
+
+    return {
+      unplannedTotal: unplanned.reduce((sum, u) => sum + u.amount, 0),
+      unplanned,
+      overBudgetTotal: overBudget.reduce((sum, o) => sum + o.over, 0),
+      overBudget,
+    };
+  },
+
   async getFilteredReport(
     userId: string,
     filters: ReportFilterQuery,
@@ -58,6 +167,84 @@ export const ReportsService = {
       categoryIds = Array.from(expanded);
     }
 
+    const hasCategory = !!filters.categoryIds && filters.categoryIds.length > 0;
+    const hasPeriod = filters.year !== undefined && filters.month !== undefined;
+
+    const summary = hasPeriod && !filters.accountId
+      ? await BudgetEngineService.getMonthlySummary(userId, filters.year!, filters.month!)
+      : null;
+    const periodTotals = hasPeriod ? await getPeriodTotals(userId, filters.year!, filters.month!) : null;
+
+    function plannedFor(type: 'EXPENSE' | 'INCOME' | 'INVESTMENT' | undefined): number | null {
+      if (!summary) return null;
+      if (hasCategory && flatCategories) {
+        // Each selected id's own `.planned` is already the budget-engine's rolled-up sum
+        // for that node's whole subtree — summing per selected root (not per expanded
+        // descendant) avoids double-counting a child that's also inside a selected
+        // parent's rollup. The picker already prevents selecting a category alongside its
+        // own ancestor/descendant, but the API is reachable directly too, so this drops
+        // any selected id that's covered by another selected id before summing — defense
+        // in depth, not just a UI nicety.
+        const roots = filters.categoryIds!;
+        const independentIds = roots.filter(
+          (id) => !roots.some((other) => other !== id && isDescendant(flatCategories!, other, id)),
+        );
+        const allNodes = summary.groups.flatMap((g) => g.categories);
+        return independentIds.reduce((sum, id) => sum + (findNode(allNodes, id)?.planned ?? 0), 0);
+      }
+      if (type) {
+        return summary.groups.filter((g) => g.type === type).reduce((sum, g) => sum + g.planned, 0);
+      }
+      return summary.groups.reduce((sum, g) => sum + g.planned, 0);
+    }
+
+    function pctOfIncomeFor(actual: number): number | null {
+      if (!periodTotals || periodTotals.totalIncome <= 0) return null;
+      return Math.round((actual / periodTotals.totalIncome) * 1000) / 10;
+    }
+
+    const incomeForPeriod = periodTotals ? periodTotals.totalIncome : null;
+
+    // "All types, no category" has nothing to anchor a single "actual" figure to — Income,
+    // Expense, and Investment amounts don't mean the same thing, so summing them produces
+    // a number that reads as real but isn't. Give a per-type breakdown instead; see the
+    // `byType` doc comment above.
+    if (!filters.type && !hasCategory) {
+      const types = ['INCOME', 'EXPENSE', 'INVESTMENT'] as const;
+      const byType = await Promise.all(
+        types.map(async (type): Promise<ReportFilterTypeBreakdown> => {
+          const { actual, count, recurringActual } = await TransactionRepository.sumFiltered(userId, {
+            year: filters.year,
+            month: filters.month,
+            type,
+            accountId: filters.accountId,
+          });
+          const planned = plannedFor(type);
+          return {
+            type,
+            actual,
+            recurringActual,
+            count,
+            planned,
+            variance: planned !== null ? actual - planned : null,
+            pctOfIncome: pctOfIncomeFor(actual),
+          };
+        }),
+      );
+
+      return {
+        count: byType.reduce((sum, b) => sum + b.count, 0),
+        actual: null,
+        recurringActual: null,
+        planned: null,
+        variance: null,
+        pctOfPlanned: null,
+        pctOfIncome: null,
+        incomeForPeriod,
+        byType,
+      };
+    }
+
     const { actual, count, recurringActual } = await TransactionRepository.sumFiltered(userId, {
       year: filters.year,
       month: filters.month,
@@ -66,53 +253,9 @@ export const ReportsService = {
       categoryIds,
     });
 
-    let planned: number | null = null;
-    if (filters.year !== undefined && filters.month !== undefined && !filters.accountId) {
-      const summary = await BudgetEngineService.getMonthlySummary(
-        userId,
-        filters.year,
-        filters.month,
-      );
-      if (filters.categoryIds && filters.categoryIds.length > 0 && flatCategories) {
-        // Each selected id's own `.planned` is already the budget-engine's rolled-up sum
-        // for that node's whole subtree — summing per selected root (not per expanded
-        // descendant) avoids double-counting a child that's also inside a selected
-        // parent's rollup. The picker already prevents selecting a category alongside its
-        // own ancestor/descendant, but the API is reachable directly too, so this drops
-        // any selected id that's covered by another selected id before summing — defense
-        // in depth, not just a UI nicety.
-        const roots = filters.categoryIds;
-        const independentIds = roots.filter(
-          (id) => !roots.some((other) => other !== id && isDescendant(flatCategories!, other, id)),
-        );
-        const allNodes = summary.groups.flatMap((g) => g.categories);
-        planned = independentIds.reduce(
-          (sum, id) => sum + (findNode(allNodes, id)?.planned ?? 0),
-          0,
-        );
-      } else if (filters.type) {
-        planned = summary.groups
-          .filter((g) => g.type === filters.type)
-          .reduce((sum, g) => sum + g.planned, 0);
-      } else {
-        planned = summary.groups.reduce((sum, g) => sum + g.planned, 0);
-      }
-    }
-
+    const planned = plannedFor(filters.type);
     const variance = planned !== null ? actual - planned : null;
     const pctOfPlanned = planned !== null && planned > 0 ? Math.round((actual / planned) * 100) : null;
-
-    let pctOfIncome: number | null = null;
-    let incomeForPeriod: number | null = null;
-
-    if (filters.year !== undefined && filters.month !== undefined) {
-      const periodTotals = await getPeriodTotals(userId, filters.year, filters.month);
-      pctOfIncome =
-        periodTotals.totalIncome > 0
-          ? Math.round((actual / periodTotals.totalIncome) * 1000) / 10
-          : null;
-      incomeForPeriod = periodTotals.totalIncome;
-    }
 
     return {
       actual,
@@ -121,8 +264,9 @@ export const ReportsService = {
       planned,
       variance,
       pctOfPlanned,
-      pctOfIncome,
+      pctOfIncome: pctOfIncomeFor(actual),
       incomeForPeriod,
+      byType: null,
     };
   },
 };

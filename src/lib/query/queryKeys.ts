@@ -59,6 +59,8 @@ export const queryKeys = {
     kpi: (year: number, month: number) => [...queryKeys.reports.all, 'kpi', year, month] as const,
     filter: (params: Record<string, unknown>) =>
       [...queryKeys.reports.all, 'filter', params] as const,
+    budgetFlags: (year: number, month: number) =>
+      [...queryKeys.reports.all, 'budget-flags', year, month] as const,
   },
   budget: {
     all: ['budget'] as const,

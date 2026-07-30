@@ -129,10 +129,19 @@ describe('ReportsService.getFilteredReport', () => {
     expect(result.planned).toBe(9500);
   });
 
-  it('sums every group when neither category nor type is set', async () => {
+  it('returns a per-type breakdown instead of one blended total when neither category nor type is set', async () => {
     const result = await ReportsService.getFilteredReport('u1', { year: 2026, month: 7 });
 
-    expect(result.planned).toBe(9500 + 85000);
+    // Top-level single-number fields are null — Income + Expense + Investment don't sum
+    // to anything meaningful, so there's no honest single "planned"/"actual" to report.
+    expect(result.planned).toBeNull();
+    expect(result.actual).toBeNull();
+    expect(result.byType).not.toBeNull();
+
+    const expense = result.byType!.find((b) => b.type === 'EXPENSE');
+    const income = result.byType!.find((b) => b.type === 'INCOME');
+    expect(expense!.planned).toBe(9500);
+    expect(income!.planned).toBe(85000);
   });
 
   it('suppresses planned/variance when an account filter is set, since budgets have no account dimension', async () => {
@@ -173,11 +182,28 @@ describe('ReportsService.getFilteredReport', () => {
       recurringActual: 0,
     });
 
-    const result = await ReportsService.getFilteredReport('u1', { year: 2026, month: 7 });
+    const result = await ReportsService.getFilteredReport('u1', {
+      year: 2026,
+      month: 7,
+      type: 'EXPENSE',
+    });
 
     expect(result.actual).toBe(0);
     expect(result.count).toBe(0);
     expect(result.recurringActual).toBe(0);
+  });
+
+  it('sums per-type counts into the top-level count when neither category nor type is set', async () => {
+    vi.mocked(TransactionRepository.sumFiltered).mockResolvedValue({
+      actual: 100,
+      count: 4,
+      recurringActual: 0,
+    });
+
+    const result = await ReportsService.getFilteredReport('u1', { year: 2026, month: 7 });
+
+    // Called once per type (INCOME, EXPENSE, INVESTMENT), 4 matches each → 12 total.
+    expect(result.count).toBe(12);
   });
 
   it("computes pctOfIncome from that month's total income", async () => {
@@ -310,5 +336,102 @@ describe('ReportsService.getFilteredReport', () => {
     await ReportsService.getFilteredReport('u1', { year: 2026, month: 7 });
 
     expect(CategoriesRepository.findAccessible).not.toHaveBeenCalled();
+  });
+});
+
+describe('ReportsService.getBudgetFlags', () => {
+  it('lists unplanned spend and over-budget categories from EXPENSE only, sorted by size', async () => {
+    const flaggedSummary = {
+      year: 2026,
+      month: 7,
+      groups: [
+        {
+          id: 'g-expense',
+          name: 'Expenses',
+          type: 'EXPENSE',
+          planned: 0,
+          actual: 0,
+          lastMonthActual: 0,
+          variance: 0,
+          variancePct: 0,
+          progressPct: 0,
+          categories: [
+            // Over budget, not unplanned.
+            node({ id: 'groceries', name: 'Groceries', planned: 5000, actual: 6200 }),
+            // Unplanned, not over budget (no plan at all).
+            node({ id: 'gadget', name: 'Gadget', planned: 0, actual: 3000, isUnplanned: true }),
+            // Nested: unplanned AND over budget — appears in both lists, with parent context.
+            node({
+              id: 'personal-care',
+              name: 'Personal Care',
+              planned: 0,
+              actual: 0,
+              children: [
+                node({
+                  id: 'haircut',
+                  name: 'Haircut',
+                  planned: 500,
+                  actual: 1800,
+                  isUnplanned: true,
+                }),
+              ],
+            }),
+            // Neither — under budget, not flagged.
+            node({ id: 'utilities', name: 'Utilities', planned: 4500, actual: 4000 }),
+            // The synthetic Uncategorized row — never a real report row.
+            node({ id: 'uncategorized', name: 'Uncategorized', isVirtual: true, planned: 0, actual: 900 }),
+          ],
+        },
+        {
+          id: 'g-income',
+          name: 'Income',
+          type: 'INCOME',
+          planned: 85000,
+          actual: 90000,
+          lastMonthActual: 0,
+          variance: 0,
+          variancePct: 0,
+          progressPct: 0,
+          // Over its own plan and unplanned — must never leak into an EXPENSE-only report.
+          categories: [node({ id: 'bonus', name: 'Bonus', planned: 80000, actual: 90000, isUnplanned: true })],
+        },
+      ],
+    };
+    vi.mocked(BudgetEngineService.getMonthlySummary).mockResolvedValue(flaggedSummary as never);
+
+    const result = await ReportsService.getBudgetFlags('u1', 2026, 7);
+
+    // gadget (₹3,000) sorts before haircut (₹1,800) — highest amount first.
+    expect(result.unplanned.map((u) => u.id)).toEqual(['gadget', 'haircut']);
+    expect(result.unplanned.find((u) => u.id === 'haircut')).toMatchObject({
+      name: 'Haircut',
+      parentName: 'Personal Care',
+      amount: 1800,
+    });
+    expect(result.unplanned.find((u) => u.id === 'gadget')?.parentName).toBeNull();
+    expect(result.unplannedTotal).toBe(1800 + 3000);
+
+    expect(result.overBudget.map((o) => o.id)).toEqual(['haircut', 'groceries']);
+    expect(result.overBudget.find((o) => o.id === 'haircut')).toMatchObject({
+      planned: 500,
+      amount: 1800,
+      over: 1300,
+    });
+    expect(result.overBudgetTotal).toBe(1300 + 1200);
+
+    expect(result.unplanned.some((u) => u.id === 'bonus')).toBe(false);
+    expect(result.overBudget.some((o) => o.id === 'bonus')).toBe(false);
+    expect(result.unplanned.some((u) => u.id === 'uncategorized')).toBe(false);
+  });
+
+  it('returns empty lists when nothing is unplanned or over budget', async () => {
+    vi.mocked(BudgetEngineService.getMonthlySummary).mockResolvedValue(SUMMARY as never);
+
+    const result = await ReportsService.getBudgetFlags('u1', 2026, 7);
+
+    expect(result.unplanned).toEqual([]);
+    expect(result.overBudget).toEqual([]);
+    expect(result.unplannedTotal).toBe(0);
+    expect(result.overBudgetTotal).toBe(0);
   });
 });

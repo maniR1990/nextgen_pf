@@ -34,19 +34,26 @@ export const BudgetEngineRepository = {
     );
   },
 
-  /** Which of the given category IDs have a Budget plan or transactions in this exact period. */
+  /**
+   * Which of the given category IDs have real activity in this exact period.
+   * Transactions always count. A bare Budget plan (no spend) only counts when
+   * `includeBudgetPlans` is true — see the caller for why that's period-dependent.
+   */
   findCategoriesWithActivityInPeriod: async (
     userId: string,
     categoryIds: string[],
     year: number,
     month: number,
+    includeBudgetPlans: boolean,
   ) => {
     if (categoryIds.length === 0) return new Set<string>();
     const [budgetRows, txRows] = await Promise.all([
-      prisma.budget.findMany({
-        where: { userId, period: 'MONTHLY', year, month, categoryId: { in: categoryIds } },
-        select: { categoryId: true },
-      }),
+      includeBudgetPlans
+        ? prisma.budget.findMany({
+            where: { userId, period: 'MONTHLY', year, month, categoryId: { in: categoryIds } },
+            select: { categoryId: true },
+          })
+        : Promise.resolve([] as { categoryId: string }[]),
       prisma.financeTransaction.groupBy({
         by: ['categoryId'],
         where: {

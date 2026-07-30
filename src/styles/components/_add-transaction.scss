@@ -248,11 +248,12 @@
     }
   }
 
-  &__month {
+  &__weekday {
     font-size: 10px;
     font-weight: 500;
     line-height: 1.2;
     color: var(--color-text-muted);
+    white-space: nowrap;
   }
 
   &__num {
