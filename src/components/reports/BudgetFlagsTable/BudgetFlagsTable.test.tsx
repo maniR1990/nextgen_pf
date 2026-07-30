@@ -1,5 +1,5 @@
 import type { BudgetFlagsResult } from '@/hooks/useBudgetFlags';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { BudgetFlagsTableInner } from './BudgetFlagsTable';
 
@@ -35,8 +35,9 @@ describe('BudgetFlagsTableInner', () => {
       'aria-selected',
       'true',
     );
-    expect(screen.getByText('Excess Amount')).toBeInTheDocument();
-    const row = screen.getByText('Vehicle Insurance').closest('tr')!;
+    const table = screen.getByRole('table');
+    expect(within(table).getByText('Excess Amount')).toBeInTheDocument();
+    const row = within(table).getByText('Vehicle Insurance').closest('tr')!;
     expect(row).toHaveTextContent('Insurance');
     expect(row).toHaveTextContent('₹1,465.00');
   });
@@ -62,12 +63,13 @@ describe('BudgetFlagsTableInner', () => {
       'aria-selected',
       'true',
     );
-    expect(screen.getByText('Amount')).toBeInTheDocument();
-    expect(screen.queryByText('Excess Amount')).not.toBeInTheDocument();
-    expect(screen.getByText('Gadget')).toBeInTheDocument();
-    expect(screen.getByText('₹5,200.00')).toBeInTheDocument();
+    const table = screen.getByRole('table');
+    expect(within(table).getByText('Amount')).toBeInTheDocument();
+    expect(within(table).queryByText('Excess Amount')).not.toBeInTheDocument();
+    expect(within(table).getByText('Gadget')).toBeInTheDocument();
+    expect(within(table).getByText('₹5,200.00')).toBeInTheDocument();
     // Vehicle Insurance was on the other tab — must not still be showing.
-    expect(screen.queryByText('Vehicle Insurance')).not.toBeInTheDocument();
+    expect(within(table).queryByText('Vehicle Insurance')).not.toBeInTheDocument();
   });
 
   it('lands on the Unplanned tab by default when only unplanned spend exists', () => {
@@ -85,7 +87,7 @@ describe('BudgetFlagsTableInner', () => {
       'aria-selected',
       'true',
     );
-    expect(screen.getByText('Gadget')).toBeInTheDocument();
+    expect(screen.getByRole('table')).toHaveTextContent('Gadget');
   });
 
   it('shows an empty message on a tab with nothing to show, without losing the other tab', () => {
@@ -121,10 +123,13 @@ describe('BudgetFlagsTableInner', () => {
       />,
     );
 
-    expect(screen.getByText('₹1,465.00')).toHaveClass('budget-flags-table__excess');
+    const table = screen.getByRole('table');
+    expect(within(table).getByText('₹1,465.00')).toHaveClass('budget-flags-table__excess');
 
     fireEvent.click(screen.getByRole('tab', { name: 'Unplanned Expenses' }));
-    expect(screen.getByText('₹5,200.00')).toHaveClass('budget-flags-table__amount');
+    expect(within(screen.getByRole('table')).getByText('₹5,200.00')).toHaveClass(
+      'budget-flags-table__amount',
+    );
   });
 
   it("falls back to an em dash for the subcategory column when a leaf has no parent", () => {
@@ -138,7 +143,8 @@ describe('BudgetFlagsTableInner', () => {
       />,
     );
 
-    const row = screen.getByText('—').closest('tr')!;
+    const table = screen.getByRole('table');
+    const row = within(table).getByText('—').closest('tr')!;
     expect(row).toHaveTextContent('Insurance');
   });
 
@@ -156,8 +162,51 @@ describe('BudgetFlagsTableInner', () => {
       />,
     );
 
-    const rows = screen.getAllByRole('row').slice(1); // drop header row
+    const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1); // drop header row
     expect(rows[0]).toHaveTextContent('Bathroom Cleaner');
     expect(rows[1]).toHaveTextContent('Doctor / Consultation');
+  });
+
+  describe('mobile card list', () => {
+    it('renders the same rows as stacked cards, for narrow viewports that hide the table', () => {
+      render(
+        <BudgetFlagsTableInner
+          data={{
+            ...EMPTY,
+            overBudgetTotal: 1465,
+            overBudget: [
+              { id: 'c1', name: 'Vehicle Insurance', parentName: 'Insurance', amount: 1965, planned: 500, over: 1465 },
+            ],
+          }}
+        />,
+      );
+
+      const list = screen.getByRole('list');
+      const card = within(list).getByText('Vehicle Insurance').closest('li')!;
+      expect(card).toHaveTextContent('Insurance');
+      expect(card).toHaveTextContent('₹1,465.00');
+    });
+
+    it('switches tabs for the card list too', () => {
+      render(
+        <BudgetFlagsTableInner
+          data={{
+            ...EMPTY,
+            overBudgetTotal: 1465,
+            overBudget: [
+              { id: 'c1', name: 'Vehicle Insurance', parentName: 'Insurance', amount: 1965, planned: 500, over: 1465 },
+            ],
+            unplannedTotal: 5200,
+            unplanned: [{ id: 'u1', name: 'Gadget', parentName: null, amount: 5200 }],
+          }}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Unplanned Expenses' }));
+
+      const list = screen.getByRole('list');
+      expect(within(list).getByText('Gadget')).toBeInTheDocument();
+      expect(within(list).queryByText('Vehicle Insurance')).not.toBeInTheDocument();
+    });
   });
 });

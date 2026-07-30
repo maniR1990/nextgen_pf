@@ -105,24 +105,48 @@ export interface BudgetFlagsResult {
 export const ReportsService = {
   /**
    * Two things worth a user's attention that neither the KPI strip nor the filter tool
-   * surfaces on their own: spend flagged "unplanned" (a one-off the user marked in the
-   * Budget page, not part of the regular plan) and categories that have actually gone
-   * over their planned amount this month. Scoped to EXPENSE only — "unplanned income" or
-   * "over-planned investment" isn't a warning in the same sense a budget overrun is.
+   * surfaces on their own: spend flagged "unplanned" and categories that have actually
+   * gone over their planned amount this month. Scoped to EXPENSE only — "unplanned
+   * income" or "over-planned investment" isn't a warning in the same sense a budget
+   * overrun is.
+   *
+   * "Unplanned" has two independent sources that both have to count:
+   *  - Budget.isUnplanned — a whole-category flag set in the Budget page ("this budget
+   *    line itself is irregular"), which counts that category's entire actual spend.
+   *  - FinanceTransaction.isPlanned === false — the "Unplanned" checkbox on the Log
+   *    Transaction form, which flags one specific transaction regardless of whether its
+   *    category is otherwise a normal, planned budget line. This is the one most users
+   *    actually touch day to day, and was previously not read here at all.
+   * A category flagged at the budget level already counts its full actual spend, which
+   * is always ≥ any subset of individually-flagged transactions inside it — so the two
+   * sources are only combined by falling back to the transaction sum, never added
+   * together, to avoid double-counting.
    */
   async getBudgetFlags(userId: string, year: number, month: number): Promise<BudgetFlagsResult> {
-    const summary = await BudgetEngineService.getMonthlySummary(userId, year, month);
+    const [summary, unplannedTxByCategory] = await Promise.all([
+      BudgetEngineService.getMonthlySummary(userId, year, month),
+      TransactionRepository.sumUnplannedByCategory(userId, year, month),
+    ]);
+    const unplannedTxAmount = new Map(
+      unplannedTxByCategory.map((row) => [row.categoryId as string, row._sum.amount ?? 0]),
+    );
+
     const leaves = summary.groups
       .filter((g) => g.type === 'EXPENSE')
       .flatMap((g) => collectLeaves(g.categories));
 
     const unplanned = leaves
-      .filter(({ node }) => node.isUnplanned && node.actual > 0)
       .map(({ node, parentName }) => ({
+        node,
+        parentName,
+        amount: node.isUnplanned ? node.actual : (unplannedTxAmount.get(node.id) ?? 0),
+      }))
+      .filter(({ amount }) => amount > 0)
+      .map(({ node, parentName, amount }) => ({
         id: node.id,
         name: node.name,
         parentName,
-        amount: node.actual,
+        amount,
       }))
       .sort((a, b) => b.amount - a.amount);
 

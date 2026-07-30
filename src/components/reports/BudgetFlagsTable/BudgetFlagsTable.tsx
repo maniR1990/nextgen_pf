@@ -7,6 +7,13 @@ import { useState } from 'react';
 
 type Tab = 'over-budget' | 'unplanned';
 
+interface Row {
+  id: string;
+  category: string;
+  item: string;
+  amount: number;
+}
+
 function categoryCell(c: BudgetFlagCategory): string {
   return c.parentName ?? c.name;
 }
@@ -15,32 +22,13 @@ function itemCell(c: BudgetFlagCategory): string {
   return c.parentName ? c.name : '—';
 }
 
-function OverBudgetRows({ rows }: { rows: OverBudgetCategory[] }) {
-  return (
-    <>
-      {rows.map((c) => (
-        <tr key={c.id}>
-          <td>{categoryCell(c)}</td>
-          <td>{itemCell(c)}</td>
-          <td className="budget-flags-table__excess">{formatINR(c.over, 2)}</td>
-        </tr>
-      ))}
-    </>
-  );
-}
-
-function UnplannedRows({ rows }: { rows: BudgetFlagCategory[] }) {
-  return (
-    <>
-      {rows.map((c) => (
-        <tr key={c.id}>
-          <td>{categoryCell(c)}</td>
-          <td>{itemCell(c)}</td>
-          <td className="budget-flags-table__amount">{formatINR(c.amount, 2)}</td>
-        </tr>
-      ))}
-    </>
-  );
+function toRows(items: BudgetFlagCategory[] | OverBudgetCategory[], isOverBudget: boolean): Row[] {
+  return items.map((c) => ({
+    id: c.id,
+    category: categoryCell(c),
+    item: itemCell(c),
+    amount: isOverBudget ? (c as OverBudgetCategory).over : c.amount,
+  }));
 }
 
 // ─── Inner (pure presentational) ─────────────────────────────────────────────
@@ -60,8 +48,10 @@ export function BudgetFlagsTableInner({ data }: BudgetFlagsTableInnerProps) {
   if (!hasOverBudget && !hasUnplanned) return null;
 
   const isOverBudget = tab === 'over-budget';
-  const rows = isOverBudget ? data.overBudget : data.unplanned;
+  // Already sorted descending by amount — see ReportsService.getBudgetFlags.
+  const rows = toRows(isOverBudget ? data.overBudget : data.unplanned, isOverBudget);
   const amountHeader = isOverBudget ? 'Excess Amount' : 'Amount';
+  const amountClassName = isOverBudget ? 'budget-flags-table__excess' : 'budget-flags-table__amount';
   const emptyMessage = isOverBudget
     ? 'Nothing is over budget this month.'
     : 'No unplanned spend this month.';
@@ -102,25 +92,45 @@ export function BudgetFlagsTableInner({ data }: BudgetFlagsTableInnerProps) {
       {rows.length === 0 ? (
         <p className="budget-flags-table__empty">{emptyMessage}</p>
       ) : (
-        <div className="budget-flags-table__scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Category</th>
-                <th>Item / Subcategory</th>
-                <th className="budget-flags-table__num-head">{amountHeader}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Already sorted descending by amount — see ReportsService.getBudgetFlags. */}
-              {isOverBudget ? (
-                <OverBudgetRows rows={data.overBudget} />
-              ) : (
-                <UnplannedRows rows={data.unplanned} />
-              )}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* Desktop / tablet: a real table — plenty of width for 3 columns. */}
+          <div className="budget-flags-table__scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Item / Subcategory</th>
+                  <th className="budget-flags-table__num-head">{amountHeader}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id}>
+                    <td>{r.category}</td>
+                    <td>{r.item}</td>
+                    <td className={amountClassName}>{formatINR(r.amount, 2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile: stacked cards instead of a horizontally-scrolling table — a 3-column
+              money table doesn't compress into a phone width without either truncating a
+              column or asking for a sideways swipe most people never discover. Same rows,
+              same sort order, just laid out top-to-bottom instead of left-to-right. */}
+          <ul className="budget-flags-table__mobile-cards">
+            {rows.map((r) => (
+              <li key={r.id} className="budget-flags-table__card">
+                <div className="budget-flags-table__card-top">
+                  <span className="budget-flags-table__card-category">{r.category}</span>
+                  <span className={amountClassName}>{formatINR(r.amount, 2)}</span>
+                </div>
+                <span className="budget-flags-table__card-item">{r.item}</span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </section>
   );

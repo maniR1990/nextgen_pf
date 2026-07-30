@@ -1,18 +1,18 @@
 @use '../mixins' as m;
 
 // ─── Budget Flags Table ───────────────────────────────────────────────────────
-// Two tabs, one table: Over-Budget Breakdown and Unplanned Expenses. Category /
+// Two tabs, one dataset: Over-Budget Breakdown and Unplanned Expenses. Category /
 // Item / Subcategory / Amount, sorted descending (see ReportsService.getBudgetFlags).
-// No progress bars, no card chrome; the horizontal scroll wrapper is the only
-// concession to mobile, since a 3-column money table just doesn't compress further
-// without losing a column.
+//
+// Desktop/tablet (≥ md): a real 3-column table.
+// Mobile (< md): stacked cards, not a horizontally-scrolling table — a 3-column money
+// table doesn't compress into a phone width without truncating a column or relying on
+// a sideways swipe most people never discover (this replaced an earlier scroll-wrapper
+// attempt that technically scrolled but nobody could find). Same pattern already used
+// by .data-table__scroll / .data-table__mobile-cards elsewhere in this app.
 
 .budget-flags-table {
   margin-top: var(--space-4);
-  // min-width: 0 so this can actually shrink inside its flex/grid ancestors instead of
-  // forcing the whole page wider — the same overflow-safety pattern used everywhere
-  // else in this app that scrolls a wide strip horizontally (see MiniDateStrip). Without
-  // it, a wide table pushes the *page* wider on mobile instead of scrolling in place.
   min-width: 0;
 
   &__tabs {
@@ -51,14 +51,19 @@
     margin: 0;
   }
 
+  // ── Desktop table ──────────────────────────────────────────────────────────
+
   &__scroll {
+    display: none;
     min-width: 0;
     max-width: 100%;
     overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
+
+    @include m.respond-to(md) {
+      display: block;
+    }
   }
 
   table {
@@ -110,10 +115,48 @@
     color: var(--color-text);
   }
 
-  @include m.respond-below(sm) {
-    th,
-    td {
-      padding: var(--space-1-5) var(--space-2);
+  // ── Mobile cards ───────────────────────────────────────────────────────────
+
+  &__mobile-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @include m.respond-to(md) {
+      display: none;
     }
+  }
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-0-5);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  &__card-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  &__card-category {
+    min-width: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__card-item {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
   }
 }

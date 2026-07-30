@@ -233,6 +233,26 @@ export const TransactionRepository = {
     };
   },
 
+  // Expense spend from transactions individually marked "unplanned" at logging time
+  // (the checkbox in the Log Transaction form, which sets isPlanned: false) — grouped
+  // by category for a period. Distinct from Budget.isUnplanned, a separate whole-category
+  // flag set in the Budget page; ReportsService.getBudgetFlags combines both so spend
+  // flagged either way shows up in the Unplanned Expenses report.
+  sumUnplannedByCategory: (userId: string, year: number, month: number) =>
+    prisma.financeTransaction.groupBy({
+      by: ['categoryId'],
+      where: {
+        userId,
+        type: 'EXPENSE',
+        isPlanned: false,
+        budgetPeriodYear: year,
+        budgetPeriodMonth: month,
+        status: { not: 'VOID' },
+        categoryId: { not: null },
+      },
+      _sum: { amount: true },
+    }),
+
   // Whole-period totals by type — used for the Income/Expense/Net summary card. Must NOT
   // be derived from a paginated list: any period with more rows than the page size would
   // silently under-count until every page is loaded.

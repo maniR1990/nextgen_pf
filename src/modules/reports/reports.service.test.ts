@@ -82,6 +82,7 @@ beforeEach(() => {
   // Empty flat list by default — collectDescendantIds then resolves each selected id to
   // just itself, i.e. an exact match, which is what most tests below actually want.
   vi.mocked(CategoriesRepository.findAccessible).mockResolvedValue([] as never);
+  vi.mocked(TransactionRepository.sumUnplannedByCategory).mockResolvedValue([]);
 });
 
 describe('ReportsService.getFilteredReport', () => {
@@ -433,5 +434,80 @@ describe('ReportsService.getBudgetFlags', () => {
     expect(result.overBudget).toEqual([]);
     expect(result.unplannedTotal).toBe(0);
     expect(result.overBudgetTotal).toBe(0);
+  });
+
+  it('includes a category flagged unplanned via the per-transaction checkbox, not just the Budget-page flag', async () => {
+    // "Groceries" is an ordinary, planned budget line (Budget.isUnplanned is false) —
+    // but the user logged one transaction inside it with the "Unplanned" checkbox
+    // checked at entry time. That transaction-level flag has to surface here too.
+    const summaryWithPlannedCategory = {
+      year: 2026,
+      month: 7,
+      groups: [
+        {
+          id: 'g-expense',
+          name: 'Expenses',
+          type: 'EXPENSE',
+          planned: 0,
+          actual: 0,
+          lastMonthActual: 0,
+          variance: 0,
+          variancePct: 0,
+          progressPct: 0,
+          categories: [node({ id: 'groceries', name: 'Groceries', planned: 5000, actual: 4200 })],
+        },
+      ],
+    };
+    vi.mocked(BudgetEngineService.getMonthlySummary).mockResolvedValue(
+      summaryWithPlannedCategory as never,
+    );
+    vi.mocked(TransactionRepository.sumUnplannedByCategory).mockResolvedValue([
+      { categoryId: 'groceries', _sum: { amount: 650 } },
+    ] as never);
+
+    const result = await ReportsService.getBudgetFlags('u1', 2026, 7);
+
+    expect(result.unplanned).toEqual([
+      { id: 'groceries', name: 'Groceries', parentName: null, amount: 650 },
+    ]);
+    expect(result.unplannedTotal).toBe(650);
+  });
+
+  it('counts the whole category once it is Budget-flagged unplanned, instead of double-counting individually-flagged transactions inside it', async () => {
+    const summaryWithFlaggedCategory = {
+      year: 2026,
+      month: 7,
+      groups: [
+        {
+          id: 'g-expense',
+          name: 'Expenses',
+          type: 'EXPENSE',
+          planned: 0,
+          actual: 0,
+          lastMonthActual: 0,
+          variance: 0,
+          variancePct: 0,
+          progressPct: 0,
+          categories: [
+            node({ id: 'gadget', name: 'Gadget', planned: 0, actual: 3000, isUnplanned: true }),
+          ],
+        },
+      ],
+    };
+    vi.mocked(BudgetEngineService.getMonthlySummary).mockResolvedValue(
+      summaryWithFlaggedCategory as never,
+    );
+    // Some of that ₹3,000 also came from individually-flagged transactions — must not
+    // be added on top of the category's own ₹3,000 actual.
+    vi.mocked(TransactionRepository.sumUnplannedByCategory).mockResolvedValue([
+      { categoryId: 'gadget', _sum: { amount: 1200 } },
+    ] as never);
+
+    const result = await ReportsService.getBudgetFlags('u1', 2026, 7);
+
+    expect(result.unplanned).toEqual([
+      { id: 'gadget', name: 'Gadget', parentName: null, amount: 3000 },
+    ]);
+    expect(result.unplannedTotal).toBe(3000);
   });
 });
