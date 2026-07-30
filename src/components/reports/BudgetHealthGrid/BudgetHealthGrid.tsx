@@ -1,5 +1,6 @@
 'use client';
 
+import { useBudgetFlags } from '@/hooks/useBudgetFlags';
 import { useReportFilter } from '@/hooks/useReportFilter';
 import type { ReportFilterResult, ReportFilterTypeBreakdown } from '@/hooks/useReportFilter';
 import { formatINR } from '@/lib/utils/format';
@@ -25,8 +26,10 @@ const GENERIC_LABELS = { planned: 'Planned', actual: 'Actual', variance: 'Varian
 
 function formatSigned(n: number): string {
   // formatINR already prints its own minus sign for negatives — only the "+" for a
-  // non-negative surplus/shortfall needs adding here.
-  return n >= 0 ? `+${formatINR(n)}` : formatINR(n);
+  // non-negative surplus/shortfall needs adding here. Always 2 decimals so every
+  // right-aligned row in the grid lines up instead of drifting between whole and
+  // fractional rupee amounts.
+  return n >= 0 ? `+${formatINR(n, 2)}` : formatINR(n, 2);
 }
 
 function varianceColor(type: FlowType | null, value: number): string | undefined {
@@ -44,9 +47,12 @@ interface CardProps {
   planned: number | null;
   actual: number;
   variance: number | null;
+  /** Only meaningful (and only ever shown) for the Expenses card — a category flagged
+   *  "unplanned" in the Budget page, not something Income/Investment track. */
+  unplannedSpend?: number;
 }
 
-function HealthCard({ heading, type, planned, actual, variance }: CardProps) {
+function HealthCard({ heading, type, planned, actual, variance, unplannedSpend }: CardProps) {
   const labels = type ? ROW_LABELS[type] : GENERIC_LABELS;
   // Expenses' 3rd row is a plain "how much is left" (planned minus spent) — formatINR's
   // own sign handling is enough. Investment/Income read as an explicit surplus/shortfall
@@ -64,27 +70,37 @@ function HealthCard({ heading, type, planned, actual, variance }: CardProps) {
             ? 'N/A'
             : planned === 0 && type === 'INCOME'
               ? 'Not set'
-              : formatINR(planned)}
+              : formatINR(planned, 2)}
         </span>
       </div>
       <div className="budget-health__row">
         <span className="budget-health__label">{labels.actual}</span>
-        <span className="budget-health__value">{formatINR(actual)}</span>
+        <span className="budget-health__value">{formatINR(actual, 2)}</span>
       </div>
+      {type === 'EXPENSE' && unplannedSpend !== undefined && (
+        <div className="budget-health__row">
+          <span className="budget-health__label">Unplanned Spend</span>
+          <span className="budget-health__value">{formatINR(unplannedSpend, 2)}</span>
+        </div>
+      )}
       <div className="budget-health__row">
         <span className="budget-health__label">{labels.variance}</span>
         <span
           className="budget-health__value"
-          style={{ color: rowValue === null ? undefined : varianceColor(type, rowValue) }}
+          style={{ color: variance === null ? undefined : varianceColor(type, variance) }}
         >
-          {rowValue === null ? 'N/A' : showAsRemaining ? formatINR(rowValue) : formatSigned(rowValue)}
+          {rowValue === null
+            ? 'N/A'
+            : showAsRemaining
+              ? formatINR(rowValue, 2)
+              : formatSigned(rowValue)}
         </span>
       </div>
     </div>
   );
 }
 
-function byTypeCard(b: ReportFilterTypeBreakdown) {
+function byTypeCard(b: ReportFilterTypeBreakdown, unplannedSpend?: number) {
   return (
     <HealthCard
       key={b.type}
@@ -93,6 +109,7 @@ function byTypeCard(b: ReportFilterTypeBreakdown) {
       planned={b.planned}
       actual={b.actual}
       variance={b.variance}
+      unplannedSpend={b.type === 'EXPENSE' ? unplannedSpend : undefined}
     />
   );
 }
@@ -102,15 +119,23 @@ export interface BudgetHealthGridInnerProps {
   /** The type filter currently applied — 'all' unless the user narrowed it, in which
    *  case the single-result card below adopts that type's vocabulary too. */
   selectedType: string;
+  /** This month's total unplanned spend (all categories) — a whole-month figure, so it
+   *  only appears on the unfiltered 3-card grid. A narrowed single-category/account view
+   *  would otherwise show a total that doesn't actually describe what's on screen. */
+  unplannedSpend?: number;
 }
 
-export function BudgetHealthGridInner({ data, selectedType }: BudgetHealthGridInnerProps) {
+export function BudgetHealthGridInner({ data, selectedType, unplannedSpend }: BudgetHealthGridInnerProps) {
   if (data.count === 0) {
     return <p className="budget-health__empty">No transactions match these filters.</p>;
   }
 
   if (data.byType) {
-    return <div className="budget-health__grid">{data.byType.map(byTypeCard)}</div>;
+    return (
+      <div className="budget-health__grid">
+        {data.byType.map((b) => byTypeCard(b, unplannedSpend))}
+      </div>
+    );
   }
 
   // A specific type or category is selected — one card, not three. Only a concrete
@@ -151,6 +176,9 @@ export function BudgetHealthGrid({ year, month, type, accountId, categoryIds }: 
     accountId: accountId === 'all' ? undefined : accountId,
     categoryIds: categoryIds.length > 0 ? categoryIds : undefined,
   });
+  // Same query BudgetFlagsTable makes for this (year, month) — react-query dedupes it,
+  // so this isn't a second network request, just a second read of the same cache entry.
+  const { data: flagsData } = useBudgetFlags(year, month);
 
   return (
     <section className="budget-health" aria-label="Budget health">
@@ -162,7 +190,11 @@ export function BudgetHealthGrid({ year, month, type, accountId, categoryIds }: 
           ))}
         </div>
       ) : (
-        <BudgetHealthGridInner data={data} selectedType={type} />
+        <BudgetHealthGridInner
+          data={data}
+          selectedType={type}
+          unplannedSpend={flagsData?.unplannedTotal}
+        />
       )}
     </section>
   );

@@ -1,8 +1,8 @@
 'use client';
 
+import { BudgetFlagsTable } from '@/components/reports/BudgetFlagsTable';
 import { BudgetHealthGrid } from '@/components/reports/BudgetHealthGrid';
 import { BudgetReportFilterBar } from '@/components/reports/BudgetReportFilterBar';
-import { OverBudgetTable } from '@/components/reports/OverBudgetTable';
 import { ReportKpiBar } from '@/components/reports/ReportKpiBar';
 import { useReportFilters } from '@/hooks/useReportFilters';
 
@@ -32,7 +32,7 @@ export default function ReportsPage() {
         categoryIds={filters.categoryIds}
       />
 
-      <OverBudgetTable year={filters.year} month={filters.month} />
+      <BudgetFlagsTable year={filters.year} month={filters.month} />
     </div>
   );
 }

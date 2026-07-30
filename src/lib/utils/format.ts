@@ -2,11 +2,18 @@ export function formatCurrency(amount: number, currency = 'USD'): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
 }
 
-/** Full INR format — ₹89,432 */
-export function formatINR(amount: number): string {
+/** Full INR format — ₹89,432. Pass `decimals` to force a fixed decimal count (e.g. 2)
+ *  so a column of otherwise inconsistent whole/fractional rupee amounts lines up
+ *  cleanly once right-aligned — without it, amounts keep whatever precision they
+ *  actually have (₹1,700 next to ₹812.09). */
+export function formatINR(amount: number, decimals?: number): string {
   const abs = Math.abs(amount);
   const sign = amount < 0 ? '−' : '';
-  return `${sign}₹${abs.toLocaleString('en-IN')}`;
+  const opts: Intl.NumberFormatOptions | undefined =
+    decimals === undefined
+      ? undefined
+      : { minimumFractionDigits: decimals, maximumFractionDigits: decimals };
+  return `${sign}₹${abs.toLocaleString('en-IN', opts)}`;
 }
 
 /** Compact INR — ₹47.2L, ₹1.3Cr, ₹6,817 */
