@@ -1090,7 +1090,17 @@ $rem-over:       #dc2626;
   // than let them overflow into the Pace/Last-month columns (which still hold real,
   // readable text underneath), float the toolbar as an opaque overlay instead. It
   // covers whatever's underneath cleanly rather than visually mixing with it.
-  &:hover &__actions-inner {
+  //
+  // The same overflow can happen with NO hover at all: a non-monthly recurring badge
+  // (e.g. "Every 2 months"), the active due-day icon, and the active unplanned icon are
+  // all *permanently* visible (not hover-revealed), and combined they can already exceed
+  // 80px on their own — painting straight over Actual/Remaining/Pace with no backing
+  // underneath. So the floating-overlay treatment also has to apply whenever any of
+  // those persistent badges is present, not just on row hover.
+  &:hover &__actions-inner,
+  &:has(&__icon-btn--active-due) &__actions-inner,
+  &:has(&__icon-btn--active-unpl) &__actions-inner,
+  &:has(.freq-picker-trigger--active) &__actions-inner {
     position: absolute;
     right: 0;
     top: 50%;

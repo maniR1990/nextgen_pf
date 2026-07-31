@@ -217,4 +217,48 @@ export const BudgetEngineRepository = {
     });
     return new Set(rows.map((r) => r.categoryId));
   },
+
+  /**
+   * For each of the given categories, the most recent Budget row marked recurring
+   * strictly before the given period — i.e. "the last time this item was actually due,"
+   * which for a non-monthly cadence (half-yearly, annual) may be several months back,
+   * not simply "last month." A category with no recurring history yet is absent from
+   * the returned map. Used by the dashboard's recurring-cost widget to detect price
+   * creep on cross-cycle cadences, where a plain "vs. last calendar month" comparison
+   * would almost always compare against a month the item wasn't even due in.
+   */
+  findPreviousRecurringPlans: async (
+    userId: string,
+    categoryIds: string[],
+    beforeYear: number,
+    beforeMonth: number,
+  ) => {
+    if (categoryIds.length === 0) {
+      return new Map<
+        string,
+        { year: number; month: number; plannedAmount: number; dueDay: number | null }
+      >();
+    }
+    const rows = await prisma.budget.findMany({
+      where: {
+        userId,
+        period: 'MONTHLY',
+        categoryId: { in: categoryIds },
+        isRecurring: true,
+        OR: [{ year: { lt: beforeYear } }, { year: beforeYear, month: { lt: beforeMonth } }],
+      },
+      select: { categoryId: true, year: true, month: true, plannedAmount: true, dueDay: true },
+      orderBy: [{ year: 'desc' }, { month: 'desc' }],
+    });
+    const map = new Map<
+      string,
+      { year: number; month: number; plannedAmount: number; dueDay: number | null }
+    >();
+    for (const row of rows) {
+      // period: 'MONTHLY' guarantees `month` is set; Prisma's type doesn't know that.
+      if (row.month == null) continue;
+      if (!map.has(row.categoryId)) map.set(row.categoryId, { ...row, month: row.month });
+    }
+    return map;
+  },
 };

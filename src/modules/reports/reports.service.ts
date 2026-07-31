@@ -1,5 +1,6 @@
 import { BudgetEngineService } from '@/modules/budget-engine';
 import type { BudgetCategoryNode } from '@/modules/budget-engine/budget-engine.types';
+import { collectLeaves } from '@/modules/budget-engine/lib/collectLeaves';
 import { CategoriesRepository } from '@/modules/categories/categories.repository';
 import { collectDescendantIds, isDescendant } from '@/modules/categories/lib/category-tree';
 import { getPeriodTotals } from '@/modules/transactions/period-spend';
@@ -13,26 +14,6 @@ function findNode(nodes: BudgetCategoryNode[], id: string): BudgetCategoryNode |
     if (found) return found;
   }
   return undefined;
-}
-
-/**
- * Only leaf categories carry a user-set `planned` and `isUnplanned` — a parent's own
- * `.planned`/`.actual` are computed rollups of its children (see BudgetCategoryRow), so
- * flagging a parent here would either double-count a child already flagged underneath it
- * or flag a rollup nobody actually set. The synthetic "Uncategorized" row is skipped too:
- * it has no real category id, so there's nothing a report row could link to.
- */
-function collectLeaves(
-  nodes: BudgetCategoryNode[],
-  parentName: string | null = null,
-): Array<{ node: BudgetCategoryNode; parentName: string | null }> {
-  const out: Array<{ node: BudgetCategoryNode; parentName: string | null }> = [];
-  for (const node of nodes) {
-    if (node.isVirtual) continue;
-    if (node.children.length === 0) out.push({ node, parentName });
-    else out.push(...collectLeaves(node.children, node.name));
-  }
-  return out;
 }
 
 export interface ReportFilterTypeBreakdown {
