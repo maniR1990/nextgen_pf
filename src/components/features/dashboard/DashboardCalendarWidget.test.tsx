@@ -136,34 +136,67 @@ describe('DashboardCalendarWidget', () => {
       mockQuery(
         baseData({
           billDue: [
-            { day: 5, name: 'Rent', amount: 15000, paid: true },
-            { day: 25, name: 'Credit card', amount: 3200, paid: false },
+            { day: 5, name: 'Rent', amount: 15000, paid: true, partial: false, remaining: 0 },
+            { day: 25, name: 'Credit card', amount: 3200, paid: false, partial: false, remaining: 3200 },
           ],
         }),
       );
       render(<DashboardCalendarWidget />);
       expect(screen.getByText('Rent')).toBeInTheDocument();
-      expect(screen.getByText('July 5')).toBeInTheDocument();
       expect(screen.getByText('Paid')).toBeInTheDocument();
       expect(screen.getByText('₹3,200')).toBeInTheDocument();
     });
 
-    it('groups same-day bills under a single date heading instead of repeating it per row', () => {
+    it('groups bills into calendar weeks, with a date-badge per day', () => {
       mockQuery(
         baseData({
           billDue: [
-            { day: 5, name: 'Rent', amount: 15000, paid: true },
-            { day: 5, name: 'Gym', amount: 1200, paid: false },
-            { day: 25, name: 'Credit card', amount: 3200, paid: false },
+            { day: 5, name: 'Rent', amount: 15000, paid: true, partial: false, remaining: 0 },
+            { day: 10, name: 'Gym', amount: 1200, paid: false, partial: false, remaining: 1200 },
+            { day: 25, name: 'Credit card', amount: 3200, paid: false, partial: false, remaining: 3200 },
           ],
         }),
       );
-      render(<DashboardCalendarWidget />);
-      expect(screen.getAllByText('July 5')).toHaveLength(1);
+      const { container } = render(<DashboardCalendarWidget />);
+      // July 1 2026 is a Wednesday, so days 5 and 10 fall in the same calendar week
+      // (Jul 5–11) while day 25 falls in a later week (Jul 19–25) — two week sections.
+      expect(screen.getByText('Jul 5–11')).toBeInTheDocument();
+      expect(screen.getByText('Jul 19–25')).toBeInTheDocument();
+      const dayNums = [...container.querySelectorAll('.dashboard-calendar-widget__day-num')].map(
+        (el) => el.textContent,
+      );
+      expect(dayNums).toEqual(['5', '10', '25']);
       expect(screen.getByText('Rent')).toBeInTheDocument();
       expect(screen.getByText('Gym')).toBeInTheDocument();
-      expect(screen.getByText('July 25')).toBeInTheDocument();
       expect(screen.getByText('Credit card')).toBeInTheDocument();
+    });
+
+    it('shares one date badge across several bills on the same day, stacking the rows beside it', () => {
+      mockQuery(
+        baseData({
+          billDue: [
+            { day: 5, name: 'Rent', amount: 15000, paid: true, partial: false, remaining: 0 },
+            { day: 5, name: 'Gym', amount: 1200, paid: false, partial: false, remaining: 1200 },
+          ],
+        }),
+      );
+      const { container } = render(<DashboardCalendarWidget />);
+      expect(container.querySelectorAll('.dashboard-calendar-widget__day-badge')).toHaveLength(1);
+      expect(container.querySelectorAll('.dashboard-calendar-widget__bill-row')).toHaveLength(2);
+    });
+
+    it("shows 'Paid · remaining left' rather than the original amount for a partially-paid bill", () => {
+      mockQuery(
+        baseData({
+          billDue: [
+            { day: 5, name: 'Gemini', amount: 2000, paid: false, partial: true, remaining: 50 },
+          ],
+        }),
+      );
+      const { container } = render(<DashboardCalendarWidget />);
+      expect(screen.getByText('Paid · ₹50 left')).toBeInTheDocument();
+      expect(screen.queryByText('₹2,000')).not.toBeInTheDocument();
+      expect(container.querySelector('.badge--warning')).toBeInTheDocument();
     });
 
     it('hides the bills section when there are none', () => {

@@ -58,6 +58,7 @@ export interface AccountSummary {
   currency: string;
   status: AccountStatus;
   isPrimary: boolean;
+  isDefaultExpenseAccount: boolean;
   isExcludeNetWorth: boolean;
   isHidden: boolean;
   institutionId: string | null;

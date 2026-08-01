@@ -13,6 +13,7 @@ export interface AccountGroupSectionProps {
   onAccountClick?: (account: AccountSummary) => void;
   onEdit?: (account: AccountSummary) => void;
   onTransfer?: (account: AccountSummary) => void;
+  onSetDefaultExpense?: (account: AccountSummary) => void;
   onArchive?: (account: AccountSummary) => void;
   onDelete?: (account: AccountSummary) => void;
   onAddAccount?: (groupId: string) => void;
@@ -28,6 +29,7 @@ export function AccountGroupSection({
   onAccountClick,
   onEdit,
   onTransfer,
+  onSetDefaultExpense,
   onArchive,
   onDelete,
   onAddAccount,
@@ -192,6 +194,7 @@ export function AccountGroupSection({
                 onClick={onAccountClick}
                 onEdit={onEdit}
                 onTransfer={onTransfer}
+                onSetDefaultExpense={onSetDefaultExpense}
                 onArchive={onArchive}
                 onDelete={onDelete}
                 onHover={onAccountHover}

@@ -12,6 +12,7 @@ export interface AccountListRowProps {
   onClick?: (account: AccountSummary) => void;
   onEdit?: (account: AccountSummary) => void;
   onTransfer?: (account: AccountSummary) => void;
+  onSetDefaultExpense?: (account: AccountSummary) => void;
   onArchive?: (account: AccountSummary) => void;
   onDelete?: (account: AccountSummary) => void;
   onHover?: (account: AccountSummary) => void;
@@ -30,6 +31,7 @@ export function AccountListRow({
   onClick,
   onEdit,
   onTransfer,
+  onSetDefaultExpense,
   onArchive,
   onDelete,
   onHover,
@@ -55,7 +57,7 @@ export function AccountListRow({
     };
   }, [menuOpen]);
 
-  const hasMenu = Boolean(onEdit || onTransfer || onArchive || onDelete);
+  const hasMenu = Boolean(onEdit || onTransfer || onSetDefaultExpense || onArchive || onDelete);
 
   return (
     <div
@@ -87,9 +89,16 @@ export function AccountListRow({
           title={SYNC_STATUS_LABEL[account.status] ?? account.status}
           aria-label={`Status: ${SYNC_STATUS_LABEL[account.status] ?? account.status}`}
         />
-        <Badge variant="inactive" kind="label" className="account-list-row__type-badge">
-          {meta.name}
-        </Badge>
+        <span className="account-list-row__badges">
+          <Badge variant="inactive" kind="label" className="account-list-row__type-badge">
+            {meta.name}
+          </Badge>
+          {account.isDefaultExpenseAccount && (
+            <Badge variant="active" kind="label" className="account-list-row__default-badge">
+              Default · Expense
+            </Badge>
+          )}
+        </span>
       </button>
 
       {hasMenu && (
@@ -146,6 +155,19 @@ export function AccountListRow({
                   }}
                 >
                   Transfer
+                </button>
+              )}
+              {onSetDefaultExpense && !account.isDefaultExpenseAccount && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="account-list-row__menu-item account-list-row__menu-item--accent"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onSetDefaultExpense(account);
+                  }}
+                >
+                  Set as default for expenses
                 </button>
               )}
               {onArchive && (

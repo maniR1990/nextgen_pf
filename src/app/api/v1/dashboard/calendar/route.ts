@@ -67,6 +67,8 @@ const handleCalendar = compose(withAuth())(async (req, ctx) => {
       name: p.name,
       amount: p.amount,
       paid: p.paid,
+      partial: p.partial,
+      remaining: p.remaining,
     }));
 
     // plannedTotal stays category-based — a "planned" amount is inherently something

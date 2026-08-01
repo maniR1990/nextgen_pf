@@ -12,6 +12,7 @@ const SUMMARY_SELECT = {
   currency: true,
   status: true,
   isPrimary: true,
+  isDefaultExpenseAccount: true,
   isExcludeNetWorth: true,
   isHidden: true,
   institutionId: true,
@@ -224,4 +225,20 @@ export const AccountsRepository = {
   deleteById: (id: string) => prisma.account.delete({ where: { id } }),
 
   runTransaction: <T>(fn: (tx: Prisma.TransactionClient) => Promise<T>) => prisma.$transaction(fn),
+
+  /** At most one account per user holds this flag — unsetting every other holder and
+   *  setting the target happens in one transaction so a request can never observe (or
+   *  leave behind, on a mid-request failure) a state with two defaults or zero. */
+  setDefaultExpenseAccount: (userId: string, accountId: string) =>
+    prisma.$transaction([
+      prisma.account.updateMany({
+        where: { userId, isDefaultExpenseAccount: true, id: { not: accountId } },
+        data: { isDefaultExpenseAccount: false },
+      }),
+      prisma.account.update({
+        where: { id: accountId },
+        data: { isDefaultExpenseAccount: true },
+        select: DETAIL_SELECT,
+      }),
+    ]),
 };

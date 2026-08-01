@@ -74,11 +74,12 @@ function applyOptimisticPatch(
 
 // ── hooks ─────────────────────────────────────────────────────────────────────
 
-export function useBudgetSummary(year: number, month: number) {
+export function useBudgetSummary(year: number, month: number, options?: { enabled?: boolean }) {
   return useQuery<BudgetSummaryResponse>({
     queryKey: queryKeys.budget.summary(year, month),
     queryFn: () => apiGetV1<BudgetSummaryResponse>(`/api/v1/budget/${year}/${month}`),
     staleTime: 30_000,
+    enabled: options?.enabled ?? true,
   });
 }
 

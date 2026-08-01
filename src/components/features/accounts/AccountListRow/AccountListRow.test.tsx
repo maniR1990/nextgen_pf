@@ -14,6 +14,7 @@ const mockAccount: AccountSummary = {
   currency: 'INR',
   status: 'ACTIVE',
   isPrimary: true,
+  isDefaultExpenseAccount: false,
   isExcludeNetWorth: false,
   isHidden: false,
   institutionId: null,
@@ -46,5 +47,34 @@ describe('AccountListRow', () => {
     render(<AccountListRow account={mockAccount} onEdit={vi.fn()} />);
     await user.click(screen.getByRole('button', { name: /more actions/i }));
     expect(screen.getByText('Edit')).toBeInTheDocument();
+  });
+
+  describe('default expense account', () => {
+    it('shows no badge and offers "Set as default for expenses" when not the default', async () => {
+      const user = userEvent.setup();
+      const onSetDefaultExpense = vi.fn();
+      render(
+        <AccountListRow account={mockAccount} onSetDefaultExpense={onSetDefaultExpense} />,
+      );
+      expect(screen.queryByText('Default · Expense')).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: /more actions/i }));
+      const item = screen.getByText('Set as default for expenses');
+      expect(item).toBeInTheDocument();
+
+      await user.click(item);
+      expect(onSetDefaultExpense).toHaveBeenCalledWith(mockAccount);
+    });
+
+    it('shows a "Default · Expense" badge and hides the action when already the default', async () => {
+      const user = userEvent.setup();
+      const account = { ...mockAccount, isDefaultExpenseAccount: true };
+      render(<AccountListRow account={account} onSetDefaultExpense={vi.fn()} />);
+
+      expect(screen.getByText('Default · Expense')).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: /more actions/i }));
+      expect(screen.queryByText('Set as default for expenses')).not.toBeInTheDocument();
+    });
   });
 });

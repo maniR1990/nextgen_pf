@@ -1,8 +1,10 @@
 'use client';
 
+import { derivePayments } from '@/components/common/PaymentSchedulePanel/derivePayments';
 import { useToast } from '@/components/common/ToastProvider/useToast';
 import type { TxType } from '@/constants/finance';
 import { TX_TYPE_META } from '@/constants/finance';
+import { useBudgetSummary } from '@/hooks/useBudgetSummary';
 import {
   useCreateBulkTransaction,
   useCreateTransaction,
@@ -12,7 +14,7 @@ import type { BulkTransactionBody, TransactionBody } from '@/hooks/useTransactio
 import { CreateTransactionSchema } from '@/modules/transactions/transactions.schema';
 import { useTransactionFormStore } from '@/store/transactionFormStore';
 import type { FormErrors, SuccessData } from '@/store/transactionFormStore';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 // ── Body builder ──────────────────────────────────────────────────────────────
 
@@ -107,11 +109,35 @@ export function useTransactionForm(editId?: string) {
   const createBulkTx = useCreateBulkTransaction();
   const patchTx = usePatchTransaction(editId ?? '');
 
+  // Only fetched for EXPENSE — this data exists purely to auto-fill the amount when a
+  // recurring bill's category is picked below, which is meaningless for other types.
+  const { data: budgetSummary } = useBudgetSummary(
+    store.values.budgetPeriodYear,
+    store.values.budgetPeriodMonth,
+    { enabled: store.values.type === 'EXPENSE' },
+  );
+  const duePaymentsById = useMemo(() => {
+    if (!budgetSummary) return new Map<string, ReturnType<typeof derivePayments>[number]>();
+    return new Map(derivePayments(budgetSummary.groups).map((p) => [p.id, p]));
+  }, [budgetSummary]);
+
   const handleTypeChange = useCallback((type: TxType) => store.setType(type), [store]);
 
   const handleFieldChange = useCallback(
     <K extends keyof typeof store.values>(key: K, value: (typeof store.values)[K]) => {
       store.setField(key, value);
+
+      // Auto-fill the amount from a recurring bill's remaining balance when its
+      // category is picked and the amount hasn't been touched yet — the same "pay
+      // what's left" behaviour Quick Pay already has on the Budget page, surfaced here
+      // too since this general Log Transaction dialog is where most bills actually get
+      // logged day to day. Never overwrites an amount the user already typed.
+      if (key === 'categoryId' && store.values.type === 'EXPENSE' && store.values.amount === '') {
+        const due = duePaymentsById.get(value as string);
+        if (due && !due.paid && due.remaining > 0) {
+          store.setField('amount', String(due.remaining));
+        }
+      }
 
       // Auto-derive budget period from date
       if (key === 'date') {
@@ -147,7 +173,7 @@ export function useTransactionForm(editId?: string) {
         }
       }
     },
-    [store],
+    [store, duePaymentsById],
   );
 
   const validate = useCallback((): FormErrors => {

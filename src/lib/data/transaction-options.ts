@@ -15,6 +15,7 @@ export interface FormSourceOption {
   type: string;
   currentBalance: number;
   bank?: string | null;
+  isDefaultExpenseAccount?: boolean;
 }
 
 export interface FormCategoryOption {
@@ -94,6 +95,7 @@ export async function getPaymentSourceOptions(userId: string): Promise<FormSourc
         currency: a.currency,
         status: a.status,
         isPrimary: a.isPrimary,
+        isDefaultExpenseAccount: a.isDefaultExpenseAccount,
         isExcludeNetWorth: a.isExcludeNetWorth,
         isHidden: a.isHidden,
         institutionId: a.institutionId,

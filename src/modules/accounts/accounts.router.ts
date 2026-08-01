@@ -119,6 +119,19 @@ export const v1ArchiveAccount = compose(withAuth())(async (_req, ctx) => {
   }
 });
 
+export const v1SetDefaultExpenseAccount = compose(withAuth())(async (_req, ctx) => {
+  try {
+    const id = ctx.params?.id;
+    if (!id) return missingId();
+    const result = await AccountsService.setDefaultExpenseAccount(id, ctx.session!.id);
+    return v1Ok(result);
+  } catch (err) {
+    log.error('v1SetDefaultExpenseAccount', { err });
+    if (isApiError(err)) return v1FromApiError(err);
+    throw err;
+  }
+});
+
 export const v1TransferAccount = compose(
   withAuth(),
   withValidation(TransferAccountSchema),

@@ -21,6 +21,7 @@ const mockAccount = {
   currency: 'INR',
   status: 'ACTIVE' as const,
   isPrimary: true,
+  isDefaultExpenseAccount: false,
   isExcludeNetWorth: false,
   isHidden: false,
   institutionId: null,
@@ -123,6 +124,31 @@ describe('AccountsService.archive', () => {
       ],
     } as never);
     await expect(AccountsService.archive('a1', userId)).rejects.toThrow(AccountArchiveBlockedError);
+  });
+});
+
+describe('AccountsService.setDefaultExpenseAccount', () => {
+  it('throws AccountNotFoundError for wrong owner', async () => {
+    vi.mocked(AccountsRepository.findById).mockResolvedValue({
+      ...mockAccount,
+      userId: 'other',
+    } as never);
+    await expect(AccountsService.setDefaultExpenseAccount('a1', userId)).rejects.toThrow(
+      AccountNotFoundError,
+    );
+  });
+
+  it('delegates the swap to the repository and returns the now-default account', async () => {
+    vi.mocked(AccountsRepository.findById).mockResolvedValue(mockAccount as never);
+    vi.mocked(AccountsRepository.setDefaultExpenseAccount).mockResolvedValue([
+      { count: 1 },
+      { ...mockAccount, isDefaultExpenseAccount: true },
+    ] as never);
+
+    const result = await AccountsService.setDefaultExpenseAccount('a1', userId);
+
+    expect(AccountsRepository.setDefaultExpenseAccount).toHaveBeenCalledWith(userId, 'a1');
+    expect(result.isDefaultExpenseAccount).toBe(true);
   });
 });
 

@@ -526,6 +526,13 @@ model Account {
 
   isPrimary         Boolean       @default(false)
 
+  // The account a new Expense transaction pre-selects on open. Distinct from isPrimary
+  // (unused today, unclear original intent) rather than overloading it — this flag has
+  // one specific job: at most one account per user may have it set (see
+  // AccountsRepository.setDefaultExpenseAccount, which unsets any previous holder in the
+  // same transaction that sets the new one).
+  isDefaultExpenseAccount Boolean @default(false)
+
   isExcludeNetWorth Boolean       @default(false)
 
   isHidden          Boolean       @default(false)

@@ -269,6 +269,14 @@
     sup { font-size: 7px; }
   }
 
+  &__row-name-wrap {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
   &__row-name {
     font-size: 12px;
     font-weight: 500;
@@ -276,6 +284,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
+  }
+
+  &__row-partial {
+    flex-shrink: 0;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 1px 5px;
+    border-radius: 20px;
+    white-space: nowrap;
+    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+    color: var(--color-warning);
   }
 
   &__row-amt {

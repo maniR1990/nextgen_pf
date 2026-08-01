@@ -31,6 +31,7 @@ function toPaymentSourceOption(s: FormOptions['sources'][number]): PaymentSource
     type: s.type,
     balance: s.currentBalance,
     bank: s.bank ?? undefined,
+    isDefaultExpenseAccount: s.isDefaultExpenseAccount,
   };
 }
 

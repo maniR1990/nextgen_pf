@@ -154,10 +154,18 @@ export function AddTransactionModal({
   // effect reads the pre-prefill empty sourceId in the same flush and immediately
   // overwrites the real account with paymentSources[0] — always "the first account",
   // never the one actually on the transaction.
+  //
+  // For a fresh Expense, prefer whichever account is flagged as the default expense
+  // account (set from Settings > Accounts) over the alphabetical-first fallback — that
+  // fallback is really just "no default has been set yet", not a meaningful choice.
   useEffect(() => {
     if (!open || editId || values.sourceId || paymentSources.length === 0) return;
-    handleFieldChange('sourceId', paymentSources[0].id);
-  }, [open, editId, paymentSources, values.sourceId, handleFieldChange]);
+    const defaultForExpense =
+      values.type === 'EXPENSE'
+        ? paymentSources.find((s) => s.isDefaultExpenseAccount)
+        : undefined;
+    handleFieldChange('sourceId', (defaultForExpense ?? paymentSources[0]).id);
+  }, [open, editId, paymentSources, values.sourceId, values.type, handleFieldChange]);
 
   const handleClose = () => {
     reset();

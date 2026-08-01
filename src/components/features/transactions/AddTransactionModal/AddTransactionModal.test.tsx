@@ -109,4 +109,32 @@ describe('AddTransactionModal — editing an existing transaction', () => {
 
     expect(useTransactionFormStore.getState().values.sourceId).toBe('acc-first-alphabetically');
   });
+
+  it('prefers the account flagged as the default expense account over the alphabetical fallback', () => {
+    const sourcesWithDefault: PaymentSourceOption[] = [
+      { id: 'acc-first-alphabetically', name: 'Ainion', type: 'BANK_SAVINGS', balance: 0 },
+      {
+        id: 'acc-actually-used',
+        name: 'Zerodha',
+        type: 'BROKERAGE',
+        balance: 0,
+        isDefaultExpenseAccount: true,
+      },
+    ];
+    const Wrapper = makeWrapper();
+    render(
+      <Wrapper>
+        <AddTransactionModal
+          open
+          onClose={vi.fn()}
+          paymentSources={sourcesWithDefault}
+          categories={[]}
+          categoryGroups={[]}
+          sinkingFunds={[]}
+        />
+      </Wrapper>,
+    );
+
+    expect(useTransactionFormStore.getState().values.sourceId).toBe('acc-actually-used');
+  });
 });

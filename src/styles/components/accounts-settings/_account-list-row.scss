@@ -75,9 +75,18 @@
     line-height: var(--line-height-tight);
   }
 
-  &__type-badge.badge {
+  &__badges {
     grid-column: 2;
     grid-row: 2;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  &__type-badge.badge,
+  &__default-badge.badge {
     justify-self: start;
     font-size: 10px !important;
     padding: 1px var(--space-2) !important;
@@ -169,6 +178,13 @@
     }
     &--danger:hover {
       background: color-mix(in srgb, var(--color-error) 8%, var(--color-bg-surface));
+    }
+    &--accent {
+      color: var(--color-brand);
+      background: color-mix(in srgb, var(--color-brand) 6%, transparent);
+    }
+    &--accent:hover {
+      background: color-mix(in srgb, var(--color-brand) 12%, transparent);
     }
   }
 }

@@ -1,7 +1,7 @@
-import { apiPatchV1, apiPostV1 } from '@/lib/query/fetcher';
+import { apiGetV1, apiPatchV1, apiPostV1 } from '@/lib/query/fetcher';
 import { useTransactionFormStore } from '@/store/transactionFormStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTransactionForm } from './useTransactionForm';
@@ -22,7 +22,12 @@ vi.mock('@/components/common/ToastProvider/useToast', () => ({
 // never let validation reach the actual network call. Bulk and single-transaction
 // create share apiPostV1 but return different shapes (array vs one object), so the
 // mock branches on the URL rather than using one blanket resolved value.
+//
+// apiGetV1 backs useBudgetSummary, which useTransactionForm now fetches (EXPENSE only)
+// to auto-fill the amount for a recurring bill's category — an empty group list is a
+// safe default for every test here that doesn't specifically exercise that behaviour.
 vi.mock('@/lib/query/fetcher', () => ({
+  apiGetV1: vi.fn().mockResolvedValue({ groups: [] }),
   apiPostV1: vi.fn((url: string) => {
     if (url === '/api/v1/transactions/bulk') {
       return Promise.resolve([
@@ -170,6 +175,101 @@ describe('useTransactionForm', () => {
       act(() => result.current.handleFieldChange('ptsSpent', '5000'));
       act(() => result.current.handleFieldChange('ptsRate', '0.25'));
       expect(result.current.values.amount).toBe('1250.00');
+    });
+  });
+
+  describe('recurring bill auto-fill', () => {
+    function budgetCategory(overrides: Record<string, unknown>) {
+      return {
+        id: 'gemini',
+        name: 'Gemini',
+        level: 1,
+        icon: null,
+        color: null,
+        isSystem: false,
+        isRecurring: true,
+        isUnplanned: false,
+        dueDay: null,
+        isSettled: false,
+        settledTransactionId: null,
+        planned: 0,
+        actual: 0,
+        lastMonthActual: 0,
+        variance: 0,
+        variancePct: 0,
+        progressPct: 0,
+        children: [],
+        ...overrides,
+      };
+    }
+
+    function budgetSummaryWith(category: ReturnType<typeof budgetCategory>) {
+      return {
+        groups: [
+          {
+            id: 'g1',
+            name: 'Subscriptions',
+            type: 'EXPENSE',
+            planned: 0,
+            actual: 0,
+            lastMonthActual: 0,
+            variance: 0,
+            variancePct: 0,
+            progressPct: 0,
+            categories: [category],
+          },
+        ],
+      };
+    }
+
+    it("fills the amount with a recurring bill's remaining balance when its category is picked", async () => {
+      vi.mocked(apiGetV1).mockResolvedValueOnce(
+        budgetSummaryWith(budgetCategory({ dueDay: 28, planned: 2000, actual: 1950 })),
+      );
+
+      const { result } = renderHook(() => useTransactionForm(), { wrapper });
+      act(() => result.current.handleFieldChange('date', '2026-09-01'));
+
+      await waitFor(() => {
+        act(() => result.current.handleFieldChange('categoryId', 'gemini'));
+        expect(result.current.values.amount).toBe('50');
+      });
+    });
+
+    it('does not overwrite an amount the user already typed', async () => {
+      vi.mocked(apiGetV1).mockResolvedValueOnce(
+        budgetSummaryWith(budgetCategory({ dueDay: 28, planned: 2000, actual: 0 })),
+      );
+
+      const { result } = renderHook(() => useTransactionForm(), { wrapper });
+      act(() => result.current.handleFieldChange('date', '2026-10-02'));
+      act(() => result.current.handleFieldChange('amount', '999'));
+      await new Promise((r) => setTimeout(r, 0));
+      act(() => result.current.handleFieldChange('categoryId', 'gemini'));
+
+      expect(result.current.values.amount).toBe('999');
+    });
+
+    it('does not fill the amount for a category that is already fully paid', async () => {
+      vi.mocked(apiGetV1).mockResolvedValueOnce(
+        budgetSummaryWith(budgetCategory({ dueDay: 28, planned: 2000, actual: 2000 })),
+      );
+
+      const { result } = renderHook(() => useTransactionForm(), { wrapper });
+      act(() => result.current.handleFieldChange('date', '2026-11-03'));
+      await new Promise((r) => setTimeout(r, 0));
+      act(() => result.current.handleFieldChange('categoryId', 'gemini'));
+
+      expect(result.current.values.amount).toBe('');
+    });
+
+    it('does not fetch budget data or fill the amount for non-EXPENSE types', async () => {
+      const { result } = renderHook(() => useTransactionForm(), { wrapper });
+      act(() => result.current.handleTypeChange('INCOME'));
+      act(() => result.current.handleFieldChange('date', '2026-09-04'));
+      act(() => result.current.handleFieldChange('categoryId', 'gemini'));
+
+      expect(result.current.values.amount).toBe('');
     });
   });
 

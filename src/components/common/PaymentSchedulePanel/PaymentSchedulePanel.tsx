@@ -182,7 +182,9 @@ function QuickPay({
   const [fromId, setFromId] = useState(sources[0]?.id ?? '');
   const [toId, setToId] = useState('');
   const [txType, setTxType] = useState<'EXPENSE' | 'TRANSFER'>('EXPENSE');
-  const [amount, setAmount] = useState(item.amount);
+  // Default to what's actually left, not the original full amount, when part of it is
+  // already paid — otherwise a ₹1,950-of-₹2,000 bill would default to double-paying it.
+  const [amount, setAmount] = useState(item.partial ? item.remaining : item.amount);
   const { mutateAsync, isPending } = useCreateTransaction();
   const toast = useToast();
 
@@ -552,10 +554,26 @@ export const PaymentSchedulePanel = memo(function PaymentSchedulePanel({
                       {item.dueDay}
                       <sup>{ordinal(item.dueDay)}</sup>
                     </span>
-                    <span className="psp__row-name" title={item.name}>
-                      {item.name}
+                    {/* Wrapping name + the partial tag together keeps both inside the
+                        row's single "name" grid column — no change to the fixed
+                        grid-template-columns needed for this extra bit of markup. */}
+                    <span className="psp__row-name-wrap">
+                      <span className="psp__row-name" title={item.name}>
+                        {item.name}
+                      </span>
+                      {/* Some but not all of this item's planned amount is already
+                          spent — showing the original full amount again as still "due"
+                          would read as if nothing had been paid at all, so the amount
+                          cell shows what's actually left instead. */}
+                      {item.partial && <span className="psp__row-partial">Partial</span>}
                     </span>
-                    <span className="psp__row-amt">{item.amount > 0 ? fmt(item.amount) : '—'}</span>
+                    <span className="psp__row-amt">
+                      {item.partial
+                        ? `${fmt(item.remaining)} left`
+                        : item.amount > 0
+                          ? fmt(item.amount)
+                          : '—'}
+                    </span>
                     {badge && (
                       <span className={`psp__row-badge psp__row-badge--${status}`}>{badge}</span>
                     )}

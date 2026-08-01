@@ -60,17 +60,33 @@ describe('deriveCalendarData', () => {
   });
 
   describe('billDue', () => {
-    it('maps dueDay/name/amount/paid and sorts by day', () => {
+    it('maps dueDay/name/amount/paid/partial/remaining and sorts by day', () => {
       const result = base({
         duePayments: [
-          { dueDay: 25, name: 'Credit card', amount: 3200, paid: false },
-          { dueDay: 5, name: 'Rent', amount: 15000, paid: true },
+          { dueDay: 25, name: 'Credit card', amount: 3200, paid: false, partial: false, remaining: 3200 },
+          { dueDay: 5, name: 'Rent', amount: 15000, paid: true, partial: false, remaining: 0 },
         ],
       });
       expect(result.billDue).toEqual([
-        { day: 5, name: 'Rent', amount: 15000, paid: true },
-        { day: 25, name: 'Credit card', amount: 3200, paid: false },
+        { day: 5, name: 'Rent', amount: 15000, paid: true, partial: false, remaining: 0 },
+        { day: 25, name: 'Credit card', amount: 3200, paid: false, partial: false, remaining: 3200 },
       ]);
+    });
+
+    it('carries through a partially-paid bill and its remaining balance', () => {
+      const result = base({
+        duePayments: [
+          { dueDay: 5, name: 'Gemini', amount: 2000, paid: false, partial: true, remaining: 50 },
+        ],
+      });
+      expect(result.billDue[0]).toEqual({
+        day: 5,
+        name: 'Gemini',
+        amount: 2000,
+        paid: false,
+        partial: true,
+        remaining: 50,
+      });
     });
   });
 

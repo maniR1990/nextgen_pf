@@ -13,6 +13,16 @@ export interface DuePaymentItem {
    *  actual>=planned heuristic — drives whether "Undo" is available and meaningful. */
   isSettled: boolean;
   settledTransactionId: string | null;
+  /** Some (but not all) of `amount` has already been spent against this item this
+   *  period, and it was never explicitly settled — e.g. ₹1,950 logged against a ₹2,000
+   *  bill. Distinct from `paid`: a partial item should still read as "needs attention",
+   *  not as fully done, but showing the original full amount again as still "due" is
+   *  misleading too — see `remaining`. */
+  partial: boolean;
+  /** `amount` minus whatever's already been spent this period, floored at 0. Equals
+   *  `amount` when nothing has been paid yet; what's actually left to pay when
+   *  `partial` is true. */
+  remaining: number;
   color: string | null;
   icon: string | null;
 }
@@ -21,18 +31,21 @@ export interface DuePaymentItem {
 function collect(nodes: BudgetCategoryNode[], out: DuePaymentItem[]) {
   for (const n of nodes) {
     if (n.dueDay) {
+      // An explicit settlement always wins — it's the only signal that's correct
+      // regardless of the settling transaction's type (e.g. a TRANSFER, which never
+      // rolls up into `actual`). The actual>=planned check is the fallback for items
+      // that were never explicitly settled but happen to look paid by spend alone.
+      const paid = n.isSettled || (n.planned > 0 && n.actual >= n.planned);
       out.push({
         id: n.id,
         name: n.name,
         amount: n.planned,
         dueDay: n.dueDay,
-        // An explicit settlement always wins — it's the only signal that's correct
-        // regardless of the settling transaction's type (e.g. a TRANSFER, which never
-        // rolls up into `actual`). The actual>=planned check is the fallback for items
-        // that were never explicitly settled but happen to look paid by spend alone.
-        paid: n.isSettled || (n.planned > 0 && n.actual >= n.planned),
+        paid,
         isSettled: n.isSettled,
         settledTransactionId: n.settledTransactionId,
+        partial: !paid && n.actual > 0,
+        remaining: Math.max(n.planned - n.actual, 0),
         color: n.color,
         icon: n.icon,
       });

@@ -76,5 +76,23 @@ export function useAccountDetail(accountId: string | null) {
     [invalidate, toast],
   );
 
-  return { account: data ?? null, isLoading, isError, update, transfer, archive };
+  const setDefaultForExpense = useCallback(
+    async (id: string) => {
+      try {
+        await apiPatchV1(`/api/v1/accounts/${id}/set-default-expense`);
+        toast.success('Default account updated');
+        await invalidate();
+        // The Log Transaction dialog caches its own account list separately from the
+        // Settings page's — without this it would keep prefilling the old default
+        // until that cache happened to expire on its own.
+        await queryClient.invalidateQueries({ queryKey: queryKeys.formOptions.sources() });
+      } catch (err) {
+        toast.error(getFetchErrorMessage(err, 'Could not set default account'));
+        throw err;
+      }
+    },
+    [invalidate, queryClient, toast],
+  );
+
+  return { account: data ?? null, isLoading, isError, update, transfer, archive, setDefaultForExpense };
 }

@@ -67,6 +67,31 @@ describe('derivePayments', () => {
     expect(items[0]!.paid).toBe(false);
   });
 
+  it('flags a partial payment and the remaining balance when some but not all of it is paid', () => {
+    const items = derivePayments([
+      makeGroup([makeNode({ id: 'gemini', dueDay: 5, planned: 2000, actual: 1950 })]),
+    ]);
+    expect(items[0]!.paid).toBe(false);
+    expect(items[0]!.partial).toBe(true);
+    expect(items[0]!.remaining).toBe(50);
+  });
+
+  it('is not partial when nothing has been paid yet', () => {
+    const items = derivePayments([
+      makeGroup([makeNode({ id: 'rent', dueDay: 5, planned: 20000, actual: 0 })]),
+    ]);
+    expect(items[0]!.partial).toBe(false);
+    expect(items[0]!.remaining).toBe(20000);
+  });
+
+  it('is not partial once fully paid — remaining is 0', () => {
+    const items = derivePayments([
+      makeGroup([makeNode({ id: 'rent', dueDay: 5, planned: 20000, actual: 20000 })]),
+    ]);
+    expect(items[0]!.partial).toBe(false);
+    expect(items[0]!.remaining).toBe(0);
+  });
+
   it('an explicit settlement marks paid even with zero actual spend — the annual-premium case', () => {
     const items = derivePayments([
       makeGroup([
@@ -105,7 +130,16 @@ describe('derivePayments', () => {
 });
 
 describe('getStatus', () => {
-  const base = { id: 'x', name: 'x', amount: 100, dueDay: 10, color: null, icon: null };
+  const base = {
+    id: 'x',
+    name: 'x',
+    amount: 100,
+    dueDay: 10,
+    color: null,
+    icon: null,
+    partial: false,
+    remaining: 100,
+  };
 
   it('is "paid" whenever the item is paid, regardless of date', () => {
     expect(getStatus({ ...base, paid: true, isSettled: true, settledTransactionId: 'tx' }, 20, false)).toBe(

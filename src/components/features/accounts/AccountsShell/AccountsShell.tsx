@@ -52,6 +52,7 @@ export interface AccountsShellProps {
   onDeleteAccount?: (id: string) => Promise<void>;
   onTransfer?: (payload: TransferPayload) => Promise<void>;
   onArchiveAccount?: (id: string) => Promise<void>;
+  onSetDefaultExpenseAccount?: (id: string) => Promise<void>;
   onCreateGroup: (payload: AccountGroupFormPayload) => Promise<void>;
   onUpdateGroup: (id: string, payload: { name: string }) => Promise<void>;
   onDeleteGroup: (id: string) => Promise<void>;
@@ -82,6 +83,7 @@ export function AccountsShell({
   onDeleteAccount,
   onTransfer,
   onArchiveAccount,
+  onSetDefaultExpenseAccount,
   onCreateGroup,
   onUpdateGroup,
   onDeleteGroup,
@@ -366,6 +368,11 @@ export function AccountsShell({
                     onAccountClick={openAccountDrawer}
                     onEdit={openAccountDrawer}
                     onTransfer={openTransfer}
+                    onSetDefaultExpense={
+                      onSetDefaultExpenseAccount
+                        ? (account) => void onSetDefaultExpenseAccount(account.id)
+                        : undefined
+                    }
                     onArchive={openArchive}
                     onDelete={onDeleteAccount ? openDeleteAccount : undefined}
                     onAddAccount={() => setWizardOpen(true)}

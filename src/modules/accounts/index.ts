@@ -9,6 +9,7 @@ export {
   v1GetAccountTransactions,
   v1ListAccounts,
   v1PatchBalance,
+  v1SetDefaultExpenseAccount,
   v1TransferAccount,
   v1UpdateAccount,
 } from './accounts.router';

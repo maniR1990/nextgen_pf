@@ -192,6 +192,14 @@ export function SettingsPageClient() {
     [detail, invalidateAccounts],
   );
 
+  const handleSetDefaultExpenseAccount = useCallback(
+    async (id: string) => {
+      await detail.setDefaultForExpense(id);
+      await invalidateAccounts();
+    },
+    [detail, invalidateAccounts],
+  );
+
   const accountDetailLoader = useCallback(async (accountId: string): Promise<AccountDetail> => {
     setSelectedAccountId(accountId);
     return apiGetV1<AccountDetail>(`/api/v1/accounts/${accountId}`);
@@ -255,6 +263,7 @@ export function SettingsPageClient() {
         onDeleteAccount={handleDeleteAccount}
         onTransfer={handleTransfer}
         onArchiveAccount={handleArchiveAccount}
+        onSetDefaultExpenseAccount={handleSetDefaultExpenseAccount}
         transactionsLoader={transactionsLoader}
         onCreateFund={funds.createFund}
         onUpdateFund={funds.updateFund}

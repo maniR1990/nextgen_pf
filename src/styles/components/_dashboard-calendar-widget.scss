@@ -89,22 +89,119 @@
     margin: 0;
   }
 
-  // One heading per due date instead of repeating "due August 5" on every row — several
-  // bills often share a date, and re-stating it per row just made the list longer to
-  // scan without adding information. Each heading sits in its own group wrapper, so the
-  // parent's flex gap (not a margin here) already spaces one group from the next.
-  &__bill-date {
+  // ── Weeks ──────────────────────────────────────────────────────────────────
+  // Bills group into calendar weeks so "what's due this week" is a glance instead of
+  // scanning every date — see groupBillsByWeek. Plain text, not a colored block: this
+  // card already has three other sections above it, so "This week" gets a bolder label
+  // rather than its own background fill to stay in step with the rest of the widget.
+
+  &__week + &__week {
+    margin-top: var(--space-2);
+  }
+
+  &__week-head {
+    @include m.flex-between;
+    align-items: baseline;
+    padding-bottom: var(--space-1);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-1);
+  }
+
+  &__week-label {
     font-size: var(--font-size-xs);
-    font-weight: var(--font-variation-medium);
+    font-weight: var(--font-variation-semibold);
     color: var(--color-text-muted);
-    margin: 0 0 var(--space-0-5);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__week-meta {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  // ── Day rows ───────────────────────────────────────────────────────────────
+  // One fixed-size date badge per day, even when several bills share it — the badge
+  // never stretches to match a taller stack of bills; it stays pinned to the top-left
+  // at the same size as a single-bill day, keeping the whole list visually even.
+
+  &__day-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+
+    & + & {
+      margin-top: var(--space-1-5);
+    }
+  }
+
+  &__day-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    background: var(--color-bg-subtle);
+
+    &--partial {
+      background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+    }
+
+    &--paid {
+      background: color-mix(in srgb, var(--color-success) 14%, transparent);
+    }
+  }
+
+  &__day-num {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-variation-semibold);
+    color: var(--color-text);
+    line-height: 1;
+
+    .dashboard-calendar-widget__day-badge--partial & { color: var(--color-warning); }
+    .dashboard-calendar-widget__day-badge--paid & { color: var(--color-success); }
+  }
+
+  &__day-mon {
+    font-size: 9px;
+    font-weight: var(--font-variation-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+
+    .dashboard-calendar-widget__day-badge--partial & { color: var(--color-warning); }
+    .dashboard-calendar-widget__day-badge--paid & { color: var(--color-success); }
+  }
+
+  &__day-bills {
+    flex: 1;
+    min-width: 0;
+    padding-top: 2px;
   }
 
   &__bill-row {
     @include m.flex-between;
     align-items: center;
+    gap: var(--space-2);
     padding-block: 2px;
     font-size: var(--font-size-sm);
     color: var(--color-text);
+
+    &--stacked {
+      margin-top: var(--space-1);
+      padding-top: var(--space-1);
+      border-top: 1px solid var(--color-border);
+    }
+  }
+
+  &__bill-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

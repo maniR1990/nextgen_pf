@@ -14,6 +14,7 @@ export function flattenAccountsForPicker(groups: AccountGroupWithAccounts[]): Fo
         type: account.type,
         currentBalance: account.balance,
         bank: group.name,
+        isDefaultExpenseAccount: account.isDefaultExpenseAccount,
       });
     }
   }

@@ -3,6 +3,8 @@ export interface DuePaymentInput {
   name: string;
   amount: number;
   paid: boolean;
+  partial: boolean;
+  remaining: number;
 }
 
 export interface CalendarBudgetPace {
@@ -21,6 +23,10 @@ export interface CalendarBillDue {
   name: string;
   amount: number;
   paid: boolean;
+  /** Some but not all of `amount` has already been spent this period. */
+  partial: boolean;
+  /** What's actually left to pay — equals `amount` when nothing's been paid yet. */
+  remaining: number;
 }
 
 export interface CalendarData {
@@ -72,7 +78,14 @@ export function deriveCalendarData({
   }
 
   const billDue = duePayments
-    .map((p) => ({ day: p.dueDay, name: p.name, amount: p.amount, paid: p.paid }))
+    .map((p) => ({
+      day: p.dueDay,
+      name: p.name,
+      amount: p.amount,
+      paid: p.paid,
+      partial: p.partial,
+      remaining: p.remaining,
+    }))
     .sort((a, b) => a.day - b.day);
 
   const spendPct = plannedTotal > 0 ? Math.round((actualTotal / plannedTotal) * 100) : 0;

@@ -20,6 +20,7 @@ export interface PaymentSourceOption {
   balance: number;
   bank?: string;
   rewardPoints?: number;
+  isDefaultExpenseAccount?: boolean;
 }
 
 export interface CategoryOption {

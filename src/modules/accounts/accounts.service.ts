@@ -44,6 +44,7 @@ function toSummary(row: Omit<AccountSummary, never> & Record<string, unknown>): 
     currency: row.currency as string,
     status: row.status as AccountSummary['status'],
     isPrimary: row.isPrimary as boolean,
+    isDefaultExpenseAccount: row.isDefaultExpenseAccount as boolean,
     isExcludeNetWorth: row.isExcludeNetWorth as boolean,
     isHidden: row.isHidden as boolean,
     institutionId: (row.institutionId as string | null) ?? null,
@@ -411,6 +412,16 @@ export const AccountsService = {
 
     const archived = await AccountsRepository.archive(id);
     return enrichDetail(archived, [], []);
+  },
+
+  /** Makes this the one account a new Expense transaction pre-selects on open,
+   *  replacing whichever account (if any) held that role before. */
+  async setDefaultExpenseAccount(id: string, userId: string) {
+    const account = await AccountsRepository.findById(id);
+    assertOwned(account, userId);
+
+    const [, updated] = await AccountsRepository.setDefaultExpenseAccount(userId, id);
+    return enrichDetail(updated, [], []);
   },
 
   async transfer(
