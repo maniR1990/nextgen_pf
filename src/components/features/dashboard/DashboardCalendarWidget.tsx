@@ -3,6 +3,7 @@
 import type { CalendarTransaction } from '@/components/common/MonthCalendar';
 import { MonthCalendar } from '@/components/common/MonthCalendar';
 import { Badge } from '@/components/ui/Badge';
+import type { CalendarBillDue } from '@/app/api/v1/dashboard/calendar/derive';
 import { useDashboardCalendar } from '@/hooks/useDashboardCalendar';
 import { useState } from 'react';
 
@@ -37,6 +38,23 @@ function toISODate(year: number, month: number, day: number): string {
 
 function money(n: number): string {
   return `₹${Math.round(n).toLocaleString('en-IN')}`;
+}
+
+interface BillDueGroup {
+  day: number;
+  bills: CalendarBillDue[];
+}
+
+// billDue arrives pre-sorted by day, so a same-day run is always contiguous — no need
+// to bucket into a Map and re-sort.
+function groupBillsByDay(billDue: CalendarBillDue[]): BillDueGroup[] {
+  const groups: BillDueGroup[] = [];
+  for (const bill of billDue) {
+    const last = groups[groups.length - 1];
+    if (last && last.day === bill.day) last.bills.push(bill);
+    else groups.push({ day: bill.day, bills: [bill] });
+  }
+  return groups;
 }
 
 export function DashboardCalendarWidget() {
@@ -122,14 +140,19 @@ export function DashboardCalendarWidget() {
       {data.billDue.length > 0 && (
         <div className="dashboard-calendar-widget__bills">
           <p className="dashboard-calendar-widget__section-label">Upcoming bills</p>
-          {data.billDue.map((bill) => (
-            <div key={`${bill.day}-${bill.name}`} className="dashboard-calendar-widget__bill-row">
-              <span>
-                {bill.name} · due {monthLabel} {bill.day}
-              </span>
-              <Badge variant={bill.paid ? 'success' : 'inactive'}>
-                {bill.paid ? 'Paid' : money(bill.amount)}
-              </Badge>
+          {groupBillsByDay(data.billDue).map((group) => (
+            <div key={group.day}>
+              <p className="dashboard-calendar-widget__bill-date">
+                {monthLabel} {group.day}
+              </p>
+              {group.bills.map((bill) => (
+                <div key={bill.name} className="dashboard-calendar-widget__bill-row">
+                  <span>{bill.name}</span>
+                  <Badge variant={bill.paid ? 'success' : 'inactive'}>
+                    {bill.paid ? 'Paid' : money(bill.amount)}
+                  </Badge>
+                </div>
+              ))}
             </div>
           ))}
         </div>

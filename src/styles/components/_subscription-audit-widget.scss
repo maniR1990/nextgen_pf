@@ -3,7 +3,7 @@
 // Composes the existing .card / .badge primitives — only the layout glue between them
 // is new here, not a parallel set of card/badge styles.
 .subscription-audit-widget {
-  @include m.flex-col($gap: var(--space-4));
+  @include m.flex-col($gap: var(--space-2-5));
 
   &__status {
     font-size: var(--font-size-sm);
@@ -18,13 +18,19 @@
   }
 
   &__total {
-    @include m.flex-col($gap: var(--space-1));
+    @include m.flex-col($gap: var(--space-0-5));
   }
 
   &__total-value {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-xl);
     font-weight: var(--font-variation-bold);
     color: var(--color-text);
+  }
+
+  &__total-unit {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-variation-medium);
+    color: var(--color-text-muted);
   }
 
   &__total-sub {
@@ -32,16 +38,75 @@
     color: var(--color-text-muted);
   }
 
+  // ── Sections (Bills / By category / By account) ──────────────────────────────
+  // Each section owns its own header (label + optional toggle) so the two toggles
+  // — list view and category unit — stay scoped to the data they actually affect,
+  // instead of one global control implying the whole card shares one unit.
+
+  &__section-header {
+    @include m.flex-between;
+    align-items: center;
+    margin-bottom: var(--space-1);
+  }
+
+  &__section-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0;
+  }
+
+  &__toggle {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    background: var(--color-bg-subtle);
+    border-radius: var(--radius-full, 999px);
+    flex-shrink: 0;
+  }
+
+  &__toggle-btn {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-medium);
+    padding: 3px 8px;
+    border: none;
+    border-radius: var(--radius-full, 999px);
+    background: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+
+    &--active {
+      background: var(--comp-btn-primary-bg);
+      color: var(--comp-btn-primary-text);
+    }
+  }
+
+  // ── Bill list ──────────────────────────────────────────────────────────────
+
   &__list {
     @include m.flex-col($gap: 0);
     border-top: var(--border-width) solid var(--color-border);
   }
 
+  &__cycle-heading {
+    @include m.flex-between;
+    margin-top: var(--space-1-5);
+    padding-bottom: var(--space-0-5);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
   &__row {
     @include m.flex-between;
     align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-2-5) 0;
+    gap: var(--space-2);
+    padding: var(--space-1-5) 0;
     border-bottom: var(--border-width) solid var(--color-border);
   }
 
@@ -63,11 +128,23 @@
 
   &__row-amount {
     display: flex;
-    align-items: center;
-    gap: var(--space-1-5);
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-0-5);
     font-size: var(--font-size-sm);
     color: var(--color-text);
     white-space: nowrap;
+  }
+
+  &__row-amount-main {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5);
+  }
+
+  &__row-monthly {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
   }
 
   &__old-amount {
@@ -75,15 +152,114 @@
     color: var(--color-text-muted);
   }
 
-  &__breakdown {
-    display: grid;
-    gap: var(--space-4);
-    grid-template-columns: 1fr;
+  // ── By category (expandable) ──────────────────────────────────────────────
 
-    @include m.respond-to(md) {
-      grid-template-columns: 1fr 1fr;
+  &__categories {
+    @include m.flex-col($gap: var(--space-1));
+  }
+
+  &__catcard {
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  &__cat-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5);
+    width: 100%;
+    padding: var(--space-1) var(--space-1-5);
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background var(--transition-fast);
+
+    &:hover {
+      background: var(--color-bg-subtle);
+    }
+
+    &:focus-visible {
+      @include m.focus-ring;
     }
   }
+
+  &__cat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-subtle);
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  &__cat-info {
+    @include m.flex-col($gap: 1px);
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__cat-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-variation-medium);
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__cat-count {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__cat-amt {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-variation-medium);
+    color: var(--color-text);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  &__cat-chev {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    transition: transform var(--transition-fast);
+
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+
+  // Grid-rows 0fr → 1fr animates height smoothly without measuring scrollHeight in JS.
+  &__cat-wrap {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--transition-fast);
+
+    &--open {
+      grid-template-rows: 1fr;
+    }
+  }
+
+  &__cat-items {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  &__cat-item {
+    @include m.flex-between;
+    padding: var(--space-1) var(--space-1-5) var(--space-1) calc(20px + var(--space-1-5) * 2);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    border-top: var(--border-width) solid var(--color-border);
+  }
+
+  // ── By account ─────────────────────────────────────────────────────────────
 
   &__breakdown-group {
     @include m.flex-col($gap: var(--space-1-5));
@@ -93,14 +269,5 @@
     @include m.flex-between;
     font-size: var(--font-size-sm);
     color: var(--color-text);
-  }
-
-  &__section-label {
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-variation-semibold);
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin: 0;
   }
 }

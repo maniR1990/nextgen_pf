@@ -37,6 +37,10 @@ export interface SubscriptionItem {
   amount: number;
   /** Set only when the latest charge is higher than the one before it. */
   previousAmount: number | null;
+  /** Same label used in byCategory (falls back to 'Uncategorized' the same way) — lets
+   *  a UI filter this list down to one category's items (e.g. a "By category" row
+   *  expanding to show what's inside it) without a second request. */
+  categoryName: string;
 }
 
 export interface PriceIncreaseItem {
@@ -131,6 +135,7 @@ export function deriveSubscriptionData({
       nextRenewal: t.nextRenewal,
       amount: currentAmount,
       previousAmount: increased ? previousAmount : null,
+      categoryName: categoryLabel,
     });
 
     if (increased && latest) {

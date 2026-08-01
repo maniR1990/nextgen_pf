@@ -89,9 +89,21 @@
     margin: 0;
   }
 
+  // One heading per due date instead of repeating "due August 5" on every row — several
+  // bills often share a date, and re-stating it per row just made the list longer to
+  // scan without adding information. Each heading sits in its own group wrapper, so the
+  // parent's flex gap (not a margin here) already spaces one group from the next.
+  &__bill-date {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-variation-medium);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-0-5);
+  }
+
   &__bill-row {
     @include m.flex-between;
     align-items: center;
+    padding-block: 2px;
     font-size: var(--font-size-sm);
     color: var(--color-text);
   }

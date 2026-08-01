@@ -1,8 +1,22 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SubscriptionAuditWidget } from './SubscriptionAuditWidget';
 import { useDashboardSubscriptions } from '@/hooks/useDashboardSubscriptions';
 import type { DashboardSubscriptionsResponse } from '@/hooks/useDashboardSubscriptions';
+import type { SubscriptionItem } from '@/app/api/v1/dashboard/subscriptions/derive';
+
+function sub(overrides: Partial<SubscriptionItem> = {}): SubscriptionItem {
+  return {
+    id: 'a',
+    name: 'Netflix',
+    frequency: 'MONTHLY',
+    nextRenewal: '2026-08-05',
+    amount: 500,
+    previousAmount: null,
+    categoryName: 'Entertainment',
+    ...overrides,
+  };
+}
 
 vi.mock('@/hooks/useDashboardSubscriptions', () => ({
   useDashboardSubscriptions: vi.fn(),
@@ -115,26 +129,14 @@ describe('SubscriptionAuditWidget', () => {
 
   describe('subscriptions list', () => {
     it('shows a plain amount for an unchanged subscription', () => {
-      mockQuery(
-        baseData({
-          subscriptions: [
-            { id: 'a', name: 'Netflix', frequency: 'MONTHLY', nextRenewal: '2026-08-05', amount: 500, previousAmount: null },
-          ],
-        }),
-      );
+      mockQuery(baseData({ subscriptions: [sub()] }));
       render(<SubscriptionAuditWidget />);
       expect(screen.getByText('Netflix')).toBeInTheDocument();
       expect(screen.getByText('₹500')).toBeInTheDocument();
     });
 
     it('shows a struck-through old price and a delta badge for a changed subscription', () => {
-      mockQuery(
-        baseData({
-          subscriptions: [
-            { id: 'a', name: 'Netflix', frequency: 'MONTHLY', nextRenewal: '2026-08-05', amount: 650, previousAmount: 500 },
-          ],
-        }),
-      );
+      mockQuery(baseData({ subscriptions: [sub({ amount: 650, previousAmount: 500 })] }));
       const { container } = render(<SubscriptionAuditWidget />);
       expect(screen.getByText('₹500')).toBeInTheDocument();
       expect(screen.getByText('₹650')).toBeInTheDocument();
@@ -147,25 +149,120 @@ describe('SubscriptionAuditWidget', () => {
       const { container } = render(<SubscriptionAuditWidget />);
       expect(container.querySelector('.subscription-audit-widget__list')).not.toBeInTheDocument();
     });
-  });
 
-  describe('breakdowns', () => {
-    it('renders category and account rows when present', () => {
+    it('defaults to the By date view, listing every item with its own frequency', () => {
       mockQuery(
         baseData({
+          subscriptions: [
+            sub({ id: 'a', name: 'Netflix', frequency: 'MONTHLY' }),
+            sub({ id: 'b', name: 'Insurance', frequency: 'ANNUAL', amount: 12000 }),
+          ],
+        }),
+      );
+      render(<SubscriptionAuditWidget />);
+      expect(screen.getByText('Netflix')).toBeInTheDocument();
+      expect(screen.getByText('Insurance')).toBeInTheDocument();
+      expect(screen.getByText('Annual · renews 5 Aug')).toBeInTheDocument();
+    });
+
+    it('switches to By cycle grouping, with a monthly-equivalent subtotal per frequency', () => {
+      mockQuery(
+        baseData({
+          subscriptions: [
+            sub({ id: 'a', name: 'Netflix', frequency: 'MONTHLY', amount: 500 }),
+            sub({
+              id: 'b',
+              name: 'Insurance',
+              frequency: 'ANNUAL',
+              amount: 12000,
+              nextRenewal: '2026-08-10',
+            }),
+          ],
+        }),
+      );
+      render(<SubscriptionAuditWidget />);
+      fireEvent.click(screen.getByRole('button', { name: 'By cycle' }));
+      expect(screen.getByText('Monthly')).toBeInTheDocument();
+      expect(screen.getByText('₹500/mo')).toBeInTheDocument();
+      expect(screen.getByText('Annual')).toBeInTheDocument();
+      expect(screen.getByText('₹1,000/mo')).toBeInTheDocument();
+      // Grouped view shows renewal date only — frequency already reads as the group heading.
+      expect(screen.getByText('renews 10 Aug')).toBeInTheDocument();
+    });
+  });
+
+  describe('by category', () => {
+    it('renders each category collapsed by default, with its item count', () => {
+      mockQuery(
+        baseData({
+          subscriptions: [sub({ id: 'a', categoryName: 'Entertainment' })],
           byCategory: [{ label: 'Entertainment', amount: 500 }],
-          byAccount: [{ label: 'HDFC Card', amount: 500 }],
         }),
       );
       render(<SubscriptionAuditWidget />);
       expect(screen.getByText('Entertainment')).toBeInTheDocument();
+      expect(screen.getByText('1 item')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Entertainment/ })).toHaveAttribute(
+        'aria-expanded',
+        'false',
+      );
+    });
+
+    it('expands a category to show only the items filed under it', () => {
+      mockQuery(
+        baseData({
+          subscriptions: [
+            sub({ id: 'a', name: 'Netflix', categoryName: 'Entertainment' }),
+            sub({ id: 'b', name: 'Term Insurance', categoryName: 'Insurance' }),
+          ],
+          byCategory: [
+            { label: 'Entertainment', amount: 500 },
+            { label: 'Insurance', amount: 7000 },
+          ],
+        }),
+      );
+      render(<SubscriptionAuditWidget />);
+      fireEvent.click(screen.getByRole('button', { name: /Entertainment/ }));
+      expect(screen.getByRole('button', { name: /Entertainment/ })).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      );
+      // Insurance's own item shouldn't leak into Entertainment's expanded list.
+      const entertainmentCard = screen.getByRole('button', { name: /Entertainment/ }).closest(
+        '.subscription-audit-widget__catcard',
+      );
+      expect(entertainmentCard).not.toBeNull();
+      expect(entertainmentCard!.textContent).toContain('Netflix');
+      expect(entertainmentCard!.textContent).not.toContain('Term Insurance');
+    });
+
+    it('switches category totals between monthly and yearly', () => {
+      mockQuery(
+        baseData({
+          subscriptions: [sub()],
+          byCategory: [{ label: 'Entertainment', amount: 500 }],
+        }),
+      );
+      const { container } = render(<SubscriptionAuditWidget />);
+      const catAmt = () => container.querySelector('.subscription-audit-widget__cat-amt');
+      expect(catAmt()?.textContent).toBe('₹500');
+      fireEvent.click(screen.getByRole('button', { name: 'Yearly' }));
+      expect(catAmt()?.textContent).toBe('₹6,000');
+    });
+  });
+
+  describe('by account', () => {
+    it('renders account rows when present', () => {
+      mockQuery(baseData({ byAccount: [{ label: 'HDFC Card', amount: 500 }] }));
+      render(<SubscriptionAuditWidget />);
       expect(screen.getByText('HDFC Card')).toBeInTheDocument();
     });
 
-    it('hides breakdown sections when empty', () => {
+    it('hides category and account sections when empty', () => {
       mockQuery(baseData({ byCategory: [], byAccount: [] }));
       const { container } = render(<SubscriptionAuditWidget />);
-      expect(container.querySelector('.subscription-audit-widget__breakdown')).not.toBeInTheDocument();
+      expect(container.querySelector('.subscription-audit-widget__categories')).not.toBeInTheDocument();
+      expect(screen.queryByText('By account')).not.toBeInTheDocument();
     });
   });
 });

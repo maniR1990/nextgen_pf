@@ -142,9 +142,28 @@ describe('DashboardCalendarWidget', () => {
         }),
       );
       render(<DashboardCalendarWidget />);
-      expect(screen.getByText(/rent · due july 5/i)).toBeInTheDocument();
+      expect(screen.getByText('Rent')).toBeInTheDocument();
+      expect(screen.getByText('July 5')).toBeInTheDocument();
       expect(screen.getByText('Paid')).toBeInTheDocument();
       expect(screen.getByText('₹3,200')).toBeInTheDocument();
+    });
+
+    it('groups same-day bills under a single date heading instead of repeating it per row', () => {
+      mockQuery(
+        baseData({
+          billDue: [
+            { day: 5, name: 'Rent', amount: 15000, paid: true },
+            { day: 5, name: 'Gym', amount: 1200, paid: false },
+            { day: 25, name: 'Credit card', amount: 3200, paid: false },
+          ],
+        }),
+      );
+      render(<DashboardCalendarWidget />);
+      expect(screen.getAllByText('July 5')).toHaveLength(1);
+      expect(screen.getByText('Rent')).toBeInTheDocument();
+      expect(screen.getByText('Gym')).toBeInTheDocument();
+      expect(screen.getByText('July 25')).toBeInTheDocument();
+      expect(screen.getByText('Credit card')).toBeInTheDocument();
     });
 
     it('hides the bills section when there are none', () => {
