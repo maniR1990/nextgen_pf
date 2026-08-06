@@ -12,6 +12,7 @@ import { PasswordStrengthMeter } from '@/components/ui/PasswordStrengthMeter';
 import { TextLink } from '@/components/ui/TextLink';
 import { getEnabledOAuthProviders } from '@/constants/oauth';
 import { ROUTES } from '@/constants/routes';
+import { useCountdown } from '@/hooks/useCountdown';
 import { parseClientError } from '@/lib/api/parseClientError';
 import { RegisterSchema } from '@/modules/auth/auth.schema';
 import { useRouter } from 'next/navigation';
@@ -27,6 +28,7 @@ export function RegisterForm() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const hasOAuth = getEnabledOAuthProviders().length > 0;
+  const retryCountdown = useCountdown();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,6 +63,9 @@ export function RegisterForm() {
       setLoading(false);
       const apiError = await parseClientError(res);
       setFormError(apiError.message);
+      if (apiError.retryAfterSec) {
+        retryCountdown.start(apiError.retryAfterSec);
+      }
       return;
     }
 
@@ -68,11 +73,15 @@ export function RegisterForm() {
     router.push(`${ROUTES.LOGIN}?registered=1`);
   }
 
+  const displayError = retryCountdown.isActive
+    ? `${formError} Try again in ${retryCountdown.secondsLeft}s.`
+    : formError;
+
   return (
     <form onSubmit={handleSubmit} className="auth-form">
       <AuthFormHeader title="Create account" subtitle="Get started with your free account" />
 
-      {formError ? <Alert variant="error">{formError}</Alert> : null}
+      {formError ? <Alert variant="error">{displayError}</Alert> : null}
 
       {hasOAuth ? (
         <>
@@ -117,8 +126,8 @@ export function RegisterForm() {
         label="I agree to the Terms and Privacy Policy"
       />
 
-      <Button type="submit" loading={loading}>
-        Create account
+      <Button type="submit" loading={loading} disabled={retryCountdown.isActive}>
+        {retryCountdown.isActive ? `Try again in ${retryCountdown.secondsLeft}s` : 'Create account'}
       </Button>
 
       <AuthFormFooter>

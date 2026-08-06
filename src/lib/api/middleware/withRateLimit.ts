@@ -1,5 +1,5 @@
 import { v1FromApiError } from '@/lib/api/v1/envelope';
-import { ApiError } from '../errors';
+import { TooManyRequestsError } from '../errors';
 import type { Middleware } from './types';
 
 const store = new Map<string, { count: number; resetAt: number }>();
@@ -22,7 +22,8 @@ export function withRateLimit({ max, window }: { max: number; window: string }):
     }
 
     if (entry.count >= max) {
-      return v1FromApiError(new ApiError('Too many requests', 429, 'RATE_LIMITED'));
+      const retryAfterSec = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
+      return v1FromApiError(new TooManyRequestsError(retryAfterSec));
     }
 
     entry.count += 1;

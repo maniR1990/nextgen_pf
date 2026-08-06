@@ -10,6 +10,7 @@ import { OAuthButtons } from '@/components/ui/OAuthButtons';
 import { TextLink } from '@/components/ui/TextLink';
 import { getEnabledOAuthProviders } from '@/constants/oauth';
 import { ROUTES } from '@/constants/routes';
+import { useCountdown } from '@/hooks/useCountdown';
 import { parseClientError } from '@/lib/api/parseClientError';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
@@ -28,6 +29,7 @@ export function LoginForm() {
   const [unverified, setUnverified] = useState(false);
   const [loading, setLoading] = useState(false);
   const hasOAuth = getEnabledOAuthProviders().length > 0;
+  const retryCountdown = useCountdown();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -53,6 +55,9 @@ export function LoginForm() {
       if (typeof apiError.details?.attemptsRemaining === 'number') {
         setAttemptsRemaining(apiError.details.attemptsRemaining);
       }
+      if (apiError.retryAfterSec) {
+        retryCountdown.start(apiError.retryAfterSec);
+      }
       return;
     }
 
@@ -75,6 +80,10 @@ export function LoginForm() {
       ? `${attemptsRemaining} attempt${attemptsRemaining === 1 ? '' : 's'} remaining`
       : undefined;
 
+  const displayError = retryCountdown.isActive
+    ? `${formError} Try again in ${retryCountdown.secondsLeft}s.`
+    : formError;
+
   return (
     <form onSubmit={handleSubmit} className="auth-form">
       <AuthFormHeader title="Welcome back" subtitle="Sign in to your account" />
@@ -87,7 +96,7 @@ export function LoginForm() {
           Your session expired due to inactivity. Please sign in again.
         </Alert>
       ) : null}
-      {formError ? <Alert variant="error">{formError}</Alert> : null}
+      {formError ? <Alert variant="error">{displayError}</Alert> : null}
 
       {hasOAuth ? (
         <>
@@ -124,8 +133,8 @@ export function LoginForm() {
         </Button>
       ) : null}
 
-      <Button type="submit" loading={loading}>
-        Sign in
+      <Button type="submit" loading={loading} disabled={retryCountdown.isActive}>
+        {retryCountdown.isActive ? `Try again in ${retryCountdown.secondsLeft}s` : 'Sign in'}
       </Button>
 
       <AuthFormFooter>

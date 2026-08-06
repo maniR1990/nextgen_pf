@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { TextLink } from '@/components/ui/TextLink';
 import { AUTH_MESSAGES } from '@/constants/auth';
 import { ROUTES } from '@/constants/routes';
+import { useCountdown } from '@/hooks/useCountdown';
 import { parseClientError } from '@/lib/api/parseClientError';
 import { ForgotPasswordSchema } from '@/modules/auth/auth.schema';
 import { KeyRound } from 'lucide-react';
@@ -19,6 +20,7 @@ export function ForgotPasswordForm() {
   const [fieldError, setFieldError] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const retryCountdown = useCountdown();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,11 +44,18 @@ export function ForgotPasswordForm() {
     if (!res.ok) {
       const apiError = await parseClientError(res);
       setFormError(apiError.message);
+      if (apiError.retryAfterSec) {
+        retryCountdown.start(apiError.retryAfterSec);
+      }
       return;
     }
 
     setSent(true);
   }
+
+  const displayError = retryCountdown.isActive
+    ? `${formError} Try again in ${retryCountdown.secondsLeft}s.`
+    : formError;
 
   return (
     <form onSubmit={handleSubmit} className="auth-form">
@@ -57,7 +66,7 @@ export function ForgotPasswordForm() {
         iconTone="warning"
       />
 
-      {formError ? <Alert variant="error">{formError}</Alert> : null}
+      {formError ? <Alert variant="error">{displayError}</Alert> : null}
       {sent ? <Alert variant="success">{AUTH_MESSAGES.resetLinkSent}</Alert> : null}
 
       <Input
@@ -70,8 +79,8 @@ export function ForgotPasswordForm() {
         invalid={Boolean(fieldError)}
       />
 
-      <Button type="submit" loading={loading}>
-        Send reset link
+      <Button type="submit" loading={loading} disabled={retryCountdown.isActive}>
+        {retryCountdown.isActive ? `Try again in ${retryCountdown.secondsLeft}s` : 'Send reset link'}
       </Button>
 
       <AuthFormFooter>
