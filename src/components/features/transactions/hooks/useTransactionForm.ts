@@ -109,12 +109,13 @@ export function useTransactionForm(editId?: string) {
   const createBulkTx = useCreateBulkTransaction();
   const patchTx = usePatchTransaction(editId ?? '');
 
-  // Only fetched for EXPENSE — this data exists purely to auto-fill the amount when a
-  // recurring bill's category is picked below, which is meaningless for other types.
+  // Fetched for EXPENSE and INVESTMENT — this data exists purely to auto-fill the amount
+  // when a planned bill/SIP category is picked below (both carry categories with a
+  // budgeted `planned` amount + dueDay); meaningless for other types.
   const { data: budgetSummary } = useBudgetSummary(
     store.values.budgetPeriodYear,
     store.values.budgetPeriodMonth,
-    { enabled: store.values.type === 'EXPENSE' },
+    { enabled: ['EXPENSE', 'INVESTMENT'].includes(store.values.type) },
   );
   const duePaymentsById = useMemo(() => {
     if (!budgetSummary) return new Map<string, ReturnType<typeof derivePayments>[number]>();
@@ -127,12 +128,17 @@ export function useTransactionForm(editId?: string) {
     <K extends keyof typeof store.values>(key: K, value: (typeof store.values)[K]) => {
       store.setField(key, value);
 
-      // Auto-fill the amount from a recurring bill's remaining balance when its
+      // Auto-fill the amount from a recurring bill/SIP's remaining balance when its
       // category is picked and the amount hasn't been touched yet — the same "pay
       // what's left" behaviour Quick Pay already has on the Budget page, surfaced here
-      // too since this general Log Transaction dialog is where most bills actually get
-      // logged day to day. Never overwrites an amount the user already typed.
-      if (key === 'categoryId' && store.values.type === 'EXPENSE' && store.values.amount === '') {
+      // too since this general Log Transaction dialog is where most bills (and planned
+      // investment contributions) actually get logged day to day. Never overwrites an
+      // amount the user already typed.
+      if (
+        key === 'categoryId' &&
+        ['EXPENSE', 'INVESTMENT'].includes(store.values.type) &&
+        store.values.amount === ''
+      ) {
         const due = duePaymentsById.get(value as string);
         if (due && !due.paid && due.remaining > 0) {
           store.setField('amount', String(due.remaining));
