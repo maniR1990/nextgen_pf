@@ -89,13 +89,25 @@ export const TransactionService = {
     return { rows: page, hasMore, nextCursor: hasMore ? page[page.length - 1].id : null, limit };
   },
 
-  // Whole-period Income/Expense/Net — computed server-side over every matching row, not
-  // just whatever page(s) the client has paginated in. Delegates to the shared
+  // Whole-period Income/Expense/Investment/Net — computed server-side over every matching
+  // row, not just whatever page(s) the client has paginated in. Delegates to the shared
   // getPeriodTotals so this figure can never drift from the Dashboard's or the Calendar
   // widget's — see period-spend.ts for why that matters.
+  //
+  // `totalExpense` here is deliberately the narrow totalExpenseOnly figure (true spend),
+  // not the broader OUTFLOW_TYPES sum — Investment/Sinking are asset conversions, not
+  // consumption, and get their own `totalInvestment` bucket instead of inflating Expense.
+  // `net` stays the broad income-minus-all-outflow figure (unchanged) since that's the
+  // real cash-liquidity number regardless of how the outflow is labeled.
   async getPeriodSummary(userId: string, year: number, month: number) {
-    const { totalIncome, totalExpense, net } = await getPeriodTotals(userId, year, month);
-    return { totalIncome, totalExpense, net };
+    const { totalIncome, totalExpenseOnly, net, totalsByType } = await getPeriodTotals(
+      userId,
+      year,
+      month,
+    );
+    const totalInvestment =
+      (totalsByType.INVESTMENT ?? 0) + (totalsByType.SINKING_DEPOSIT ?? 0);
+    return { totalIncome, totalExpense: totalExpenseOnly, totalInvestment, net };
   },
 
   // ── Single ────────────────────────────────────────────────────────────────

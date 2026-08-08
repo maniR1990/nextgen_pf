@@ -30,7 +30,20 @@ export interface TimelineGroup {
 export interface TimelineSummary {
   totalIncome: number;
   totalExpense: number;
+  totalInvestment: number;
   net: number;
+}
+
+// Investment and Sinking Deposit are asset conversions, not consumption — they get their
+// own color/tile instead of reading as "expense" red. See period-spend.ts's
+// totalExpenseOnly vs totalExpense split for the same distinction server-side.
+const INVESTMENT_TX_TYPES = new Set(['INVESTMENT', 'SINKING_DEPOSIT']);
+
+type ColorVariant = 'credit' | 'debit' | 'investment' | 'neutral';
+
+function colorVariant(tx: TimelineTransaction): ColorVariant {
+  if (tx.type === 'debit' && tx.txType && INVESTMENT_TX_TYPES.has(tx.txType)) return 'investment';
+  return tx.type;
 }
 
 export interface TransactionTimelineProps {
@@ -67,6 +80,20 @@ function groupNetTotal(group: TimelineGroup) {
   return { label: `${prefix}₹${Math.abs(net).toLocaleString('en-IN')}`, positive: net >= 0 };
 }
 
+// Splits a day's outflow into true spend vs investment — only meaningful to show when
+// both are present; a pure-expense or pure-investment day is already fully described by
+// the plain net total above.
+function groupOutflowBreakdown(group: TimelineGroup) {
+  let expense = 0;
+  let investment = 0;
+  for (const tx of group.transactions) {
+    if (tx.type !== 'debit') continue;
+    if (tx.txType && INVESTMENT_TX_TYPES.has(tx.txType)) investment += tx.amount;
+    else expense += tx.amount;
+  }
+  return { expense, investment, out: expense + investment };
+}
+
 export function TransactionTimeline({
   groups,
   onLoadMore,
@@ -84,13 +111,22 @@ export function TransactionTimeline({
   const computedSummary = useMemo(() => {
     let totalIncome = 0;
     let totalExpense = 0;
+    let totalInvestment = 0;
     for (const g of groups) {
       for (const tx of g.transactions) {
         if (tx.type === 'credit') totalIncome += tx.amount;
-        else if (tx.type === 'debit') totalExpense += tx.amount;
+        else if (tx.type === 'debit') {
+          if (tx.txType && INVESTMENT_TX_TYPES.has(tx.txType)) totalInvestment += tx.amount;
+          else totalExpense += tx.amount;
+        }
       }
     }
-    return { totalIncome, totalExpense, net: totalIncome - totalExpense };
+    return {
+      totalIncome,
+      totalExpense,
+      totalInvestment,
+      net: totalIncome - totalExpense - totalInvestment,
+    };
   }, [groups]);
   const summary = summaryProp ?? computedSummary;
 
@@ -115,54 +151,86 @@ export function TransactionTimeline({
     <div className="tx-timeline max-w-4xl mx-auto p-8" aria-label="Transaction timeline">
       {/* Summary bar */}
       {showSummary && groups.length > 0 && (
-        <div className="tx-timeline__summary">
-          <div className="tx-timeline__summary-item">
-            <span className="tx-timeline__summary-label">
-              Income
-              <button
-                type="button"
-                className="tx-timeline__summary-mask-toggle"
-                onClick={() => setMasked((v) => !v)}
-                aria-label={masked ? 'Show amounts' : 'Hide amounts'}
+        <>
+          <div className="tx-timeline__summary">
+            <div className="tx-timeline__summary-item">
+              <span className="tx-timeline__summary-label">
+                Income
+                <button
+                  type="button"
+                  className="tx-timeline__summary-mask-toggle"
+                  onClick={() => setMasked((v) => !v)}
+                  aria-label={masked ? 'Show amounts' : 'Hide amounts'}
+                >
+                  {masked ? <Eye size={11} /> : <EyeOff size={11} />}
+                </button>
+              </span>
+              <span className="tx-timeline__summary-value tx-timeline__summary-value--credit">
+                {masked ? '••••••' : `+₹${summary.totalIncome.toLocaleString('en-IN')}`}
+              </span>
+            </div>
+            <div className="tx-timeline__summary-divider" />
+            <div className="tx-timeline__summary-item">
+              <span className="tx-timeline__summary-label">Expense</span>
+              <span className="tx-timeline__summary-value tx-timeline__summary-value--debit">
+                −₹{summary.totalExpense.toLocaleString('en-IN')}
+              </span>
+            </div>
+            <div className="tx-timeline__summary-divider" />
+            <div className="tx-timeline__summary-item">
+              <span className="tx-timeline__summary-label">Investment</span>
+              <span className="tx-timeline__summary-value tx-timeline__summary-value--investment">
+                −₹{summary.totalInvestment.toLocaleString('en-IN')}
+              </span>
+            </div>
+            <div className="tx-timeline__summary-divider" />
+            <div className="tx-timeline__summary-item tx-timeline__summary-item--net">
+              <span className="tx-timeline__summary-label">
+                Net
+                <button
+                  type="button"
+                  className="tx-timeline__summary-mask-toggle"
+                  onClick={() => setMasked((v) => !v)}
+                  aria-label={masked ? 'Show amounts' : 'Hide amounts'}
+                >
+                  {masked ? <Eye size={11} /> : <EyeOff size={11} />}
+                </button>
+              </span>
+              <span
+                className={`tx-timeline__summary-value tx-timeline__summary-value--${summary.net >= 0 ? 'credit' : 'debit'}`}
               >
-                {masked ? <Eye size={11} /> : <EyeOff size={11} />}
-              </button>
+                {masked
+                  ? '••••••'
+                  : summary.net >= 0
+                    ? `+₹${summary.net.toLocaleString('en-IN')}`
+                    : `−₹${Math.abs(summary.net).toLocaleString('en-IN')}`}
+              </span>
+            </div>
+          </div>
+
+          <p className="tx-timeline__summary-formula">
+            Net = income − expense − investment. Investment includes sinking-fund transfers —
+            money saved, not spent.
+          </p>
+          <div className="tx-timeline__legend">
+            <span className="tx-timeline__legend-item">
+              <span className="tx-timeline__legend-dot tx-timeline__legend-dot--credit" />
+              Income — money in
             </span>
-            <span className="tx-timeline__summary-value tx-timeline__summary-value--credit">
-              {masked ? '••••••' : `+₹${summary.totalIncome.toLocaleString('en-IN')}`}
+            <span className="tx-timeline__legend-item">
+              <span className="tx-timeline__legend-dot tx-timeline__legend-dot--debit" />
+              Expense — true spend
+            </span>
+            <span className="tx-timeline__legend-item">
+              <span className="tx-timeline__legend-dot tx-timeline__legend-dot--investment" />
+              Investment — asset conversion
+            </span>
+            <span className="tx-timeline__legend-item">
+              <span className="tx-timeline__legend-dot tx-timeline__legend-dot--neutral" />
+              Transfer — neutral
             </span>
           </div>
-          <div className="tx-timeline__summary-divider" />
-          <div className="tx-timeline__summary-item">
-            <span className="tx-timeline__summary-label">Expense</span>
-            <span className="tx-timeline__summary-value tx-timeline__summary-value--debit">
-              −₹{summary.totalExpense.toLocaleString('en-IN')}
-            </span>
-          </div>
-          <div className="tx-timeline__summary-divider" />
-          <div className="tx-timeline__summary-item tx-timeline__summary-item--net">
-            <span className="tx-timeline__summary-label">
-              Net
-              <button
-                type="button"
-                className="tx-timeline__summary-mask-toggle"
-                onClick={() => setMasked((v) => !v)}
-                aria-label={masked ? 'Show amounts' : 'Hide amounts'}
-              >
-                {masked ? <Eye size={11} /> : <EyeOff size={11} />}
-              </button>
-            </span>
-            <span
-              className={`tx-timeline__summary-value tx-timeline__summary-value--${summary.net >= 0 ? 'credit' : 'debit'}`}
-            >
-              {masked
-                ? '••••••'
-                : summary.net >= 0
-                  ? `+₹${summary.net.toLocaleString('en-IN')}`
-                  : `−₹${Math.abs(summary.net).toLocaleString('en-IN')}`}
-            </span>
-          </div>
-        </div>
+        </>
       )}
 
       {groups.length === 0 && <div className="tx-timeline__empty">No transactions to display</div>}
@@ -178,6 +246,7 @@ export function TransactionTimeline({
             }
           })();
           const total = groupNetTotal(group);
+          const breakdown = groupOutflowBreakdown(group);
 
           return (
             <div key={group.date} className="tx-timeline__group">
@@ -208,6 +277,22 @@ export function TransactionTimeline({
                   </span>
                 </div>
 
+                {/* Only worth calling out when the day mixes spend and investment —
+                    a pure-expense or pure-investment day is already fully described by
+                    the net total above. */}
+                {breakdown.investment > 0 && (
+                  <p className="tx-timeline__group-breakdown">
+                    Out −₹{breakdown.out.toLocaleString('en-IN')}
+                    {breakdown.expense > 0 && (
+                      <>
+                        {' '}
+                        (expense −₹{breakdown.expense.toLocaleString('en-IN')} · investment −₹
+                        {breakdown.investment.toLocaleString('en-IN')})
+                      </>
+                    )}
+                  </p>
+                )}
+
                 <div className="tx-timeline__cards-list">
                   {group.transactions.map((tx) => {
                     // Editing/deleting is a plain data-fix action, not tied to which
@@ -215,13 +300,14 @@ export function TransactionTimeline({
                     // the wrong budget period (the common reason to open it) has to stay
                     // editable regardless of today's date or which period is being viewed.
                     const showActions = Boolean(onEditClick || onDeleteClick);
+                    const variant = colorVariant(tx);
 
                     return (
                       <div
                         key={tx.id}
                         className={[
                           'tx-timeline__card',
-                          `tx-timeline__card--${tx.type}`,
+                          `tx-timeline__card--${variant}`,
                           onTransactionClick ? 'tx-timeline__card--clickable' : '',
                           showActions ? 'tx-timeline__card--has-actions' : '',
                         ]
@@ -241,7 +327,7 @@ export function TransactionTimeline({
                         }
                       >
                         <span
-                          className={`tx-timeline__dot tx-timeline__dot--${tx.type}`}
+                          className={`tx-timeline__dot tx-timeline__dot--${variant}`}
                           aria-hidden
                         />
                         <div className="tx-timeline__card-body">
@@ -256,7 +342,7 @@ export function TransactionTimeline({
                           {tx.notes && <span className="tx-timeline__card-notes">{tx.notes}</span>}
                         </div>
                         <span
-                          className={`tx-timeline__card-amount tx-timeline__card-amount--${tx.type}`}
+                          className={`tx-timeline__card-amount tx-timeline__card-amount--${variant}`}
                         >
                           {formatAmount(tx)}
                         </span>

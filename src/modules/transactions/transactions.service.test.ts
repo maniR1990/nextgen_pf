@@ -71,7 +71,29 @@ describe('TransactionService.getPeriodSummary', () => {
     expect(result).toEqual({
       totalIncome: 85000,
       totalExpense: 24399.68,
+      totalInvestment: 0,
       net: 85000 - 24399.68,
+    });
+  });
+
+  it('separates Investment and Sinking Deposit into totalInvestment, out of totalExpense', async () => {
+    vi.mocked(TransactionRepository.sumByTypeForPeriod).mockResolvedValue([
+      { type: 'EXPENSE', _sum: { amount: 5000 } },
+      { type: 'INVESTMENT', _sum: { amount: 23000 } },
+      { type: 'SINKING_DEPOSIT', _sum: { amount: 2000 } },
+      { type: 'INCOME', _sum: { amount: 42000 } },
+    ] as never);
+    vi.mocked(TransactionRepository.sumUncategorizedByTypeForPeriod).mockResolvedValue(
+      [] as never,
+    );
+
+    const result = await TransactionService.getPeriodSummary('u1', 2026, 7);
+
+    expect(result).toEqual({
+      totalIncome: 42000,
+      totalExpense: 5000,
+      totalInvestment: 25000,
+      net: 42000 - (5000 + 23000 + 2000),
     });
   });
 });

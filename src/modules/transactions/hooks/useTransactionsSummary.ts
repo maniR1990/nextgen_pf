@@ -6,7 +6,10 @@ import { useQuery } from '@tanstack/react-query';
 
 export interface TransactionsPeriodSummary {
   totalIncome: number;
+  /** True spend only — EXPENSE type. Excludes Investment/Sinking; see totalInvestment. */
   totalExpense: number;
+  /** Investment + Sinking Deposit — asset conversion, not consumption. */
+  totalInvestment: number;
   net: number;
 }
 
