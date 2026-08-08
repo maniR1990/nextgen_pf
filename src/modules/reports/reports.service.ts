@@ -24,6 +24,12 @@ export interface ReportFilterTypeBreakdown {
   planned: number | null;
   variance: number | null;
   pctOfIncome: number | null;
+  /** INVESTMENT only — the split behind `actual`. Sinking Deposit isn't a selectable
+   *  report `type` on its own (it's tracked via Funds, not categories), so without this
+   *  split it would silently vanish from every report instead of counting as the
+   *  savings it is. See getFilteredReport. */
+  investmentActual?: number;
+  sinkingActual?: number;
 }
 
 export interface ReportFilterResult {
@@ -57,6 +63,10 @@ export interface ReportFilterResult {
    *  category is picked, its whole subtree already belongs to exactly one type, so
    *  there's nothing left to blend and the single-number fields above apply as normal. */
   byType: ReportFilterTypeBreakdown[] | null;
+  /** Set only when `type=INVESTMENT` is selected directly (byType is null in that case)
+   *  — same Investment/Sinking split as ReportFilterTypeBreakdown, see there for why. */
+  investmentActual?: number;
+  sinkingActual?: number;
 }
 
 export interface BudgetFlagCategory {
@@ -210,6 +220,30 @@ export const ReportsService = {
 
     const incomeForPeriod = periodTotals ? periodTotals.totalIncome : null;
 
+    // Sinking Deposit isn't a selectable report `type` (it's tracked via Funds, not
+    // categories — see ReportFilterTypeBreakdown's doc comment), but it's savings just
+    // like Investment, so it belongs in "Actual Invested" instead of vanishing. Queried
+    // and kept separate so the caller can both merge it into the total AND show the
+    // split, rather than picking one or the other.
+    async function investmentPlusSinking(base: {
+      year?: number;
+      month?: number;
+      accountId?: string;
+      categoryIds?: string[];
+    }) {
+      const [investment, sinking] = await Promise.all([
+        TransactionRepository.sumFiltered(userId, { ...base, type: 'INVESTMENT' }),
+        TransactionRepository.sumFiltered(userId, { ...base, type: 'SINKING_DEPOSIT' }),
+      ]);
+      return {
+        actual: investment.actual + sinking.actual,
+        count: investment.count + sinking.count,
+        recurringActual: investment.recurringActual + sinking.recurringActual,
+        investmentActual: investment.actual,
+        sinkingActual: sinking.actual,
+      };
+    }
+
     // "All types, no category" has nothing to anchor a single "actual" figure to — Income,
     // Expense, and Investment amounts don't mean the same thing, so summing them produces
     // a number that reads as real but isn't. Give a per-type breakdown instead; see the
@@ -218,12 +252,11 @@ export const ReportsService = {
       const types = ['INCOME', 'EXPENSE', 'INVESTMENT'] as const;
       const byType = await Promise.all(
         types.map(async (type): Promise<ReportFilterTypeBreakdown> => {
-          const { actual, count, recurringActual } = await TransactionRepository.sumFiltered(userId, {
-            year: filters.year,
-            month: filters.month,
-            type,
-            accountId: filters.accountId,
-          });
+          const base = { year: filters.year, month: filters.month, accountId: filters.accountId };
+          const { actual, count, recurringActual, investmentActual, sinkingActual } =
+            type === 'INVESTMENT'
+              ? await investmentPlusSinking(base)
+              : { ...(await TransactionRepository.sumFiltered(userId, { ...base, type })), investmentActual: undefined, sinkingActual: undefined };
           const planned = plannedFor(type);
           return {
             type,
@@ -233,6 +266,8 @@ export const ReportsService = {
             planned,
             variance: planned !== null ? actual - planned : null,
             pctOfIncome: pctOfIncomeFor(actual),
+            investmentActual,
+            sinkingActual,
           };
         }),
       );
@@ -250,13 +285,11 @@ export const ReportsService = {
       };
     }
 
-    const { actual, count, recurringActual } = await TransactionRepository.sumFiltered(userId, {
-      year: filters.year,
-      month: filters.month,
-      type: filters.type,
-      accountId: filters.accountId,
-      categoryIds,
-    });
+    const base = { year: filters.year, month: filters.month, accountId: filters.accountId, categoryIds };
+    const { actual, count, recurringActual, investmentActual, sinkingActual } =
+      filters.type === 'INVESTMENT'
+        ? await investmentPlusSinking(base)
+        : { ...(await TransactionRepository.sumFiltered(userId, { ...base, type: filters.type })), investmentActual: undefined, sinkingActual: undefined };
 
     const planned = plannedFor(filters.type);
     const variance = planned !== null ? actual - planned : null;
@@ -272,6 +305,8 @@ export const ReportsService = {
       pctOfIncome: pctOfIncomeFor(actual),
       incomeForPeriod,
       byType: null,
+      investmentActual,
+      sinkingActual,
     };
   },
 };

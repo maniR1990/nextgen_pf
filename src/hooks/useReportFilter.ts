@@ -20,6 +20,11 @@ export interface ReportFilterTypeBreakdown {
   planned: number | null;
   variance: number | null;
   pctOfIncome: number | null;
+  /** INVESTMENT only — the split behind `actual`: Investment-type transactions vs
+   *  Sinking Deposit contributions (savings, not consumption — both count toward
+   *  "Actual Invested"). */
+  investmentActual?: number;
+  sinkingActual?: number;
 }
 
 export interface ReportFilterResult {
@@ -36,6 +41,9 @@ export interface ReportFilterResult {
   /** Populated instead of the single-number fields above when there's no single type or
    *  category to anchor "actual" to — see ReportsService.getFilteredReport. */
   byType: ReportFilterTypeBreakdown[] | null;
+  /** Set only when `type=INVESTMENT` is selected directly (byType is null in that case). */
+  investmentActual?: number;
+  sinkingActual?: number;
 }
 
 function buildQuery(params: ReportFilterParams): string {

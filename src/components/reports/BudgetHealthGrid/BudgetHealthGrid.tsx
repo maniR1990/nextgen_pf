@@ -50,9 +50,23 @@ interface CardProps {
   /** Only meaningful (and only ever shown) for the Expenses card — a category flagged
    *  "unplanned" in the Budget page, not something Income/Investment track. */
   unplannedSpend?: number;
+  /** Investments card only — the split behind `actual`. Sinking Deposit isn't a
+   *  selectable report type on its own (tracked via Funds, not categories), so without
+   *  this it would silently be invisible here despite counting toward "Actual Invested". */
+  investmentActual?: number;
+  sinkingActual?: number;
 }
 
-function HealthCard({ heading, type, planned, actual, variance, unplannedSpend }: CardProps) {
+function HealthCard({
+  heading,
+  type,
+  planned,
+  actual,
+  variance,
+  unplannedSpend,
+  investmentActual,
+  sinkingActual,
+}: CardProps) {
   const labels = type ? ROW_LABELS[type] : GENERIC_LABELS;
   // Expenses' 3rd row is a plain "how much is left" (planned minus spent) — formatINR's
   // own sign handling is enough. Investment/Income read as an explicit surplus/shortfall
@@ -77,6 +91,18 @@ function HealthCard({ heading, type, planned, actual, variance, unplannedSpend }
         <span className="budget-health__label">{labels.actual}</span>
         <span className="budget-health__value">{formatINR(actual, 2)}</span>
       </div>
+      {type === 'INVESTMENT' && investmentActual !== undefined && sinkingActual !== undefined && (
+        <>
+          <div className="budget-health__subrow">
+            <span>Investment</span>
+            <span className="budget-health__subrow-value">{formatINR(investmentActual, 2)}</span>
+          </div>
+          <div className="budget-health__subrow">
+            <span>Sinking</span>
+            <span className="budget-health__subrow-value">{formatINR(sinkingActual, 2)}</span>
+          </div>
+        </>
+      )}
       {type === 'EXPENSE' && unplannedSpend !== undefined && (
         <div className="budget-health__row">
           <span className="budget-health__label">Unplanned Spend</span>
@@ -110,6 +136,8 @@ function byTypeCard(b: ReportFilterTypeBreakdown, unplannedSpend?: number) {
       actual={b.actual}
       variance={b.variance}
       unplannedSpend={b.type === 'EXPENSE' ? unplannedSpend : undefined}
+      investmentActual={b.investmentActual}
+      sinkingActual={b.sinkingActual}
     />
   );
 }
@@ -155,6 +183,8 @@ export function BudgetHealthGridInner({ data, selectedType, unplannedSpend }: Bu
         planned={data.planned}
         actual={data.actual ?? 0}
         variance={data.variance}
+        investmentActual={data.investmentActual}
+        sinkingActual={data.sinkingActual}
       />
     </div>
   );

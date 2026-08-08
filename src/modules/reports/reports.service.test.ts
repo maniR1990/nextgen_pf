@@ -203,8 +203,44 @@ describe('ReportsService.getFilteredReport', () => {
 
     const result = await ReportsService.getFilteredReport('u1', { year: 2026, month: 7 });
 
-    // Called once per type (INCOME, EXPENSE, INVESTMENT), 4 matches each → 12 total.
-    expect(result.count).toBe(12);
+    // INCOME + EXPENSE: 1 query each, 4 matches → 8. INVESTMENT: 2 queries (INVESTMENT +
+    // SINKING_DEPOSIT, merged into one card), 4 matches each → 8. Total 16.
+    expect(result.count).toBe(16);
+  });
+
+  it('splits the INVESTMENT bucket into investmentActual/sinkingActual and merges both into actual', async () => {
+    vi.mocked(TransactionRepository.sumFiltered).mockImplementation(async (_userId, filters) => {
+      if (filters.type === 'SINKING_DEPOSIT') return { actual: 1000, count: 1, recurringActual: 0 };
+      if (filters.type === 'INVESTMENT') return { actual: 3000, count: 2, recurringActual: 0 };
+      return { actual: 0, count: 0, recurringActual: 0 };
+    });
+
+    const result = await ReportsService.getFilteredReport('u1', { year: 2026, month: 7 });
+
+    const investment = result.byType!.find((b) => b.type === 'INVESTMENT')!;
+    expect(investment.investmentActual).toBe(3000);
+    expect(investment.sinkingActual).toBe(1000);
+    expect(investment.actual).toBe(4000);
+    expect(investment.count).toBe(3);
+  });
+
+  it('merges Sinking Deposit into actual when INVESTMENT is selected as a single type', async () => {
+    vi.mocked(TransactionRepository.sumFiltered).mockImplementation(async (_userId, filters) => {
+      if (filters.type === 'SINKING_DEPOSIT') return { actual: 500, count: 1, recurringActual: 0 };
+      if (filters.type === 'INVESTMENT') return { actual: 2000, count: 1, recurringActual: 0 };
+      return { actual: 0, count: 0, recurringActual: 0 };
+    });
+
+    const result = await ReportsService.getFilteredReport('u1', {
+      year: 2026,
+      month: 7,
+      type: 'INVESTMENT',
+    });
+
+    expect(result.actual).toBe(2500);
+    expect(result.investmentActual).toBe(2000);
+    expect(result.sinkingActual).toBe(500);
+    expect(result.byType).toBeNull();
   });
 
   it("computes pctOfIncome from that month's total income", async () => {
