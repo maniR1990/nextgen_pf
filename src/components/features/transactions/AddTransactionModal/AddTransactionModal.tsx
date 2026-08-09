@@ -14,7 +14,6 @@ import {
   PointsRedeemForm,
   RefundForm,
   ReimbursementForm,
-  SinkingDepositForm,
   TransferForm,
 } from '@/components/features/transactions/forms';
 import { useBudgetImpact } from '@/components/features/transactions/hooks/useBudgetImpact';
@@ -201,15 +200,15 @@ export function AddTransactionModal({
           />
         );
       case 'INVESTMENT':
+      case 'SINKING_DEPOSIT':
         return (
           <InvestmentForm
             {...sharedFormProps}
             categoryGroups={categoryGroups}
+            sinkingFunds={sinkingFunds}
             onCreateCategory={onCreateCategory}
           />
         );
-      case 'SINKING_DEPOSIT':
-        return <SinkingDepositForm {...sharedFormProps} sinkingFunds={sinkingFunds} />;
       case 'INCOME':
         return (
           <IncomeForm

@@ -31,7 +31,7 @@ describe('TypeSelector', () => {
   });
 
   describe('expanding', () => {
-    it('reveals the remaining 9 types after clicking "More transaction types"', async () => {
+    it('reveals the remaining 8 types after clicking "More transaction types"', async () => {
       const user = userEvent.setup();
       render(<TypeSelector value="EXPENSE" onChange={vi.fn()} />);
 
@@ -41,7 +41,6 @@ describe('TypeSelector', () => {
         'Transfer',
         'ATM Withdrawal',
         'Investment',
-        'Sinking',
         'Gift Received',
         'Reimbursement',
         'Refund',
@@ -52,11 +51,35 @@ describe('TypeSelector', () => {
       }
     });
 
-    it('all 11 types are present once expanded, none duplicated', async () => {
+    it('does not render a separate Sinking pill — it is a destination choice inside Investment now', async () => {
+      const user = userEvent.setup();
+      render(<TypeSelector value="EXPENSE" onChange={vi.fn()} />);
+      await openMoreTypes(user);
+      expect(screen.queryByRole('button', { name: /sinking/i })).not.toBeInTheDocument();
+    });
+
+    it('all 10 types are present once expanded, none duplicated', async () => {
       const user = userEvent.setup();
       render(<TypeSelector value="EXPENSE" onChange={vi.fn()} />);
       await openMoreTypes(user);
       expect(screen.getAllByRole('button', { name: /expense/i })).toHaveLength(1);
+    });
+  });
+
+  describe('Investment pill covers both Investment and Sinking Deposit', () => {
+    it('marks the Investment chip active when the stored type is SINKING_DEPOSIT', () => {
+      // "More transaction types" auto-expands for SINKING_DEPOSIT (see next test) — no
+      // need to click it open first.
+      render(<TypeSelector value="SINKING_DEPOSIT" onChange={vi.fn()} />);
+      expect(screen.getByRole('button', { name: /investment/i })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+    });
+
+    it('auto-expands "More transaction types" when the stored type is SINKING_DEPOSIT', () => {
+      render(<TypeSelector value="SINKING_DEPOSIT" onChange={vi.fn()} />);
+      expect(screen.getByRole('button', { name: /investment/i })).toBeInTheDocument();
     });
   });
 

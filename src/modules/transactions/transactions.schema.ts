@@ -141,14 +141,6 @@ export const CreateTransactionSchema = z
       });
     }
 
-    if (data.type === 'SINKING_DEPOSIT' && !data.fundId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Please select a sinking fund',
-        path: ['fundId'],
-      });
-    }
-
     if (data.type === 'INCOME' && !data.categoryId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -157,7 +149,14 @@ export const CreateTransactionSchema = z
       });
     }
 
-    if ((data.type === 'TRANSFER' || data.type === 'ATM_WITHDRAWAL') && !data.toAccountId) {
+    // Sinking Deposit joins Transfer/ATM Withdrawal here — a sinking contribution
+    // always lands in a real account (a savings account, a goal wallet), same as any
+    // other money movement. fundId (below) stays optional: linking it to a Fund's
+    // progress tracking is enrichment, not a prerequisite for logging the deposit.
+    if (
+      (data.type === 'TRANSFER' || data.type === 'ATM_WITHDRAWAL' || data.type === 'SINKING_DEPOSIT') &&
+      !data.toAccountId
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Destination account is required',

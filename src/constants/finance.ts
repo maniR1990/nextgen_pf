@@ -50,7 +50,7 @@ export const TX_TYPE_META: Record<TxType, TxTypeMeta> = {
   INVESTMENT: {
     label: 'Investment',
     icon: 'TrendingUp',
-    description: 'MF/stocks/FD/PPF/NPS/Gold/ELSS/Crypto',
+    description: 'MF/stocks/FD/PPF/NPS/Gold/ELSS/Crypto/Sinking fund',
     group: 'OUTFLOW',
     amountSign: 'debit',
     hasMethod: true,

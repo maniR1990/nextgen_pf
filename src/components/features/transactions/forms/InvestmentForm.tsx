@@ -2,10 +2,12 @@
 
 import { CascadingCategoryPicker } from '@/components/common/CascadingCategoryPicker';
 import { CollapsibleSection } from '@/components/common/CollapsibleSection';
+import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
-import type { PaymentSourceOption } from '@/types/finance';
+import type { PaymentSourceOption, SinkingFundOption } from '@/types/finance';
+import { PiggyBank, TrendingUp } from 'lucide-react';
 import { CommonFormFields } from './CommonFormFields';
 
 interface InvestmentFormProps {
@@ -17,44 +19,108 @@ interface InvestmentFormProps {
   ) => void;
   paymentSources: PaymentSourceOption[];
   categoryGroups: PickerGroup[];
+  sinkingFunds: SinkingFundOption[];
   onCreateCategory?: (name: string, parentId: string | null, flowType?: string) => Promise<string>;
 }
 
+type DestinationKind = 'INVESTMENT' | 'SINKING_DEPOSIT';
+
+const DESTINATIONS: { type: DestinationKind; label: string; icon: typeof TrendingUp }[] = [
+  { type: 'INVESTMENT', label: 'Investment account', icon: TrendingUp },
+  { type: 'SINKING_DEPOSIT', label: 'Sinking fund / goal', icon: PiggyBank },
+];
+
+// Investment and Sinking Deposit are the same economic action (money set aside, not
+// spent) that used to be forced into two separate top-level types with no way back —
+// logging one and meaning the other meant deleting the row and starting over. Both now
+// live under one Investment entry; this toggle is the only place that choice is made,
+// and it's re-openable on edit exactly like everything else in this form. Both
+// destinations share the same required "which account does this land in" field — a
+// Sinking Fund link (Saved/Target/Monthly) is optional progress-tracking on top of
+// that, not a substitute for it, so an empty funds list never blocks logging.
 export function InvestmentForm({
   values,
   errors,
   onChange,
   paymentSources,
   categoryGroups,
+  sinkingFunds,
   onCreateCategory,
 }: InvestmentFormProps) {
+  const isSinking = values.type === 'SINKING_DEPOSIT';
+
+  // Switching destination only clears the fields that belong to the OTHER destination —
+  // amount, date, account, method, tags, notes all carry over untouched. toAccountId
+  // also carries over: it's the same "which account does this land in" field for both
+  // destinations now, just relabeled ("Invested Into" vs "Deposit Into").
+  function handleDestinationChange(type: DestinationKind) {
+    if (type === values.type) return;
+    onChange('type', type);
+    if (type === 'INVESTMENT') {
+      onChange('fundId', '');
+    } else {
+      onChange('categoryId', '');
+    }
+  }
+
   // Same account list Transfer uses, minus whichever account is already the source —
   // investing into the same account you're funding it from isn't a valid movement.
   const destinationOptions = (paymentSources ?? [])
     .filter((s) => s.id !== values.sourceId)
     .map((s) => ({ value: s.id, label: s.name }));
 
+  const fundOptions = sinkingFunds.map((f) => ({
+    value: f.id,
+    label: `${f.label} (${((f.saved / f.target) * 100).toFixed(0)}% of ₹${f.target.toLocaleString('en-IN')})`,
+  }));
+  const selectedFund = sinkingFunds.find((f) => f.id === values.fundId);
+
   return (
     <div className="tx-form tx-form--investment">
-      {/* Category first — mirrors Expense: helps this roll up into the right Budget
-          line (e.g. "PPF", "ELSS") even if the user isn't sure of the exact fund yet. */}
-      <CascadingCategoryPicker
-        label="Category"
-        groups={categoryGroups}
-        priorityGroupType="INVESTMENT"
-        value={values.categoryId || null}
-        onChange={(id) => onChange('categoryId', id ?? '')}
-        error={errors.categoryId}
-        onCreateL1={
-          onCreateCategory ? (name) => onCreateCategory(name, null, 'INVESTMENT') : undefined
-        }
-        onCreateL2={
-          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
-        }
-        onCreateL3={
-          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
-        }
-      />
+      <FormField label="Goes into">
+        <div className="tx-form__destination-toggle" role="radiogroup" aria-label="Goes into">
+          {DESTINATIONS.map(({ type, label, icon: Icon }) => (
+            <button
+              key={type}
+              type="button"
+              role="radio"
+              aria-checked={values.type === type}
+              className={[
+                'tx-form__destination-btn',
+                values.type === type && 'tx-form__destination-btn--active',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => handleDestinationChange(type)}
+            >
+              <Icon size={15} aria-hidden />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      </FormField>
+
+      {/* Category — only for an Investment-account destination; a Sinking Fund goal
+          already has its own name/target and was never budget-categorized. */}
+      {!isSinking && (
+        <CascadingCategoryPicker
+          label="Category"
+          groups={categoryGroups}
+          priorityGroupType="INVESTMENT"
+          value={values.categoryId || null}
+          onChange={(id) => onChange('categoryId', id ?? '')}
+          error={errors.categoryId}
+          onCreateL1={
+            onCreateCategory ? (name) => onCreateCategory(name, null, 'INVESTMENT') : undefined
+          }
+          onCreateL2={
+            onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+          }
+          onCreateL3={
+            onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+          }
+        />
+      )}
 
       <CommonFormFields
         values={values}
@@ -69,11 +135,24 @@ export function InvestmentForm({
         showRecurring={false}
       />
 
-      <CollapsibleSection label="More details — invested into, method, tags, notes">
-        {/* Optional — an investment doesn't have to land in a tracked account (e.g. an
-            employer ESPP with no ledger entry here), so this isn't required like
-            Transfer's To Account is. When set, the destination account's balance is
-            credited too instead of the money just disappearing from the source. */}
+      {isSinking ? (
+        // Required — a sinking deposit always lands in a real account (a savings
+        // account, a separate goal wallet), same as Transfer's To Account. Its balance
+        // is credited, same shape as Investment's transfer-with-destination.
+        <SelectField
+          label="Deposit Into"
+          id="tx-invest-to-account"
+          value={values.toAccountId}
+          options={destinationOptions}
+          placeholder="Select account"
+          error={errors.toAccountId}
+          required
+          onChange={(e) => onChange('toAccountId', e.target.value)}
+        />
+      ) : (
+        // Optional — an investment doesn't have to land in a tracked account (e.g. an
+        // employer ESPP with no ledger entry here). When set, the destination account's
+        // balance is credited too instead of the money just disappearing from the source.
         <SelectField
           label="Invested Into"
           id="tx-invest-to-account"
@@ -83,7 +162,45 @@ export function InvestmentForm({
           error={errors.toAccountId}
           onChange={(e) => onChange('toAccountId', e.target.value)}
         />
+      )}
 
+      {isSinking && (
+        // Purely enrichment — progress-tracking against a named goal, layered on top
+        // of a deposit that already happened via "Deposit Into" above. Never blocks
+        // logging, so having zero funds set up yet isn't a dead end.
+        <div className="tx-form__fund-track">
+          {sinkingFunds.length > 0 ? (
+            <>
+              <SelectField
+                label="Track toward a goal (optional)"
+                id="tx-sf"
+                value={values.fundId}
+                options={fundOptions}
+                placeholder="No goal tracking"
+                error={errors.fundId}
+                onChange={(e) => onChange('fundId', e.target.value)}
+              />
+              {selectedFund && (
+                <div className="tx-form__fund-info">
+                  <span>Saved: ₹{selectedFund.saved.toLocaleString('en-IN')}</span>
+                  <span>Target: ₹{selectedFund.target.toLocaleString('en-IN')}</span>
+                  <span>Monthly goal: ₹{selectedFund.monthly.toLocaleString('en-IN')}</span>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="tx-form__fund-empty">
+              No sinking funds yet —{' '}
+              <a href="/dashboard/sinking-funds" target="_blank" rel="noopener noreferrer">
+                create one
+              </a>{' '}
+              to track progress. Logging this deposit doesn&apos;t require it.
+            </p>
+          )}
+        </div>
+      )}
+
+      <CollapsibleSection label="More details — method, tags, notes">
         <CommonFormFields
           values={values}
           errors={errors}

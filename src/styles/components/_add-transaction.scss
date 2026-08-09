@@ -1210,6 +1210,78 @@
     flex-wrap: wrap;
   }
 
+  // Optional goal-tracking block under a Sinking deposit's required destination
+  // account — visually lighter than a real field so it reads as enrichment.
+  &__fund-track {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  &__fund-empty {
+    margin: 0;
+    padding: var(--space-2-5) var(--space-3);
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--color-border);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+
+    a {
+      color: var(--color-brand);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  }
+
+  // ─── Investment "goes into" destination toggle ───────────────────────────
+  // Investment account vs Sinking fund/goal — the one choice that used to be a
+  // separate, non-reversible top-level type is now a switch inside this form.
+
+  &__destination-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
+
+  &__destination-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1-5);
+    padding: var(--space-2-5) var(--space-3);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    font-family: inherit;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-surface);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition:
+      border-color var(--transition-fast),
+      background var(--transition-fast),
+      color var(--transition-fast);
+
+    &:hover:not(&--active) {
+      border-color: var(--color-brand);
+      color: var(--color-brand);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand);
+      outline-offset: 2px;
+    }
+
+    &--active {
+      border-color: var(--color-brand);
+      background: var(--comp-badge-active-bg);
+      color: var(--color-brand);
+      font-weight: 600;
+    }
+  }
+
   &__budget-period-info {
     display: flex;
     align-items: center;

@@ -40,13 +40,20 @@ const SECONDARY_TYPES: TxType[] = [
   'TRANSFER',
   'ATM_WITHDRAWAL',
   'INVESTMENT',
-  'SINKING_DEPOSIT',
   'GIFT_RECEIVED',
   'REIMBURSEMENT',
   'REFUND',
   'COUPON_REDEMPTION',
   'POINTS_REDEMPTION',
 ];
+
+// Sinking Deposit doesn't get its own pill — it's a "goes into" choice inside the
+// Investment form now, not a separate type to guess up front (see InvestmentForm). The
+// Investment chip still has to read as active/expanded for it though, since a
+// transaction's stored type can literally be SINKING_DEPOSIT.
+function isInvestmentLike(type: TxType): boolean {
+  return type === 'INVESTMENT' || type === 'SINKING_DEPOSIT';
+}
 
 interface TypeSelectorProps {
   value: TxType;
@@ -81,7 +88,7 @@ function TypeChip({
 }
 
 export function TypeSelector({ value, onChange }: TypeSelectorProps) {
-  const isSecondaryActive = SECONDARY_TYPES.includes(value);
+  const isSecondaryActive = SECONDARY_TYPES.includes(value) || value === 'SINKING_DEPOSIT';
 
   return (
     <div className="type-selector">
@@ -94,7 +101,12 @@ export function TypeSelector({ value, onChange }: TypeSelectorProps) {
       <CollapsibleSection label="More transaction types" defaultOpen={isSecondaryActive}>
         <div className="type-selector__chips">
           {SECONDARY_TYPES.map((type) => (
-            <TypeChip key={type} type={type} isActive={value === type} onChange={onChange} />
+            <TypeChip
+              key={type}
+              type={type}
+              isActive={type === 'INVESTMENT' ? isInvestmentLike(value) : value === type}
+              onChange={onChange}
+            />
           ))}
         </div>
       </CollapsibleSection>

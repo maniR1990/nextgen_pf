@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BulkCreateTransactionSchema } from './transactions.schema';
+import { BulkCreateTransactionSchema, CreateTransactionSchema } from './transactions.schema';
 
 const validItem = { categoryId: 'cat1', amount: 805 };
 
@@ -110,6 +110,46 @@ describe('BulkCreateTransactionSchema', () => {
     const result = BulkCreateTransactionSchema.safeParse({
       ...validPayload,
       items: [{ categoryId: 'cat1', amount: 805, note: 'chicken' }],
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('CreateTransactionSchema — SINKING_DEPOSIT destination', () => {
+  const base = {
+    date: '2026-07-19',
+    budgetPeriodYear: 2026,
+    budgetPeriodMonth: 7,
+    amount: 1000,
+    paymentSourceId: 'acc1',
+    paymentMethod: 'UPI' as const,
+    isPlanned: true,
+    isRecurring: false,
+  };
+
+  it('requires toAccountId — a sinking deposit always lands in a real account, same as Transfer', () => {
+    const result = CreateTransactionSchema.safeParse({ ...base, type: 'SINKING_DEPOSIT' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some((i) => i.path[0] === 'toAccountId')).toBe(true);
+    }
+  });
+
+  it('accepts a SINKING_DEPOSIT with toAccountId and no fundId — the fund link is optional enrichment', () => {
+    const result = CreateTransactionSchema.safeParse({
+      ...base,
+      type: 'SINKING_DEPOSIT',
+      toAccountId: 'goalwallet1',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a SINKING_DEPOSIT with both toAccountId and fundId', () => {
+    const result = CreateTransactionSchema.safeParse({
+      ...base,
+      type: 'SINKING_DEPOSIT',
+      toAccountId: 'goalwallet1',
+      fundId: 'fund1',
     });
     expect(result.success).toBe(true);
   });

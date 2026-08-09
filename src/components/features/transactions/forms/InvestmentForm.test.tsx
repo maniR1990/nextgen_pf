@@ -1,6 +1,6 @@
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
 import type { TransactionFormValues } from '@/store/transactionFormStore';
-import type { PaymentSourceOption } from '@/types/finance';
+import type { PaymentSourceOption, SinkingFundOption } from '@/types/finance';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -35,6 +35,7 @@ function makeValues(overrides: Partial<TransactionFormValues> = {}): Transaction
     giftFrom: '',
     occasion: '',
     fundId: '',
+    fundFlow: '',
     isTaxDed: false,
     isReimbursable: false,
     reimbDate: '',
@@ -81,6 +82,11 @@ const CATEGORY_GROUPS: PickerGroup[] = [
   },
 ];
 
+const SINKING_FUNDS: SinkingFundOption[] = [
+  { id: 'fund1', label: 'Emergency Fund', target: 100000, saved: 40000, monthly: 5000 },
+  { id: 'fund2', label: 'Vacation', target: 50000, saved: 10000, monthly: 2000 },
+];
+
 function renderForm(valueOverrides: Partial<TransactionFormValues> = {}) {
   const onChange = vi.fn();
   render(
@@ -90,6 +96,7 @@ function renderForm(valueOverrides: Partial<TransactionFormValues> = {}) {
       onChange={onChange}
       paymentSources={SOURCES}
       categoryGroups={CATEGORY_GROUPS}
+      sinkingFunds={SINKING_FUNDS}
     />,
   );
   return { onChange };
@@ -99,33 +106,87 @@ async function openMoreDetails(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: /more details/i }));
 }
 
-describe('InvestmentForm', () => {
-  it('renders a category picker', () => {
+describe('InvestmentForm — destination toggle', () => {
+  it('renders both destination options', () => {
     renderForm();
+    expect(screen.getByRole('radio', { name: /investment account/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /sinking fund/i })).toBeInTheDocument();
+  });
+
+  it('defaults to Investment account checked when type is INVESTMENT', () => {
+    renderForm({ type: 'INVESTMENT' });
+    expect(screen.getByRole('radio', { name: /investment account/i })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(screen.getByRole('radio', { name: /sinking fund/i })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+  });
+
+  it('shows Sinking fund checked when type is SINKING_DEPOSIT', () => {
+    renderForm({ type: 'SINKING_DEPOSIT' });
+    expect(screen.getByRole('radio', { name: /sinking fund/i })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+  });
+
+  it('switching to Sinking fund sets type and clears categoryId, but keeps toAccountId', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderForm({
+      type: 'INVESTMENT',
+      categoryId: 'l2-elss',
+      toAccountId: 'demat1',
+    });
+
+    await user.click(screen.getByRole('radio', { name: /sinking fund/i }));
+
+    expect(onChange).toHaveBeenCalledWith('type', 'SINKING_DEPOSIT');
+    expect(onChange).toHaveBeenCalledWith('categoryId', '');
+    // toAccountId is the shared "which account does this land in" field for both
+    // destinations now — switching doesn't wipe it, only relabels it.
+    expect(onChange).not.toHaveBeenCalledWith('toAccountId', expect.anything());
+  });
+
+  it('switching to Investment account sets type and clears fundId', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderForm({ type: 'SINKING_DEPOSIT', fundId: 'fund1' });
+
+    await user.click(screen.getByRole('radio', { name: /investment account/i }));
+
+    expect(onChange).toHaveBeenCalledWith('type', 'INVESTMENT');
+    expect(onChange).toHaveBeenCalledWith('fundId', '');
+  });
+
+  it('clicking the already-active destination is a no-op', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderForm({ type: 'INVESTMENT' });
+
+    await user.click(screen.getByRole('radio', { name: /investment account/i }));
+
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe('InvestmentForm — Investment account destination', () => {
+  it('renders a category picker', () => {
+    renderForm({ type: 'INVESTMENT' });
     expect(screen.getByText('Category')).toBeInTheDocument();
   });
 
-  it('keeps "Invested Into" and its optional fields collapsed by default', () => {
-    renderForm();
-    expect(screen.queryByText('Invested Into')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /more details/i })).toBeInTheDocument();
-  });
-
-  it('renders the "Invested Into" destination account field, unselected, once expanded', async () => {
-    const user = userEvent.setup();
-    renderForm();
-    await openMoreDetails(user);
-
+  it('renders the "Invested Into" destination account field without needing to expand anything', () => {
+    renderForm({ type: 'INVESTMENT' });
     expect(screen.getByText('Invested Into')).toBeInTheDocument();
-    expect(
-      screen.getByRole('combobox', { name: /invested into/i }),
-    ).toHaveTextContent('Select investment account (optional)');
+    expect(screen.getByRole('combobox', { name: /invested into/i })).toHaveTextContent(
+      'Select investment account (optional)',
+    );
   });
 
   it('excludes the current source account from the destination options', async () => {
     const user = userEvent.setup();
-    renderForm({ sourceId: 'bank1' });
-    await openMoreDetails(user);
+    renderForm({ type: 'INVESTMENT', sourceId: 'bank1' });
 
     await user.click(screen.getByRole('combobox', { name: /invested into/i }));
     expect(screen.getByRole('option', { name: 'Zerodha Coin' })).toBeInTheDocument();
@@ -135,8 +196,7 @@ describe('InvestmentForm', () => {
 
   it('calls onChange with toAccountId when a destination account is picked', async () => {
     const user = userEvent.setup();
-    const { onChange } = renderForm({ sourceId: 'bank1' });
-    await openMoreDetails(user);
+    const { onChange } = renderForm({ type: 'INVESTMENT', sourceId: 'bank1' });
 
     await user.click(screen.getByRole('combobox', { name: /invested into/i }));
     await user.click(screen.getByRole('option', { name: 'Zerodha Coin' }));
@@ -144,20 +204,127 @@ describe('InvestmentForm', () => {
     expect(onChange).toHaveBeenCalledWith('toAccountId', 'demat1');
   });
 
-  it('does not require a destination account — no error when toAccountId is empty', async () => {
-    const user = userEvent.setup();
-    renderForm({ toAccountId: '' });
-    await openMoreDetails(user);
-    // The field renders without an error state; FormField only shows role="alert" on error.
+  it('does not require a destination account — no error when toAccountId is empty', () => {
+    renderForm({ type: 'INVESTMENT', toAccountId: '' });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('still renders Tags and Notes once expanded (unchanged from before)', async () => {
+  it('does not render the goal-tracking block', () => {
+    renderForm({ type: 'INVESTMENT' });
+    expect(screen.queryByText(/track toward a goal/i)).not.toBeInTheDocument();
+  });
+
+  it('still renders Tags and Notes once "More details" is expanded', async () => {
     const user = userEvent.setup();
-    renderForm();
+    renderForm({ type: 'INVESTMENT' });
     await openMoreDetails(user);
 
     expect(screen.getByLabelText('Tags')).toBeInTheDocument();
     expect(screen.getByLabelText('Notes')).toBeInTheDocument();
+  });
+});
+
+describe('InvestmentForm — Sinking fund destination', () => {
+  it('does not render a category picker', () => {
+    renderForm({ type: 'SINKING_DEPOSIT' });
+    expect(screen.queryByText('Category')).not.toBeInTheDocument();
+  });
+
+  it('renders "Deposit Into" as a required account field, not "Invested Into"', () => {
+    renderForm({ type: 'SINKING_DEPOSIT' });
+    expect(screen.queryByText('Invested Into')).not.toBeInTheDocument();
+    expect(screen.getByText('Deposit Into')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /deposit into/i })).toHaveTextContent(
+      'Select account',
+    );
+  });
+
+  it('excludes the current source account from the Deposit Into options', async () => {
+    const user = userEvent.setup();
+    renderForm({ type: 'SINKING_DEPOSIT', sourceId: 'bank1' });
+
+    await user.click(screen.getByRole('combobox', { name: /deposit into/i }));
+    expect(screen.getByRole('option', { name: 'Zerodha Coin' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'HDFC Bank' })).not.toBeInTheDocument();
+  });
+
+  it('calls onChange with toAccountId when a deposit account is picked', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderForm({ type: 'SINKING_DEPOSIT', sourceId: 'bank1' });
+
+    await user.click(screen.getByRole('combobox', { name: /deposit into/i }));
+    await user.click(screen.getByRole('option', { name: 'Zerodha Coin' }));
+
+    expect(onChange).toHaveBeenCalledWith('toAccountId', 'demat1');
+  });
+
+  it('surfaces a required-field error on Deposit Into when toAccountId is missing', () => {
+    const onChange = vi.fn();
+    render(
+      <InvestmentForm
+        values={makeValues({ type: 'SINKING_DEPOSIT' })}
+        errors={{ toAccountId: 'Destination account is required' }}
+        onChange={onChange}
+        paymentSources={SOURCES}
+        categoryGroups={CATEGORY_GROUPS}
+        sinkingFunds={SINKING_FUNDS}
+      />,
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('Destination account is required');
+  });
+
+  it('shows the optional goal-tracking picker, not required', () => {
+    renderForm({ type: 'SINKING_DEPOSIT' });
+    expect(screen.getByText(/track toward a goal/i)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /track toward a goal/i })).toHaveTextContent(
+      'No goal tracking',
+    );
+  });
+
+  it('lists every sinking fund with its progress toward target', async () => {
+    const user = userEvent.setup();
+    renderForm({ type: 'SINKING_DEPOSIT' });
+
+    await user.click(screen.getByRole('combobox', { name: /track toward a goal/i }));
+    expect(screen.getByRole('option', { name: /emergency fund \(40% of ₹1,00,000\)/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /vacation \(20% of ₹50,000\)/i })).toBeInTheDocument();
+  });
+
+  it('calls onChange with fundId when a fund is picked', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderForm({ type: 'SINKING_DEPOSIT' });
+
+    await user.click(screen.getByRole('combobox', { name: /track toward a goal/i }));
+    await user.click(screen.getByRole('option', { name: /emergency fund/i }));
+
+    expect(onChange).toHaveBeenCalledWith('fundId', 'fund1');
+  });
+
+  it('shows Saved/Target/Monthly once a fund is selected', () => {
+    renderForm({ type: 'SINKING_DEPOSIT', fundId: 'fund1' });
+
+    expect(screen.getByText('Saved: ₹40,000')).toBeInTheDocument();
+    expect(screen.getByText('Target: ₹1,00,000')).toBeInTheDocument();
+    expect(screen.getByText('Monthly goal: ₹5,000')).toBeInTheDocument();
+  });
+
+  it('shows a "create one" empty state instead of the picker when no sinking funds exist', () => {
+    const onChange = vi.fn();
+    render(
+      <InvestmentForm
+        values={makeValues({ type: 'SINKING_DEPOSIT' })}
+        errors={{}}
+        onChange={onChange}
+        paymentSources={SOURCES}
+        categoryGroups={CATEGORY_GROUPS}
+        sinkingFunds={[]}
+      />,
+    );
+    expect(screen.queryByRole('combobox', { name: /track toward a goal/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/no sinking funds yet/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /create one/i })).toHaveAttribute(
+      'href',
+      '/dashboard/sinking-funds',
+    );
   });
 });

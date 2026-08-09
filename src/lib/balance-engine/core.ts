@@ -31,7 +31,6 @@ export const BALANCE_IMPACT: Record<TxType, BalanceImpact> = {
 
   // Outflows — money leaves the account
   EXPENSE: 'debit',
-  SINKING_DEPOSIT: 'debit',
 
   // Movements — money leaves one account and enters another
   TRANSFER: 'transfer',
@@ -43,6 +42,11 @@ export const BALANCE_IMPACT: Record<TxType, BalanceImpact> = {
   // getBalanceDeltas degrades this to a plain debit when no toAccountId is given, so
   // existing investment transactions logged without a destination account are unaffected.
   INVESTMENT: 'transfer',
+  // bank → the account backing the sinking fund/goal (a savings account, a separate
+  // wallet). toAccountId is required by the form/schema going forward; the degenerate
+  // fallback below covers legacy rows logged before this field existed, when the
+  // destination was only a Fund record with no real account behind it.
+  SINKING_DEPOSIT: 'transfer',
 
   // No cash movement — discounts or points applied at point of sale
   COUPON_REDEMPTION: 'none',

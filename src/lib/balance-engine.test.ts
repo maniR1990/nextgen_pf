@@ -34,9 +34,8 @@ describe('BALANCE_IMPACT', () => {
     expect(BALANCE_IMPACT.REFUND).toBe('credit');
   });
 
-  it('classifies every outflow type as debit', () => {
+  it('classifies EXPENSE as debit', () => {
     expect(BALANCE_IMPACT.EXPENSE).toBe('debit');
-    expect(BALANCE_IMPACT.SINKING_DEPOSIT).toBe('debit');
   });
 
   it('classifies movement types as transfer', () => {
@@ -45,6 +44,9 @@ describe('BALANCE_IMPACT', () => {
     // INVESTMENT moves money from a bank/wallet into a holding account (demat, MF
     // folio, PPF, ...) rather than spending it — same shape as TRANSFER, not EXPENSE.
     expect(BALANCE_IMPACT.INVESTMENT).toBe('transfer');
+    // SINKING_DEPOSIT moves money into the account backing a sinking fund/goal —
+    // same shape as INVESTMENT, not a plain debit.
+    expect(BALANCE_IMPACT.SINKING_DEPOSIT).toBe('transfer');
   });
 
   it('classifies redemption types as none', () => {
@@ -79,6 +81,21 @@ describe('getBalanceDeltas', () => {
       toAccountId: 'demat1',
     });
     expect(d).toEqual({ kind: 'transfer', fromId: 'bank1', toId: 'demat1', amount: 10000 });
+  });
+
+  it('degrades SINKING_DEPOSIT without a destination account to a plain debit (legacy rows)', () => {
+    const d = getBalanceDeltas({ type: 'SINKING_DEPOSIT', amount: 1000, accountId: 'a1' });
+    expect(d).toEqual({ kind: 'single', accountId: 'a1', delta: -1000 });
+  });
+
+  it('returns transfer delta for SINKING_DEPOSIT with a destination account', () => {
+    const d = getBalanceDeltas({
+      type: 'SINKING_DEPOSIT',
+      amount: 1000,
+      accountId: 'bank1',
+      toAccountId: 'goalwallet1',
+    });
+    expect(d).toEqual({ kind: 'transfer', fromId: 'bank1', toId: 'goalwallet1', amount: 1000 });
   });
 
   it('returns +amount single delta for REFUND', () => {

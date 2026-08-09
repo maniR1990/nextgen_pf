@@ -2,7 +2,6 @@ export { CommonFormFields } from './CommonFormFields';
 export { ExpenseForm } from './ExpenseForm';
 export { MultiItemExpenseForm } from './MultiItemExpenseForm';
 export { InvestmentForm } from './InvestmentForm';
-export { SinkingDepositForm } from './SinkingDepositForm';
 export { IncomeForm } from './IncomeForm';
 export { GiftReceivedForm } from './GiftReceivedForm';
 export { ReimbursementForm } from './ReimbursementForm';

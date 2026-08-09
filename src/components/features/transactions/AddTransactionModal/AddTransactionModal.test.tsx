@@ -32,7 +32,6 @@ vi.mock('@/components/features/transactions/forms', () => {
     ExpenseForm: Stub,
     MultiItemExpenseForm: Stub,
     InvestmentForm: Stub,
-    SinkingDepositForm: Stub,
     IncomeForm: Stub,
     GiftReceivedForm: Stub,
     ReimbursementForm: Stub,
