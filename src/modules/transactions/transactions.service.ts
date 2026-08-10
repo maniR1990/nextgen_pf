@@ -245,17 +245,26 @@ export const TransactionService = {
         };
 
         const row = await tx.financeTransaction.create({ data: txData as never, include: TX_INCLUDE });
-
-        const delta = getBalanceDeltas({
-          type: dto.type,
-          amount: item.amount,
-          accountId: dto.paymentSourceId,
-          toAccountId: dto.toAccountId,
-        });
-        await applyDeltas(tx, delta);
-
         created.push(row);
       }
+
+      // One combined balance delta for the whole batch, not one per item — every item
+      // shares the same paymentSourceId (and, for a transfer-kind type, the same
+      // toAccountId), so N separate debit/credit round-trips are pure waste and, worse,
+      // multiply how long this interactive transaction stays open. On Vercel -> Atlas
+      // cross-region latency, N items x up to 2 balance calls each was enough on its own
+      // to blow the transaction's timeout (see prisma.ts) before any single call was
+      // actually slow. Summing first means the balance effect is identical but costs
+      // exactly one (or two, for a transfer) round-trip regardless of item count.
+      const totalAmount = dto.items.reduce((sum, item) => sum + item.amount, 0);
+      const delta = getBalanceDeltas({
+        type: dto.type,
+        amount: totalAmount,
+        accountId: dto.paymentSourceId,
+        toAccountId: dto.toAccountId,
+      });
+      await applyDeltas(tx, delta);
+
       return created;
     });
   },

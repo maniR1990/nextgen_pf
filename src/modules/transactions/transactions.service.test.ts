@@ -269,14 +269,16 @@ describe('TransactionService.createBulk', () => {
     expect(batchIds[0]).toBeTruthy();
   });
 
-  it('applies one balance delta per item, all against the same account', async () => {
+  it('applies one combined balance delta for the whole batch, not one per item', async () => {
     await TransactionService.createBulk(bulkDto);
-    expect(mockPrismaTx.account.updateMany).toHaveBeenCalledTimes(3);
-    const decrements = mockPrismaTx.account.updateMany.mock.calls.map(
-      (c: unknown[]) => (c[0] as { data: { balance: { increment: number } } }).data.balance
-        .increment,
-    );
-    expect(decrements.reduce((a: number, b: number) => a + b, 0)).toBe(-(805 + 384 + 140));
+    // Batched, not per-item — see the comment on createBulk: N separate round-trips
+    // multiplied how long the interactive transaction stayed open for no benefit,
+    // since every item already shares the same account. Net effect is identical.
+    expect(mockPrismaTx.account.updateMany).toHaveBeenCalledTimes(1);
+    const [[{ data }]] = mockPrismaTx.account.updateMany.mock.calls as [
+      [{ data: { balance: { increment: number } } }],
+    ];
+    expect(data.balance.increment).toBe(-(805 + 384 + 140));
   });
 
   it('stores the exact client key only on the first (anchor) row', async () => {
@@ -381,20 +383,20 @@ describe('TransactionService.createBulk — SINKING_DEPOSIT', () => {
     }
   });
 
-  it('debits the source and credits the destination for every item — not a plain debit', async () => {
+  it('debits the source and credits the destination once for the whole batch, not per item', async () => {
     await TransactionService.createBulk(sinkingBulkDto);
-    expect(mockPrismaTx.account.updateMany).toHaveBeenCalledTimes(4); // 2 items x (debit + credit)
+    // One combined transfer delta, not one per item — see the comment on createBulk:
+    // this is exactly what fixed the real timeout hit on an 8-item batch in prod
+    // (2 items x up to 2 balance calls each was already enough to blow the interactive
+    // transaction's budget under cross-region latency).
+    expect(mockPrismaTx.account.updateMany).toHaveBeenCalledTimes(2); // 1 debit + 1 credit
     const calls = mockPrismaTx.account.updateMany.mock.calls as Array<
       [{ where: { id: string }; data: { balance: { increment?: number; decrement?: number } } }]
     >;
-    const bySource = calls.filter((c) => c[0].where.id === 'acc1');
-    const byDest = calls.filter((c) => c[0].where.id === 'acc2');
-    expect(bySource.every((c) => c[0].data.balance.decrement)).toBe(true);
-    expect(byDest.every((c) => c[0].data.balance.increment)).toBe(true);
-    const totalDebited = bySource.reduce((sum, c) => sum + (c[0].data.balance.decrement ?? 0), 0);
-    const totalCredited = byDest.reduce((sum, c) => sum + (c[0].data.balance.increment ?? 0), 0);
-    expect(totalDebited).toBe(6000);
-    expect(totalCredited).toBe(6000);
+    const bySource = calls.find((c) => c[0].where.id === 'acc1');
+    const byDest = calls.find((c) => c[0].where.id === 'acc2');
+    expect(bySource?.[0].data.balance.decrement).toBe(6000);
+    expect(byDest?.[0].data.balance.increment).toBe(6000);
   });
 
   it('connects an optional fundId with fundFlow IN on every row', async () => {
