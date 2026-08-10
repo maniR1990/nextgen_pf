@@ -37,12 +37,27 @@ describe('SuccessState', () => {
     };
     render(<SuccessState data={bulkData} onLogAnother={vi.fn()} onClose={vi.fn()} />);
 
-    expect(screen.getByText('Expenses logged!')).toBeInTheDocument();
+    expect(screen.getByText('Items logged!')).toBeInTheDocument();
     expect(screen.getByText('Items logged')).toBeInTheDocument();
     expect(screen.getByText('Meat')).toBeInTheDocument();
     expect(screen.getByText('₹805')).toBeInTheDocument();
     expect(screen.getByText('Milk')).toBeInTheDocument();
     expect(screen.getByText('₹384')).toBeInTheDocument();
+  });
+
+  it('shows the same plural heading for a bulk sinking deposit, not an expense-specific one', () => {
+    const bulkSinking: SuccessData = {
+      ...baseData,
+      type: 'SINKING_DEPOSIT',
+      merchant: 'Sinking · 2 items',
+      amount: '₹6,000',
+      items: [
+        { label: 'EB (Electricity)', amount: '₹5,000' },
+        { label: 'Internet', amount: '₹1,000' },
+      ],
+    };
+    render(<SuccessState data={bulkSinking} onLogAnother={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByText('Items logged!')).toBeInTheDocument();
   });
 
   it('keeps the singular heading when a bulk bill only had one item', () => {

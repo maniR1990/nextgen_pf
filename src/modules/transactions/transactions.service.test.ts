@@ -346,6 +346,73 @@ describe('TransactionService.createBulk', () => {
   });
 });
 
+// ── createBulk — SINKING_DEPOSIT (fund several budgeted bills at once) ────────
+
+describe('TransactionService.createBulk — SINKING_DEPOSIT', () => {
+  const sinkingBulkDto = {
+    userId: 'u1',
+    type: 'SINKING_DEPOSIT' as const,
+    date: '2026-08-10',
+    budgetPeriodYear: 2026,
+    budgetPeriodMonth: 8,
+    paymentSourceId: 'acc1',
+    toAccountId: 'acc2',
+    paymentMethod: 'UPI',
+    items: [
+      { categoryId: 'electricity', amount: 5000 },
+      { categoryId: 'internet', amount: 1000 },
+    ],
+  };
+
+  beforeEach(() => {
+    let seq = 0;
+    mockPrismaTx.financeTransaction.create.mockImplementation(
+      ({ data }: { data: Record<string, unknown> }) => {
+        seq += 1;
+        return Promise.resolve({ id: `tx${seq}`, ...data });
+      },
+    );
+  });
+
+  it('connects each row to the shared toAccountId', async () => {
+    const created = await TransactionService.createBulk(sinkingBulkDto);
+    for (const row of created as Array<Record<string, unknown>>) {
+      expect((row.toAccount as { connect: { id: string } }).connect.id).toBe('acc2');
+    }
+  });
+
+  it('debits the source and credits the destination for every item — not a plain debit', async () => {
+    await TransactionService.createBulk(sinkingBulkDto);
+    expect(mockPrismaTx.account.updateMany).toHaveBeenCalledTimes(4); // 2 items x (debit + credit)
+    const calls = mockPrismaTx.account.updateMany.mock.calls as Array<
+      [{ where: { id: string }; data: { balance: { increment?: number; decrement?: number } } }]
+    >;
+    const bySource = calls.filter((c) => c[0].where.id === 'acc1');
+    const byDest = calls.filter((c) => c[0].where.id === 'acc2');
+    expect(bySource.every((c) => c[0].data.balance.decrement)).toBe(true);
+    expect(byDest.every((c) => c[0].data.balance.increment)).toBe(true);
+    const totalDebited = bySource.reduce((sum, c) => sum + (c[0].data.balance.decrement ?? 0), 0);
+    const totalCredited = byDest.reduce((sum, c) => sum + (c[0].data.balance.increment ?? 0), 0);
+    expect(totalDebited).toBe(6000);
+    expect(totalCredited).toBe(6000);
+  });
+
+  it('connects an optional fundId with fundFlow IN on every row', async () => {
+    const created = await TransactionService.createBulk({ ...sinkingBulkDto, fundId: 'fund1' });
+    for (const row of created as Array<Record<string, unknown>>) {
+      expect((row.fund as { connect: { id: string } }).connect.id).toBe('fund1');
+      expect(row.fundFlow).toBe('IN');
+    }
+  });
+
+  it('omits the fund relation entirely when no fundId is given', async () => {
+    const created = await TransactionService.createBulk(sinkingBulkDto);
+    for (const row of created as Array<Record<string, unknown>>) {
+      expect(row.fund).toBeUndefined();
+    }
+  });
+});
+
 // ── patch — balance recalculation ─────────────────────────────────────────────
 
 describe('TransactionService.patch — balance', () => {

@@ -11,6 +11,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 interface MultiItemExpenseFormProps {
   categoryGroups: PickerGroup[];
   onCreateCategory?: (name: string, parentId: string | null, flowType?: string) => Promise<string>;
+  // Overrides the default direct-to-store update — Sinking Deposit's bulk mode passes
+  // its own handler here so picking a category can also auto-fill that item's amount
+  // from the category's remaining budget (see useTransactionForm's handleItemChange).
+  // Bulk Expense leaves this unset and keeps today's plain store write.
+  onUpdateItem?: (id: string, patch: Partial<Omit<BulkItemDraft, 'id'>>) => void;
 }
 
 type CreateCategoryFn = (
@@ -227,11 +232,13 @@ function ItemRow({
 export function MultiItemExpenseForm({
   categoryGroups,
   onCreateCategory,
+  onUpdateItem,
 }: MultiItemExpenseFormProps) {
   const items = useTransactionFormStore((s) => s.items);
   const invalidItemIds = useTransactionFormStore((s) => s.invalidItemIds);
   const addItem = useTransactionFormStore((s) => s.addItem);
-  const updateItem = useTransactionFormStore((s) => s.updateItem);
+  const storeUpdateItem = useTransactionFormStore((s) => s.updateItem);
+  const updateItem = onUpdateItem ?? storeUpdateItem;
   const removeItem = useTransactionFormStore((s) => s.removeItem);
 
   // Categories created THIS session, merged into flatOptions until categoryGroups itself

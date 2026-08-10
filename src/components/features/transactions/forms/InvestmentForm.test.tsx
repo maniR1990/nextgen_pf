@@ -1,12 +1,16 @@
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
+import { useTransactionFormStore } from '@/store/transactionFormStore';
 import type { TransactionFormValues } from '@/store/transactionFormStore';
 import type { PaymentSourceOption, SinkingFundOption } from '@/types/finance';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { InvestmentForm } from './InvestmentForm';
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  act(() => useTransactionFormStore.getState().reset());
+});
 
 function makeValues(overrides: Partial<TransactionFormValues> = {}): TransactionFormValues {
   return {
@@ -329,5 +333,47 @@ describe('InvestmentForm — Sinking fund destination', () => {
       'href',
       '/dashboard/sinking-funds',
     );
+  });
+});
+
+describe('InvestmentForm — Split into items (Sinking only)', () => {
+  it('does not show the toggle for Investment account destination', () => {
+    renderForm({ type: 'INVESTMENT' });
+    expect(screen.queryByText('Split into items')).not.toBeInTheDocument();
+  });
+
+  it('shows the toggle for Sinking fund destination', () => {
+    renderForm({ type: 'SINKING_DEPOSIT' });
+    expect(screen.getByText('Split into items')).toBeInTheDocument();
+  });
+
+  it('swaps the single Category picker for MultiItemExpenseForm once toggled on', async () => {
+    const user = userEvent.setup();
+    renderForm({ type: 'SINKING_DEPOSIT' });
+
+    await user.click(screen.getByRole('checkbox', { name: /split into items/i }));
+
+    expect(screen.getByRole('button', { name: /add item/i })).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /invested into/i })).not.toBeInTheDocument();
+  });
+
+  it('still shows Deposit Into as a single shared field while split into items', async () => {
+    const user = userEvent.setup();
+    renderForm({ type: 'SINKING_DEPOSIT' });
+
+    await user.click(screen.getByRole('checkbox', { name: /split into items/i }));
+
+    expect(screen.getByText('Deposit Into')).toBeInTheDocument();
+  });
+
+  it('clears split-into-items mode when switching destination to Investment account', async () => {
+    const user = userEvent.setup();
+    renderForm({ type: 'SINKING_DEPOSIT' });
+
+    await user.click(screen.getByRole('checkbox', { name: /split into items/i }));
+    expect(useTransactionFormStore.getState().isMultiItem).toBe(true);
+
+    await user.click(screen.getByRole('radio', { name: /investment account/i }));
+    expect(useTransactionFormStore.getState().isMultiItem).toBe(false);
   });
 });

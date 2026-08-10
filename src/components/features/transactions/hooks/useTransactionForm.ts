@@ -114,13 +114,15 @@ export function useTransactionForm(editId?: string) {
   const createBulkTx = useCreateBulkTransaction();
   const patchTx = usePatchTransaction(editId ?? '');
 
-  // Fetched for EXPENSE and INVESTMENT — this data exists purely to auto-fill the amount
-  // when a planned bill/SIP category is picked below (both carry categories with a
-  // budgeted `planned` amount + dueDay); meaningless for other types.
+  // Fetched for EXPENSE, INVESTMENT and SINKING_DEPOSIT — this data exists purely to
+  // auto-fill the amount when a planned bill/SIP category is picked below (all three
+  // can carry categories with a budgeted `planned` amount + dueDay); meaningless for
+  // other types. SINKING_DEPOSIT needs it for its bulk-item rows too — funding a batch
+  // of budgeted bills from one contribution.
   const { data: budgetSummary } = useBudgetSummary(
     store.values.budgetPeriodYear,
     store.values.budgetPeriodMonth,
-    { enabled: ['EXPENSE', 'INVESTMENT'].includes(store.values.type) },
+    { enabled: ['EXPENSE', 'INVESTMENT', 'SINKING_DEPOSIT'].includes(store.values.type) },
   );
   const duePaymentsById = useMemo(() => {
     if (!budgetSummary) return new Map<string, ReturnType<typeof derivePayments>[number]>();
@@ -141,7 +143,7 @@ export function useTransactionForm(editId?: string) {
       // amount the user already typed.
       if (
         key === 'categoryId' &&
-        ['EXPENSE', 'INVESTMENT'].includes(store.values.type) &&
+        ['EXPENSE', 'INVESTMENT', 'SINKING_DEPOSIT'].includes(store.values.type) &&
         store.values.amount === ''
       ) {
         const due = duePaymentsById.get(value as string);
@@ -183,6 +185,26 @@ export function useTransactionForm(editId?: string) {
           store.setField('amount', String((pts * rate).toFixed(2)));
         }
       }
+    },
+    [store, duePaymentsById],
+  );
+
+  // Same auto-fill as handleFieldChange's categoryId branch above, applied per bulk
+  // item row instead of the single shared field — picking "EB (Electricity)" on a
+  // sinking-deposit item row fills in its ₹5,000 remaining budget the same way picking
+  // it as the single category would.
+  const handleItemChange = useCallback(
+    (id: string, patch: Partial<Pick<(typeof store.items)[number], 'categoryId' | 'amount'>>) => {
+      if (patch.categoryId) {
+        const current = store.items.find((it) => it.id === id);
+        if (current && current.amount === '') {
+          const due = duePaymentsById.get(patch.categoryId);
+          if (due && !due.paid && due.remaining > 0) {
+            patch = { ...patch, amount: String(due.remaining) };
+          }
+        }
+      }
+      store.updateItem(id, patch);
     },
     [store, duePaymentsById],
   );
@@ -237,19 +259,28 @@ export function useTransactionForm(editId?: string) {
   }, [store]);
 
   // ── Submit (create, bulk) ────────────────────────────────────────────────────
-  // One bill, many items — merchant/date/account/method are shared, only
-  // categoryId + amount vary per item. Validated separately from the single-
-  // transaction path since it has no per-item fields in CreateTransactionSchema.
+  // One bill/deposit, many items — date/account/method (and for a sinking deposit,
+  // the destination account) are shared, only categoryId + amount vary per item.
+  // Validated separately from the single-transaction path since it has no per-item
+  // fields in CreateTransactionSchema. Works for EXPENSE (a bill split across
+  // categories) and SINKING_DEPOSIT (one contribution funding several budgeted
+  // bills) — merchant only matters for the former, toAccountId only for the latter.
 
   const handleBulkSubmit = useCallback(async (): Promise<boolean> => {
     const { values, items } = store;
+    const isExpense = values.type === 'EXPENSE';
     const invalidIds = items
       .filter((it) => !it.categoryId || !(Number.parseFloat(it.amount) > 0))
       .map((it) => it.id);
 
     const sharedErrors: FormErrors = {};
-    if (!values.merchant.trim()) sharedErrors.merchant = 'Merchant or description is required';
+    if (isExpense && !values.merchant.trim()) {
+      sharedErrors.merchant = 'Merchant or description is required';
+    }
     if (!values.sourceId) sharedErrors.sourceId = 'Payment source required';
+    if (values.type === 'SINKING_DEPOSIT' && !values.toAccountId) {
+      sharedErrors.toAccountId = 'Destination account is required';
+    }
     if (items.length === 0) {
       sharedErrors._form = 'Add at least one item';
     } else if (invalidIds.length > 0) {
@@ -266,12 +297,14 @@ export function useTransactionForm(editId?: string) {
 
     try {
       const body: BulkTransactionBody = {
-        type: 'EXPENSE',
-        merchant: values.merchant,
+        type: values.type as 'EXPENSE' | 'INVESTMENT' | 'SINKING_DEPOSIT',
+        merchant: values.merchant || undefined,
         date: values.date,
         budgetPeriodYear: values.budgetPeriodYear,
         budgetPeriodMonth: values.budgetPeriodMonth,
         paymentSourceId: values.sourceId,
+        toAccountId: values.toAccountId || undefined,
+        fundId: values.fundId || undefined,
         paymentMethod: values.method,
         notes: values.notes || undefined,
         tags: values.tags
@@ -290,11 +323,12 @@ export function useTransactionForm(editId?: string) {
       const total = items.reduce((sum, it) => sum + (Number.parseFloat(it.amount) || 0), 0);
       const d = new Date(values.date);
       const monthLabel = d.toLocaleString('en-IN', { month: 'short', year: 'numeric' });
+      const label = values.merchant || TX_TYPE_META[values.type].label;
 
       store.setSuccessData({
         amount: `₹${total.toLocaleString('en-IN')}`,
-        merchant: `${values.merchant} · ${items.length} item${items.length > 1 ? 's' : ''}`,
-        type: 'EXPENSE',
+        merchant: `${label} · ${items.length} item${items.length > 1 ? 's' : ''}`,
+        type: values.type,
         date: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
         method: values.method,
         budgetPeriodLabel: `${monthLabel} budget`,
@@ -407,6 +441,7 @@ export function useTransactionForm(editId?: string) {
     isSubmitting: createTx.isPending || createBulkTx.isPending || patchTx.isPending,
     handleTypeChange,
     handleFieldChange,
+    handleItemChange,
     handleSubmit,
     handleUpdate,
     handleLogAnother,

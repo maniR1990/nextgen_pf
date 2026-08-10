@@ -216,6 +216,7 @@ export const TransactionService = {
           amount: item.amount,
           currency: 'INR',
           account: { connect: { id: dto.paymentSourceId } },
+          ...(dto.toAccountId && { toAccount: { connect: { id: dto.toAccountId } } }),
           category: { connect: { id: item.categoryId } },
           paymentMethod: dto.paymentMethod as never,
           isPlanned: false,
@@ -225,6 +226,12 @@ export const TransactionService = {
           notes: item.note ?? dto.notes,
           tags: dto.tags ?? [],
           billBatchId,
+          ...(dto.fundId && {
+            fund: { connect: { id: dto.fundId } },
+            // Every bulk item lands in the same fund the same direction — see the
+            // single-create path's identical fundFlow derivation above.
+            fundFlow: (dto.type === 'SINKING_DEPOSIT' ? 'IN' : undefined) as never,
+          }),
           // Every row needs a real, distinct idempotencyKey — Mongo's unique index
           // treats a MISSING field the same as an explicit null, and only tolerates
           // one such document total, so omitting it on every non-anchor row (as if
@@ -243,6 +250,7 @@ export const TransactionService = {
           type: dto.type,
           amount: item.amount,
           accountId: dto.paymentSourceId,
+          toAccountId: dto.toAccountId,
         });
         await applyDeltas(tx, delta);
 

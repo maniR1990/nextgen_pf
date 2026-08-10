@@ -92,7 +92,7 @@ describe('BulkCreateTransactionSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects a type other than EXPENSE', () => {
+  it('rejects a type outside EXPENSE/INVESTMENT/SINKING_DEPOSIT', () => {
     const result = BulkCreateTransactionSchema.safeParse({ ...validPayload, type: 'INCOME' });
     expect(result.success).toBe(false);
   });
@@ -111,6 +111,44 @@ describe('BulkCreateTransactionSchema', () => {
       ...validPayload,
       items: [{ categoryId: 'cat1', amount: 805, note: 'chicken' }],
     });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('BulkCreateTransactionSchema — SINKING_DEPOSIT (fund several budgeted bills at once)', () => {
+  const sinkingPayload = {
+    type: 'SINKING_DEPOSIT' as const,
+    date: '2026-08-10',
+    budgetPeriodYear: 2026,
+    budgetPeriodMonth: 8,
+    paymentSourceId: 'acc1',
+    toAccountId: 'acc2',
+    paymentMethod: 'UPI' as const,
+    items: [
+      { categoryId: 'cat-electricity', amount: 5000 },
+      { categoryId: 'cat-internet', amount: 1000 },
+    ],
+  };
+
+  it('accepts a valid bulk sinking payload with no merchant', () => {
+    const result = BulkCreateTransactionSchema.safeParse(sinkingPayload);
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a bulk sinking payload with no destination account', () => {
+    const { toAccountId, ...rest } = sinkingPayload;
+    const result = BulkCreateTransactionSchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts a bulk INVESTMENT payload without requiring toAccountId', () => {
+    const { toAccountId, ...rest } = sinkingPayload;
+    const result = BulkCreateTransactionSchema.safeParse({ ...rest, type: 'INVESTMENT' });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts an optional fundId for goal-progress tracking', () => {
+    const result = BulkCreateTransactionSchema.safeParse({ ...sinkingPayload, fundId: 'fund1' });
     expect(result.success).toBe(true);
   });
 });

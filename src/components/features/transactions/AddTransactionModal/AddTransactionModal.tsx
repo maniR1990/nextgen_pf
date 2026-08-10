@@ -73,6 +73,7 @@ export function AddTransactionModal({
     items,
     handleTypeChange,
     handleFieldChange,
+    handleItemChange,
     handleSubmit,
     handleUpdate,
     handleLogAnother,
@@ -99,12 +100,13 @@ export function AddTransactionModal({
   const isLoading = submitState === 'loading';
 
   const bulkTotal = items.reduce((sum, it) => sum + (Number.parseFloat(it.amount) || 0), 0);
+  const bulkNoun = values.type === 'EXPENSE' ? 'expense' : 'item';
   const submitLabel = isMultiItem
     ? isLoading
       ? 'Saving…'
       : items.length === 0
         ? 'Add an item to continue'
-        : `Log ${items.length} expense${items.length > 1 ? 's' : ''} · ₹${bulkTotal.toLocaleString('en-IN')}`
+        : `Log ${items.length} ${bulkNoun}${items.length > 1 ? 's' : ''} · ₹${bulkTotal.toLocaleString('en-IN')}`
     : editId
       ? isLoading
         ? 'Updating…'
@@ -197,6 +199,7 @@ export function AddTransactionModal({
             duplicate={duplicate}
             onDismissDuplicate={dismissDuplicate}
             onCreateCategory={onCreateCategory}
+            onItemChange={handleItemChange}
           />
         );
       case 'INVESTMENT':
@@ -207,6 +210,7 @@ export function AddTransactionModal({
             categoryGroups={categoryGroups}
             sinkingFunds={sinkingFunds}
             onCreateCategory={onCreateCategory}
+            onItemChange={handleItemChange}
           />
         );
       case 'INCOME':

@@ -9,6 +9,7 @@ import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-
 import { useTransactionFormStore } from '@/store/transactionFormStore';
 import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
 import type { BudgetImpact, DuplicateMatch, PaymentSourceOption } from '@/types/finance';
+import type { BulkItemDraft } from '@/store/transactionFormStore';
 import { CommonFormFields } from './CommonFormFields';
 import { MultiItemExpenseForm } from './MultiItemExpenseForm';
 
@@ -25,6 +26,9 @@ interface ExpenseFormProps {
   duplicate: DuplicateMatch | null;
   onDismissDuplicate: () => void;
   onCreateCategory?: (name: string, parentId: string | null, flowType?: string) => Promise<string>;
+  /** Auto-fills a bulk item's amount from its category's remaining budget on pick —
+   *  see MultiItemExpenseForm's onUpdateItem for why this is optional. */
+  onItemChange?: (id: string, patch: Partial<Omit<BulkItemDraft, 'id'>>) => void;
 }
 
 export function ExpenseForm({
@@ -37,6 +41,7 @@ export function ExpenseForm({
   duplicate,
   onDismissDuplicate,
   onCreateCategory,
+  onItemChange,
 }: ExpenseFormProps) {
   const isMultiItem = useTransactionFormStore((s) => s.isMultiItem);
   const setMultiItem = useTransactionFormStore((s) => s.setMultiItem);
@@ -83,7 +88,11 @@ export function ExpenseForm({
       </div>
 
       {isMultiItem ? (
-        <MultiItemExpenseForm categoryGroups={categoryGroups} onCreateCategory={onCreateCategory} />
+        <MultiItemExpenseForm
+          categoryGroups={categoryGroups}
+          onCreateCategory={onCreateCategory}
+          onUpdateItem={onItemChange}
+        />
       ) : (
         <CollapsibleCategoryPicker
           label="Category"

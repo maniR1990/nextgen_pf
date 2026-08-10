@@ -27,7 +27,7 @@ export function SuccessState({ data, onLogAnother, onClose }: SuccessStateProps)
       </div>
 
       <h2 className="success-state__heading">
-        {hasItems && data.items!.length > 1 ? 'Expenses logged!' : 'Transaction logged!'}
+        {hasItems && data.items!.length > 1 ? 'Items logged!' : 'Transaction logged!'}
       </h2>
 
       <div className="success-state__card">

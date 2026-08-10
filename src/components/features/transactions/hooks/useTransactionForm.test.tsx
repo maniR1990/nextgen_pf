@@ -475,4 +475,149 @@ describe('useTransactionForm', () => {
       ]);
     });
   });
+
+  describe('multi-item bulk submit — SINKING_DEPOSIT (fund several budgeted bills at once)', () => {
+    function setupValidSinkingBulk(result: ReturnType<typeof useTransactionForm>) {
+      act(() => result.current.handleTypeChange('SINKING_DEPOSIT'));
+      act(() => result.current.handleFieldChange('sourceId', 'acc1'));
+      act(() => result.current.handleFieldChange('toAccountId', 'acc2'));
+      act(() => useTransactionFormStore.getState().setMultiItem(true));
+      const itemId = useTransactionFormStore.getState().items[0].id;
+      act(() =>
+        useTransactionFormStore
+          .getState()
+          .updateItem(itemId, { categoryId: 'electricity', amount: '5000' }),
+      );
+    }
+
+    it('does not require a merchant, unlike Bulk Expense', async () => {
+      const { result } = renderHook(() => useTransactionForm(), { wrapper });
+      setupValidSinkingBulk(result);
+
+      let ok: boolean | undefined;
+      await act(async () => {
+        ok = await result.current.handleSubmit();
+      });
+
+      expect(ok).toBe(true);
+      expect(result.current.errors.merchant).toBeUndefined();
+    });
+
+    it('rejects submit without a destination account', async () => {
+      const { result } = renderHook(() => useTransactionForm(), { wrapper });
+      act(() => result.current.handleTypeChange('SINKING_DEPOSIT'));
+      act(() => result.current.handleFieldChange('sourceId', 'acc1'));
+      act(() => useTransactionFormStore.getState().setMultiItem(true));
+      const itemId = useTransactionFormStore.getState().items[0].id;
+      act(() =>
+        useTransactionFormStore
+          .getState()
+          .updateItem(itemId, { categoryId: 'electricity', amount: '5000' }),
+      );
+
+      let ok: boolean | undefined;
+      await act(async () => {
+        ok = await result.current.handleSubmit();
+      });
+
+      expect(ok).toBe(false);
+      expect(result.current.errors.toAccountId).toBe('Destination account is required');
+    });
+
+    it('sends type, toAccountId and no merchant to the bulk endpoint', async () => {
+      const { result } = renderHook(() => useTransactionForm(), { wrapper });
+      setupValidSinkingBulk(result);
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(apiPostV1).toHaveBeenCalledWith(
+        '/api/v1/transactions/bulk',
+        expect.objectContaining({
+          type: 'SINKING_DEPOSIT',
+          toAccountId: 'acc2',
+          merchant: undefined,
+          items: [{ categoryId: 'electricity', amount: 5000 }],
+        }),
+        expect.anything(),
+      );
+    });
+  });
+
+  describe('handleItemChange — per-row budget auto-fill', () => {
+    function budgetSummaryWithElectricity(planned: number, actual: number) {
+      return {
+        groups: [
+          {
+            id: 'g1',
+            name: 'House Hold',
+            type: 'EXPENSE',
+            planned: 0,
+            actual: 0,
+            lastMonthActual: 0,
+            variance: 0,
+            variancePct: 0,
+            progressPct: 0,
+            categories: [
+              {
+                id: 'electricity',
+                name: 'EB (Electricity)',
+                level: 1,
+                icon: null,
+                color: null,
+                isSystem: false,
+                isRecurring: true,
+                isUnplanned: false,
+                dueDay: 15,
+                isSettled: false,
+                settledTransactionId: null,
+                planned,
+                actual,
+                lastMonthActual: 0,
+                variance: 0,
+                variancePct: 0,
+                progressPct: 0,
+                children: [],
+              },
+            ],
+          },
+        ],
+      };
+    }
+
+    it("fills a bulk item's amount from the picked category's remaining budget", async () => {
+      vi.mocked(apiGetV1).mockResolvedValueOnce(budgetSummaryWithElectricity(5000, 0));
+
+      const { result } = renderHook(() => useTransactionForm(), { wrapper });
+      act(() => result.current.handleTypeChange('SINKING_DEPOSIT'));
+      // A budgetPeriod not already cached by another test in this shared QueryClient —
+      // otherwise useBudgetSummary serves the stale cached value and never consumes
+      // this test's mockResolvedValueOnce.
+      act(() => result.current.handleFieldChange('date', '2026-12-05'));
+      act(() => useTransactionFormStore.getState().setMultiItem(true));
+      const itemId = useTransactionFormStore.getState().items[0].id;
+
+      await waitFor(() => {
+        act(() => result.current.handleItemChange(itemId, { categoryId: 'electricity' }));
+        expect(useTransactionFormStore.getState().items[0].amount).toBe('5000');
+      });
+    });
+
+    it("does not overwrite an amount the user already typed on that row", async () => {
+      vi.mocked(apiGetV1).mockResolvedValueOnce(budgetSummaryWithElectricity(5000, 0));
+
+      const { result } = renderHook(() => useTransactionForm(), { wrapper });
+      act(() => result.current.handleTypeChange('SINKING_DEPOSIT'));
+      act(() => result.current.handleFieldChange('date', '2026-12-06'));
+      act(() => useTransactionFormStore.getState().setMultiItem(true));
+      const itemId = useTransactionFormStore.getState().items[0].id;
+      act(() => useTransactionFormStore.getState().updateItem(itemId, { amount: '1234' }));
+      await new Promise((r) => setTimeout(r, 0));
+
+      act(() => result.current.handleItemChange(itemId, { categoryId: 'electricity' }));
+
+      expect(useTransactionFormStore.getState().items[0].amount).toBe('1234');
+    });
+  });
 });

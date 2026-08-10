@@ -267,10 +267,13 @@ export const CheckDuplicateSchema = z.object({
   date: z.string().min(1),
 });
 
-// ── Bulk create — one bill, many line items ────────────────────────────────────
-// Shared bill-level fields are supplied once (merchant/date/account/payment method
-// are the same for every item on one receipt); only categoryId + amount vary per
-// line. v1 is EXPENSE-only by design — see TransactionService.createBulk.
+// ── Bulk create — one bill/deposit, many line items ────────────────────────────
+// Shared bill-level fields are supplied once (date/account/payment method are the
+// same for every item); only categoryId + amount vary per line. Originally
+// EXPENSE-only (one receipt, several categories); also covers SINKING_DEPOSIT and
+// INVESTMENT now (one lump-sum contribution — e.g. topping up several budgeted
+// bills at once from a sinking fund — logged as N linked transactions sharing one
+// destination account instead of N separate manual entries).
 
 export const BulkTransactionItemSchema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
@@ -278,20 +281,43 @@ export const BulkTransactionItemSchema = z.object({
   note: z.string().max(200).optional(),
 });
 
-export const BulkCreateTransactionSchema = z.object({
-  type: z.literal('EXPENSE'),
-  merchant: z.string().min(1, 'Merchant or description is required'),
-  date: z.string().min(1, 'Date is required'),
-  budgetPeriodYear: z.number().int().min(2020),
-  budgetPeriodMonth: z.number().int().min(1).max(12),
-  paymentSourceId: z.string().min(1, 'Payment source required'),
-  paymentMethod: z.enum(PAYMENT_METHOD_VALUES),
-  notes: z.string().max(500).optional(),
-  tags: z.array(z.string()).optional(),
-  items: z
-    .array(BulkTransactionItemSchema)
-    .min(1, 'At least one item is required')
-    .max(50, 'A single bill can log at most 50 items'),
-});
+export const BulkCreateTransactionSchema = z
+  .object({
+    type: z.enum(['EXPENSE', 'INVESTMENT', 'SINKING_DEPOSIT']),
+    // Required for EXPENSE (what the bill was for); meaningless for a sinking/
+    // investment contribution, which already has toAccountId to say where it went.
+    merchant: z.string().optional(),
+    date: z.string().min(1, 'Date is required'),
+    budgetPeriodYear: z.number().int().min(2020),
+    budgetPeriodMonth: z.number().int().min(1).max(12),
+    paymentSourceId: z.string().min(1, 'Payment source required'),
+    toAccountId: z.string().optional(),
+    fundId: z.string().optional(),
+    paymentMethod: z.enum(PAYMENT_METHOD_VALUES),
+    notes: z.string().max(500).optional(),
+    tags: z.array(z.string()).optional(),
+    items: z
+      .array(BulkTransactionItemSchema)
+      .min(1, 'At least one item is required')
+      .max(50, 'A single batch can log at most 50 items'),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === 'EXPENSE' && !data.merchant?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Merchant or description is required',
+        path: ['merchant'],
+      });
+    }
+    // Same rule as CreateTransactionSchema: a sinking contribution always lands in
+    // a real account.
+    if (data.type === 'SINKING_DEPOSIT' && !data.toAccountId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Destination account is required',
+        path: ['toAccountId'],
+      });
+    }
+  });
 
 export type BulkCreateTransactionInput = z.infer<typeof BulkCreateTransactionSchema>;

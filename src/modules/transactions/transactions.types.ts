@@ -104,12 +104,14 @@ export interface BulkCreateTransactionItemDto {
 export interface BulkCreateTransactionDto {
   userId: string;
   idempotencyKey?: string;
-  type: 'EXPENSE';
-  merchant: string;
+  type: 'EXPENSE' | 'INVESTMENT' | 'SINKING_DEPOSIT';
+  merchant?: string;
   date: string;
   budgetPeriodYear: number;
   budgetPeriodMonth: number;
   paymentSourceId: string;
+  toAccountId?: string;
+  fundId?: string;
   paymentMethod: string;
   notes?: string;
   tags?: string[];

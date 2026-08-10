@@ -79,10 +79,11 @@ export interface TransactionFormValues {
 
 export type FormErrors = Partial<Record<keyof TransactionFormValues | '_form', string>>;
 
-// One bill, many line items — EXPENSE only. Kept separate from TransactionFormValues
-// (rather than folded into it) because it's meaningless for the other ten transaction
-// types; bolting it onto the shared shape would leak multi-item fields into every
-// Income/Transfer/Investment form for no reason.
+// One bill/deposit, many line items — EXPENSE (bill split) and SINKING_DEPOSIT
+// (fund a batch of budgeted bills from one contribution). Kept separate from
+// TransactionFormValues (rather than folded into it) because it's meaningless for
+// every other transaction type; bolting it onto the shared shape would leak
+// multi-item fields into Income/Transfer/etc. for no reason.
 export interface BulkItemDraft {
   id: string;
   categoryId: string;

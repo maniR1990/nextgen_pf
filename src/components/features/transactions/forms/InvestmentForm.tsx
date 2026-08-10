@@ -5,10 +5,12 @@ import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { FormField } from '@/components/common/FormField';
 import { SelectField } from '@/components/common/SelectField';
 import type { PickerGroup } from '@/modules/categories/lib/map-category-tree-to-picker-options';
-import type { FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
+import type { BulkItemDraft, FormErrors, TransactionFormValues } from '@/store/transactionFormStore';
+import { useTransactionFormStore } from '@/store/transactionFormStore';
 import type { PaymentSourceOption, SinkingFundOption } from '@/types/finance';
 import { PiggyBank, TrendingUp } from 'lucide-react';
 import { CommonFormFields } from './CommonFormFields';
+import { MultiItemExpenseForm } from './MultiItemExpenseForm';
 
 interface InvestmentFormProps {
   values: TransactionFormValues;
@@ -21,6 +23,8 @@ interface InvestmentFormProps {
   categoryGroups: PickerGroup[];
   sinkingFunds: SinkingFundOption[];
   onCreateCategory?: (name: string, parentId: string | null, flowType?: string) => Promise<string>;
+  /** Auto-fills a bulk item's amount from its category's remaining budget on pick. */
+  onItemChange?: (id: string, patch: Partial<Omit<BulkItemDraft, 'id'>>) => void;
 }
 
 type DestinationKind = 'INVESTMENT' | 'SINKING_DEPOSIT';
@@ -46,8 +50,11 @@ export function InvestmentForm({
   categoryGroups,
   sinkingFunds,
   onCreateCategory,
+  onItemChange,
 }: InvestmentFormProps) {
   const isSinking = values.type === 'SINKING_DEPOSIT';
+  const isMultiItem = useTransactionFormStore((s) => s.isMultiItem);
+  const setMultiItem = useTransactionFormStore((s) => s.setMultiItem);
 
   // Switching destination only clears fundId — Sinking-only, meaningless once the
   // money is going to an Investment account instead. Everything else carries over
@@ -58,6 +65,10 @@ export function InvestmentForm({
     onChange('type', type);
     if (type === 'INVESTMENT') {
       onChange('fundId', '');
+      // Split-into-items is Sinking-only (funding several budgeted bills from one
+      // contribution) — Investment mode has no toggle to turn it back off, so switching
+      // destination away from Sinking must clear it here.
+      setMultiItem(false);
     }
   }
 
@@ -98,38 +109,74 @@ export function InvestmentForm({
         </div>
       </FormField>
 
-      {/* Category — shown for both destinations. The category tree already carries
-          goal-shaped entries under Investment (Daughter's Future, Marriage / Life
-          Milestone Fund, Sukanya Samriddhi Yojana, Job Loss / Income Gap Fund, ...) —
-          exactly the vocabulary a sinking deposit needs, and it's the only way a
-          sinking deposit rolls up into the Budget page's category tree or the Reports
-          category filter at all, since the linked Fund (optional, below) covers
-          per-goal progress tracking but not that cross-cutting analysis. Optional here,
-          same as it already was for Investment — never required by the schema. */}
-      <CascadingCategoryPicker
-        label="Category"
-        groups={categoryGroups}
-        priorityGroupType="INVESTMENT"
-        value={values.categoryId || null}
-        onChange={(id) => onChange('categoryId', id ?? '')}
-        error={errors.categoryId}
-        onCreateL1={
-          onCreateCategory ? (name) => onCreateCategory(name, null, 'INVESTMENT') : undefined
-        }
-        onCreateL2={
-          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
-        }
-        onCreateL3={
-          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
-        }
-      />
+      {/* Sinking-only: one contribution funding several already-budgeted bills at once
+          (EB Electricity, Internet, insurance premiums, ...) instead of logging each as
+          its own deposit. Each item keeps its own real category, so it updates that
+          category's actual spend on the Budget page exactly like a normal Expense would
+          — this reuses the same MultiItemExpenseForm Bulk Expense already has, just
+          fed through the Sinking destination instead. */}
+      {isSinking && (
+        <div className="tx-form__multi-toggle">
+          <div className="tx-form__multi-toggle-text">
+            <span className="tx-form__multi-toggle-label">Split into items</span>
+            <span className="tx-form__multi-toggle-hint">
+              Fund several budgeted bills from one contribution
+            </span>
+          </div>
+          <label className="tx-form__switch">
+            <input
+              type="checkbox"
+              checked={isMultiItem}
+              onChange={(e) => setMultiItem(e.target.checked)}
+              aria-label="Split into items"
+            />
+            <span className="tx-form__switch-track">
+              <span className="tx-form__switch-thumb" />
+            </span>
+          </label>
+        </div>
+      )}
+
+      {isMultiItem && isSinking ? (
+        <MultiItemExpenseForm
+          categoryGroups={categoryGroups}
+          onCreateCategory={onCreateCategory}
+          onUpdateItem={onItemChange}
+        />
+      ) : (
+        // Category — shown for both destinations. The category tree already carries
+        // goal-shaped entries under Investment (Daughter's Future, Marriage / Life
+        // Milestone Fund, Sukanya Samriddhi Yojana, Job Loss / Income Gap Fund, ...) —
+        // exactly the vocabulary a sinking deposit needs, and it's the only way a
+        // sinking deposit rolls up into the Budget page's category tree or the Reports
+        // category filter at all, since the linked Fund (optional, below) covers
+        // per-goal progress tracking but not that cross-cutting analysis. Optional here,
+        // same as it already was for Investment — never required by the schema.
+        <CascadingCategoryPicker
+          label="Category"
+          groups={categoryGroups}
+          priorityGroupType="INVESTMENT"
+          value={values.categoryId || null}
+          onChange={(id) => onChange('categoryId', id ?? '')}
+          error={errors.categoryId}
+          onCreateL1={
+            onCreateCategory ? (name) => onCreateCategory(name, null, 'INVESTMENT') : undefined
+          }
+          onCreateL2={
+            onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+          }
+          onCreateL3={
+            onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+          }
+        />
+      )}
 
       <CommonFormFields
         values={values}
         errors={errors}
         onChange={onChange}
         paymentSources={paymentSources}
-        showAmount
+        showAmount={!(isMultiItem && isSinking)}
         showMethod={false}
         showTags={false}
         showNotes={false}

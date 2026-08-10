@@ -96,12 +96,14 @@ export interface BulkTransactionItemBody {
 }
 
 export interface BulkTransactionBody {
-  type: 'EXPENSE';
-  merchant: string;
+  type: 'EXPENSE' | 'INVESTMENT' | 'SINKING_DEPOSIT';
+  merchant?: string;
   date: string;
   budgetPeriodYear: number;
   budgetPeriodMonth: number;
   paymentSourceId: string;
+  toAccountId?: string;
+  fundId?: string;
   paymentMethod: string;
   notes?: string;
   tags?: string[];
@@ -186,9 +188,11 @@ export function useCreateBulkTransaction() {
         'X-Idempotency-Key': idempotencyKey,
       });
     },
-    onSuccess: () => {
-      // Bulk items are always EXPENSE — never touch account-transfer invalidation.
-      invalidateAfterWrite(qc, {});
+    onSuccess: (_data, variables) => {
+      // EXPENSE bulk items never touch an account balance beyond the source; a
+      // SINKING_DEPOSIT/INVESTMENT batch credits a toAccountId too, same as the
+      // single-transaction path.
+      invalidateAfterWrite(qc, { isTransfer: variables.type !== 'EXPENSE' });
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : 'Failed to log items');
