@@ -185,6 +185,7 @@ export const v1GetTransaction = compose(withAuth())(async (req, ctx) => {
     const tx = await TransactionService.getById(id, ctx.session!.id);
     return v1Ok(tx);
   } catch (err) {
+    log.error('v1GetTransaction', { err });
     if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }
@@ -202,6 +203,7 @@ export const v1PatchTransaction = compose(
     const tx = await TransactionService.patch(id, ctx.session!.id, body);
     return v1Ok(tx);
   } catch (err) {
+    log.error('v1PatchTransaction', { err });
     if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }
@@ -225,6 +227,7 @@ export const v1DeleteTransaction = compose(withAuth())(async (req, ctx) => {
     await TransactionService.hardDelete(id, ctx.session!.id);
     return v1Ok({ deleted: true });
   } catch (err) {
+    log.error('v1DeleteTransaction', { err });
     if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }
@@ -238,6 +241,7 @@ export const v1VoidTransaction = compose(withAuth())(async (req, ctx) => {
     const tx = await TransactionService.voidTransaction(id, ctx.session!.id);
     return v1Ok(tx);
   } catch (err) {
+    log.error('v1VoidTransaction', { err });
     if (isApiError(err)) return v1FromApiError(err);
     throw err;
   }

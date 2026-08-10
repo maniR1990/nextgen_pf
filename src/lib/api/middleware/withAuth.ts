@@ -3,9 +3,12 @@ import { v1FromApiError } from '@/lib/api/v1/envelope';
 import { buildLastActiveCookie, getCookie } from '@/lib/auth/cookies';
 import { verifyAccessToken } from '@/lib/auth/jwt';
 import { isAccessTokenBlacklisted } from '@/lib/auth/sessionStore';
+import { getLogger } from '@/lib/logger';
 import type { Role } from '@prisma/client';
 import { InternalError, UnauthorizedError, isApiError } from '../errors';
 import type { Middleware } from './types';
+
+const log = getLogger('withAuth');
 
 // Roll the inactivity window only when the current stamp is within the last
 // REFRESH_THRESHOLD seconds of its lifetime — avoids a header rebuild + cookie
@@ -59,7 +62,13 @@ export function withAuth(): Middleware {
       // mislabeled every unrelated server error as "you're not logged in" — genuinely
       // confusing when the session was fine all along. Preserve the real status for our
       // own error types; only fall back to a generic 500 for truly unexpected ones.
-      return v1FromApiError(isApiError(err) ? err : new InternalError());
+      if (isApiError(err)) return v1FromApiError(err);
+      // Baseline visibility for the truly-unexpected case, regardless of whether the
+      // route's own handler bothers to log — several v1 routes currently don't (see
+      // TransactionRouter's v1PatchTransaction and friends), which is exactly how this
+      // class of error went unlogged anywhere, client or server, until now.
+      log.error('unexpected error from handler', { err });
+      return v1FromApiError(new InternalError());
     }
 
     // Append the rolling activity cookie to every successful response.
