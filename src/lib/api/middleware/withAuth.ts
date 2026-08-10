@@ -4,7 +4,7 @@ import { buildLastActiveCookie, getCookie } from '@/lib/auth/cookies';
 import { verifyAccessToken } from '@/lib/auth/jwt';
 import { isAccessTokenBlacklisted } from '@/lib/auth/sessionStore';
 import type { Role } from '@prisma/client';
-import { UnauthorizedError } from '../errors';
+import { InternalError, UnauthorizedError, isApiError } from '../errors';
 import type { Middleware } from './types';
 
 // Roll the inactivity window only when the current stamp is within the last
@@ -52,8 +52,14 @@ export function withAuth(): Middleware {
           role: payload.role as Role,
         },
       });
-    } catch {
-      return v1FromApiError(new UnauthorizedError());
+    } catch (err) {
+      // Auth already succeeded by this point — whatever failed inside `handler` is a
+      // downstream/business-logic error (a Prisma error, a bug, anything), never an
+      // auth problem. This used to blanket-return UnauthorizedError() here, which
+      // mislabeled every unrelated server error as "you're not logged in" — genuinely
+      // confusing when the session was fine all along. Preserve the real status for our
+      // own error types; only fall back to a generic 500 for truly unexpected ones.
+      return v1FromApiError(isApiError(err) ? err : new InternalError());
     }
 
     // Append the rolling activity cookie to every successful response.

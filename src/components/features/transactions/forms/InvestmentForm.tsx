@@ -49,17 +49,15 @@ export function InvestmentForm({
 }: InvestmentFormProps) {
   const isSinking = values.type === 'SINKING_DEPOSIT';
 
-  // Switching destination only clears the fields that belong to the OTHER destination —
-  // amount, date, account, method, tags, notes all carry over untouched. toAccountId
-  // also carries over: it's the same "which account does this land in" field for both
-  // destinations now, just relabeled ("Invested Into" vs "Deposit Into").
+  // Switching destination only clears fundId — Sinking-only, meaningless once the
+  // money is going to an Investment account instead. Everything else carries over
+  // untouched: amount, date, account, method, tags, notes, toAccountId (shared
+  // destination-account field for both), and categoryId (shared now too — see below).
   function handleDestinationChange(type: DestinationKind) {
     if (type === values.type) return;
     onChange('type', type);
     if (type === 'INVESTMENT') {
       onChange('fundId', '');
-    } else {
-      onChange('categoryId', '');
     }
   }
 
@@ -100,27 +98,31 @@ export function InvestmentForm({
         </div>
       </FormField>
 
-      {/* Category — only for an Investment-account destination; a Sinking Fund goal
-          already has its own name/target and was never budget-categorized. */}
-      {!isSinking && (
-        <CascadingCategoryPicker
-          label="Category"
-          groups={categoryGroups}
-          priorityGroupType="INVESTMENT"
-          value={values.categoryId || null}
-          onChange={(id) => onChange('categoryId', id ?? '')}
-          error={errors.categoryId}
-          onCreateL1={
-            onCreateCategory ? (name) => onCreateCategory(name, null, 'INVESTMENT') : undefined
-          }
-          onCreateL2={
-            onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
-          }
-          onCreateL3={
-            onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
-          }
-        />
-      )}
+      {/* Category — shown for both destinations. The category tree already carries
+          goal-shaped entries under Investment (Daughter's Future, Marriage / Life
+          Milestone Fund, Sukanya Samriddhi Yojana, Job Loss / Income Gap Fund, ...) —
+          exactly the vocabulary a sinking deposit needs, and it's the only way a
+          sinking deposit rolls up into the Budget page's category tree or the Reports
+          category filter at all, since the linked Fund (optional, below) covers
+          per-goal progress tracking but not that cross-cutting analysis. Optional here,
+          same as it already was for Investment — never required by the schema. */}
+      <CascadingCategoryPicker
+        label="Category"
+        groups={categoryGroups}
+        priorityGroupType="INVESTMENT"
+        value={values.categoryId || null}
+        onChange={(id) => onChange('categoryId', id ?? '')}
+        error={errors.categoryId}
+        onCreateL1={
+          onCreateCategory ? (name) => onCreateCategory(name, null, 'INVESTMENT') : undefined
+        }
+        onCreateL2={
+          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+        }
+        onCreateL3={
+          onCreateCategory ? (name, parentId) => onCreateCategory(name, parentId) : undefined
+        }
+      />
 
       <CommonFormFields
         values={values}

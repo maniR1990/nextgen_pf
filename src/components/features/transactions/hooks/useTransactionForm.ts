@@ -59,8 +59,13 @@ export function buildTransactionBody(
     // Gift
     giftFrom: values.giftFrom || undefined,
     occasion: values.occasion || undefined,
-    // Sinking / fund purpose-tag
-    fundId: values.fundId || undefined,
+    // Sinking / fund purpose-tag — sent even when blank (not omitted like the other
+    // optional fields here) so switching the Investment/Sinking destination toggle away
+    // from Sinking during an edit actually clears a stale fund relation server-side.
+    // Omitting it entirely would leave the old fund silently attached — the PATCH
+    // handler only clears a relation when the key is present; see
+    // TransactionService.patch's fundId/categoryId/toAccountId handling.
+    fundId: values.fundId,
     fundFlow: values.fundFlow || undefined,
     // Expense extras
     isTaxDed: values.isTaxDed || undefined,

@@ -3,7 +3,8 @@
 import { formatINRCompact } from '@/lib/utils/format';
 import type { FundGroupSummary } from '@/modules/fund-groups/fund-groups.types';
 import { ChevronDown, MoreHorizontal, Plus } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface FundGroupCardProps {
   group: FundGroupSummary;
@@ -35,14 +36,47 @@ export function FundGroupCard({
   totalAmount,
 }: FundGroupCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+  const triggerWrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const canDelete = !group.isSystem && fundCount === 0;
   const isArchived = !!group.archivedAt;
+
+  // Portaled to document.body (see render below) — in FundBucketBoard's section-header
+  // mode, this card sits inside the board's scrollable `overflow-y: auto` body, which
+  // can clip a plain position:absolute dropdown once the group is scrolled near the
+  // bottom edge. position:fixed + a portal sidesteps that, same fix used for
+  // FundListRow's per-fund menu (which had the same class of bug, always-on there).
+  useLayoutEffect(() => {
+    if (!menuOpen) return;
+    const measure = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUpward = spaceBelow < 160 && rect.top > spaceBelow;
+      setMenuStyle({
+        position: 'fixed',
+        right: window.innerWidth - rect.right,
+        ...(openUpward ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.bottom + 4 }),
+      });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
+    };
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!menuOpen) return;
     const onPointerDown = (e: MouseEvent) => {
-      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+      const target = e.target as Node;
+      if (!triggerWrapRef.current?.contains(target) && !dropdownRef.current?.contains(target)) {
+        setMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', onPointerDown);
     return () => document.removeEventListener('mousedown', onPointerDown);
@@ -58,8 +92,9 @@ export function FundGroupCard({
     .join(' ');
 
   const kebabMenu = !isArchived && (onEdit || onDelete) && (
-    <div className="fund-group-card__menu-wrap" ref={menuRef}>
+    <div className="fund-group-card__menu-wrap" ref={triggerWrapRef}>
       <button
+        ref={triggerRef}
         type="button"
         className="fund-group-card__menu-trigger"
         aria-label={`Options for ${group.name}`}
@@ -69,52 +104,54 @@ export function FundGroupCard({
       >
         <MoreHorizontal size={15} aria-hidden />
       </button>
-      {menuOpen && (
-        <div className="fund-group-card__menu" role="menu">
-          {onEdit && (
-            <button
-              type="button"
-              role="menuitem"
-              className="fund-group-card__menu-item"
-              onClick={() => {
-                setMenuOpen(false);
-                onEdit(group);
-              }}
-            >
-              Rename
-            </button>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              role="menuitem"
-              className={[
-                'fund-group-card__menu-item',
-                'fund-group-card__menu-item--danger',
-                !canDelete && 'fund-group-card__menu-item--disabled',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              disabled={!canDelete}
-              title={
-                group.isSystem
-                  ? 'System groups cannot be deleted'
-                  : fundCount > 0
-                    ? `Move or archive all ${fundCount} fund(s) first`
-                    : undefined
-              }
-              onClick={() => {
-                if (canDelete) {
+      {menuOpen &&
+        createPortal(
+          <div ref={dropdownRef} className="fund-group-card__menu" role="menu" style={menuStyle}>
+            {onEdit && (
+              <button
+                type="button"
+                role="menuitem"
+                className="fund-group-card__menu-item"
+                onClick={() => {
                   setMenuOpen(false);
-                  onDelete(group);
+                  onEdit(group);
+                }}
+              >
+                Rename
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                role="menuitem"
+                className={[
+                  'fund-group-card__menu-item',
+                  'fund-group-card__menu-item--danger',
+                  !canDelete && 'fund-group-card__menu-item--disabled',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                disabled={!canDelete}
+                title={
+                  group.isSystem
+                    ? 'System groups cannot be deleted'
+                    : fundCount > 0
+                      ? `Move or archive all ${fundCount} fund(s) first`
+                      : undefined
                 }
-              }}
-            >
-              Delete
-            </button>
-          )}
-        </div>
-      )}
+                onClick={() => {
+                  if (canDelete) {
+                    setMenuOpen(false);
+                    onDelete(group);
+                  }
+                }}
+              >
+                Delete
+              </button>
+            )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 

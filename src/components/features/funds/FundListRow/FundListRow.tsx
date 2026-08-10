@@ -5,7 +5,8 @@ import { formatINRCompact } from '@/lib/utils/format';
 import type { FundSummary, SourceBreakdown } from '@/modules/funds/funds.types';
 import { MoreHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 /** Investment / alternate account types — their full balance is dedicated capital */
 const INVESTMENT_GROUPS = new Set(['investment', 'alternate']);
@@ -46,7 +47,10 @@ export interface FundListRowProps {
 
 export function FundListRow({ fund, onEdit, onAllocate, onArchive, onDelete }: FundListRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+  const triggerWrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const health = resolveHealth(fund.percentFilled);
@@ -60,10 +64,41 @@ export function FundListRow({ fund, onEdit, onAllocate, onArchive, onDelete }: F
     (s) => isDedicatedSource(s) && s.type === 'PERCENTAGE' && s.value >= 1,
   );
 
+  // Portaled to document.body (see render below) — this row sits inside the group
+  // section's collapsible body, which needs `overflow: hidden` on an ancestor for its
+  // expand/collapse height animation. That same overflow:hidden silently clips any
+  // absolutely-positioned dropdown living inside it, which is why this menu used to
+  // open but never actually show anything. position:fixed + a portal sidesteps it
+  // entirely, same fix SelectField already uses for the equivalent modal-clipping case.
+  useLayoutEffect(() => {
+    if (!menuOpen) return;
+    const measure = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUpward = spaceBelow < 160 && rect.top > spaceBelow;
+      setMenuStyle({
+        position: 'fixed',
+        right: window.innerWidth - rect.right,
+        ...(openUpward ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.bottom + 4 }),
+      });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
+    };
+  }, [menuOpen]);
+
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e: MouseEvent) => {
-      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+      const target = e.target as Node;
+      if (!triggerWrapRef.current?.contains(target) && !dropdownRef.current?.contains(target)) {
+        setMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -135,11 +170,12 @@ export function FundListRow({ fund, onEdit, onAllocate, onArchive, onDelete }: F
       {hasMenu && (
         <div
           className="fund-list-row__menu-wrap"
-          ref={menuRef}
+          ref={triggerWrapRef}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
           <button
+            ref={triggerRef}
             type="button"
             className="fund-list-row__menu-trigger"
             aria-label={`Options for ${fund.name}`}
@@ -149,62 +185,64 @@ export function FundListRow({ fund, onEdit, onAllocate, onArchive, onDelete }: F
           >
             <MoreHorizontal size={15} aria-hidden />
           </button>
-          {menuOpen && (
-            <div role="menu" className="fund-list-row__menu">
-              {onEdit && (
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="fund-list-row__menu-item"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onEdit(fund);
-                  }}
-                >
-                  Edit
-                </button>
-              )}
-              {onAllocate && (
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="fund-list-row__menu-item"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onAllocate(fund);
-                  }}
-                >
-                  Allocate
-                </button>
-              )}
-              {onArchive && (
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="fund-list-row__menu-item fund-list-row__menu-item--danger"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onArchive(fund);
-                  }}
-                >
-                  Archive
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="fund-list-row__menu-item fund-list-row__menu-item--danger"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onDelete(fund);
-                  }}
-                >
-                  Delete
-                </button>
-              )}
-            </div>
-          )}
+          {menuOpen &&
+            createPortal(
+              <div ref={dropdownRef} role="menu" className="fund-list-row__menu" style={menuStyle}>
+                {onEdit && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="fund-list-row__menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onEdit(fund);
+                    }}
+                  >
+                    Edit
+                  </button>
+                )}
+                {onAllocate && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="fund-list-row__menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onAllocate(fund);
+                    }}
+                  >
+                    Allocate
+                  </button>
+                )}
+                {onArchive && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="fund-list-row__menu-item fund-list-row__menu-item--danger"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onArchive(fund);
+                    }}
+                  >
+                    Archive
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="fund-list-row__menu-item fund-list-row__menu-item--danger"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onDelete(fund);
+                    }}
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>,
+              document.body,
+            )}
         </div>
       )}
     </li>

@@ -133,7 +133,7 @@ describe('InvestmentForm — destination toggle', () => {
     );
   });
 
-  it('switching to Sinking fund sets type and clears categoryId, but keeps toAccountId', async () => {
+  it('switching to Sinking fund sets type but keeps categoryId and toAccountId — both are shared fields now', async () => {
     const user = userEvent.setup();
     const { onChange } = renderForm({
       type: 'INVESTMENT',
@@ -144,9 +144,7 @@ describe('InvestmentForm — destination toggle', () => {
     await user.click(screen.getByRole('radio', { name: /sinking fund/i }));
 
     expect(onChange).toHaveBeenCalledWith('type', 'SINKING_DEPOSIT');
-    expect(onChange).toHaveBeenCalledWith('categoryId', '');
-    // toAccountId is the shared "which account does this land in" field for both
-    // destinations now — switching doesn't wipe it, only relabels it.
+    expect(onChange).not.toHaveBeenCalledWith('categoryId', expect.anything());
     expect(onChange).not.toHaveBeenCalledWith('toAccountId', expect.anything());
   });
 
@@ -225,9 +223,14 @@ describe('InvestmentForm — Investment account destination', () => {
 });
 
 describe('InvestmentForm — Sinking fund destination', () => {
-  it('does not render a category picker', () => {
+  it('renders a category picker — sinking deposits are categorizable too, same as Investment', () => {
     renderForm({ type: 'SINKING_DEPOSIT' });
-    expect(screen.queryByText('Category')).not.toBeInTheDocument();
+    expect(screen.getByText('Category')).toBeInTheDocument();
+  });
+
+  it('keeps the category selection when switching from Investment to Sinking', () => {
+    renderForm({ type: 'SINKING_DEPOSIT', categoryId: 'l2-elss' });
+    expect(screen.getByText('ELSS')).toBeInTheDocument();
   });
 
   it('renders "Deposit Into" as a required account field, not "Invested Into"', () => {

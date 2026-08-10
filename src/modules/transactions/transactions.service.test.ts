@@ -410,6 +410,64 @@ describe('TransactionService.patch — balance', () => {
   });
 });
 
+// Regression: switching a transaction's Investment/Sinking destination clears the
+// field that no longer applies (categoryId, toAccountId, fundId) by sending it as ''
+// rather than omitting it — an unconditional `connect: { id: dto.categoryId } }` would
+// try to connect an empty-string ObjectId and throw. Same shape as the pre-existing
+// fundId handling; categoryId/toAccountId needed the same disconnect-on-empty guard.
+describe('TransactionService.patch — clearing a relation with an empty string', () => {
+  it('disconnects category instead of connecting an empty id', async () => {
+    vi.mocked(TransactionRepository.findById).mockResolvedValue(baseTx as never);
+    mockPrismaTx.financeTransaction.update.mockResolvedValue(baseTx);
+
+    await TransactionService.patch('tx1', 'u1', { categoryId: '' });
+
+    const call = mockPrismaTx.financeTransaction.update.mock.calls[0][0];
+    expect(call.data.category).toEqual({ disconnect: true });
+  });
+
+  it('still connects category normally when a real id is sent', async () => {
+    vi.mocked(TransactionRepository.findById).mockResolvedValue(baseTx as never);
+    mockPrismaTx.financeTransaction.update.mockResolvedValue(baseTx);
+
+    await TransactionService.patch('tx1', 'u1', { categoryId: 'cat1' });
+
+    const call = mockPrismaTx.financeTransaction.update.mock.calls[0][0];
+    expect(call.data.category).toEqual({ connect: { id: 'cat1' } });
+  });
+
+  it('disconnects toAccount instead of connecting an empty id', async () => {
+    vi.mocked(TransactionRepository.findById).mockResolvedValue(baseTx as never);
+    mockPrismaTx.financeTransaction.update.mockResolvedValue(baseTx);
+
+    await TransactionService.patch('tx1', 'u1', { toAccountId: '' });
+
+    const call = mockPrismaTx.financeTransaction.update.mock.calls[0][0];
+    expect(call.data.toAccount).toEqual({ disconnect: true });
+  });
+
+  it('still connects toAccount normally when a real id is sent', async () => {
+    vi.mocked(TransactionRepository.findById).mockResolvedValue(baseTx as never);
+    mockPrismaTx.financeTransaction.update.mockResolvedValue(baseTx);
+
+    await TransactionService.patch('tx1', 'u1', { toAccountId: 'acc2' });
+
+    const call = mockPrismaTx.financeTransaction.update.mock.calls[0][0];
+    expect(call.data.toAccount).toEqual({ connect: { id: 'acc2' } });
+  });
+
+  it('leaves category/toAccount untouched when the fields are omitted entirely', async () => {
+    vi.mocked(TransactionRepository.findById).mockResolvedValue(baseTx as never);
+    mockPrismaTx.financeTransaction.update.mockResolvedValue(baseTx);
+
+    await TransactionService.patch('tx1', 'u1', { notes: 'unrelated edit' });
+
+    const call = mockPrismaTx.financeTransaction.update.mock.calls[0][0];
+    expect(call.data.category).toBeUndefined();
+    expect(call.data.toAccount).toBeUndefined();
+  });
+});
+
 // ── voidTransaction ────────────────────────────────────────────────────────────
 
 describe('TransactionService.voidTransaction', () => {

@@ -302,8 +302,16 @@ export const TransactionService = {
     if (dto.budgetPeriodYear !== undefined) data.budgetPeriodYear = dto.budgetPeriodYear;
     if (dto.budgetPeriodMonth !== undefined) data.budgetPeriodMonth = dto.budgetPeriodMonth;
     if (dto.paymentSourceId !== undefined) data.account = { connect: { id: dto.paymentSourceId } };
-    if (dto.categoryId !== undefined) data.category = { connect: { id: dto.categoryId } };
-    if (dto.toAccountId !== undefined) data.toAccount = { connect: { id: dto.toAccountId } };
+    // Ternary, not a bare connect — `dto.categoryId`/`dto.toAccountId` can be sent as
+    // '' to explicitly clear the relation (e.g. switching Investment -> Sinking Deposit
+    // clears a stale category), same pattern fundId already used below. An unconditional
+    // `connect: { id: '' }` would throw on Prisma's ObjectId validation instead.
+    if (dto.categoryId !== undefined) {
+      data.category = dto.categoryId ? { connect: { id: dto.categoryId } } : { disconnect: true };
+    }
+    if (dto.toAccountId !== undefined) {
+      data.toAccount = dto.toAccountId ? { connect: { id: dto.toAccountId } } : { disconnect: true };
+    }
     if (dto.assetClass !== undefined) data.assetClass = dto.assetClass;
     if (dto.fundName !== undefined) data.fundName = dto.fundName;
     if (dto.units !== undefined) data.units = dto.units;

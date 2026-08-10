@@ -185,11 +185,11 @@
     }
   }
 
+  // Portaled to document.body — position/top/right come from the inline `style` set
+  // by the measure effect in FundGroupCard.tsx (position: fixed), same treatment as
+  // FundListRow's menu and select-field__dropdown.
   &__menu {
-    position: absolute;
-    top: calc(100% + var(--space-1));
-    right: 0;
-    z-index: 20;
+    z-index: calc(var(--comp-modal-z-index, 1000) + 10);
     min-width: 8rem;
     padding: var(--space-1);
     background: var(--color-bg-surface);

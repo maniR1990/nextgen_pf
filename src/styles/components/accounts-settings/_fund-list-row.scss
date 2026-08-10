@@ -218,11 +218,13 @@
     &:focus-visible { @include m.focus-ring; }
   }
 
+  // Portaled to document.body — position/top/right come from the inline `style` set
+  // by FundListRow's measure effect (position: fixed), same as select-field__dropdown.
+  // This row lives inside its group section's collapsible body, which needs
+  // overflow:hidden on an ancestor for the expand/collapse height animation — a plain
+  // position:absolute menu here would silently get clipped by that, open but invisible.
   &__menu {
-    position: absolute;
-    top: calc(100% + var(--space-1));
-    right: 0;
-    z-index: 30;
+    z-index: calc(var(--comp-modal-z-index, 1000) + 10);
     min-width: 8rem;
     padding: var(--space-1);
     background: var(--color-bg-surface);
