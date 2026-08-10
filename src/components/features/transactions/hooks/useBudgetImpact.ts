@@ -45,8 +45,8 @@ export function useBudgetImpact({ categoryId, amount, categories }: Props): Budg
       const res = await apiPostV1<ImpactResponse>('/api/v1/budget/impact', {
         categoryId: debouncedKey.categoryId,
         amount: debouncedKey.amountNum,
-        year,
-        month,
+        budgetPeriodYear: year,
+        budgetPeriodMonth: month,
       });
       return res;
     },

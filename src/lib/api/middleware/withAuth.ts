@@ -68,7 +68,16 @@ export function withAuth(): Middleware {
       // TransactionRouter's v1PatchTransaction and friends), which is exactly how this
       // class of error went unlogged anywhere, client or server, until now.
       log.error('unexpected error from handler', { err });
-      return v1FromApiError(new InternalError());
+      // Real message, not the generic default — this is a single-user app, not a
+      // multi-tenant service with other people's data to protect from each other, so
+      // the usual "don't leak internals to the client" concern doesn't apply the same
+      // way here. Being able to see the actual Prisma/DB error in the browser's network
+      // tab (this user's only practical access to server-side diagnostics right now) is
+      // worth more than the theoretical info-disclosure risk. Revisit if this app ever
+      // grows other users.
+      return v1FromApiError(
+        new InternalError(err instanceof Error ? err.message : 'Internal server error'),
+      );
     }
 
     // Append the rolling activity cookie to every successful response.

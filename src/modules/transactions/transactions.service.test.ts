@@ -22,7 +22,7 @@ const mockPrismaTx = {
     delete: vi.fn(),
   },
   account: {
-    update: vi.fn().mockResolvedValue({}),
+    updateMany: vi.fn().mockResolvedValue({ count: 1 }),
   },
 };
 
@@ -130,7 +130,7 @@ describe('TransactionService.createTransaction — balance', () => {
   it('increments account balance for INCOME', async () => {
     mockPrismaTx.financeTransaction.create.mockResolvedValue(incomeTx);
     await TransactionService.createTransaction({ ...baseDto, type: 'INCOME', amount: 50000 });
-    expect(mockPrismaTx.account.update).toHaveBeenCalledWith(
+    expect(mockPrismaTx.account.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'acc1' },
         data: expect.objectContaining({ balance: { increment: 50000 } }),
@@ -141,7 +141,7 @@ describe('TransactionService.createTransaction — balance', () => {
   it('decrements account balance for EXPENSE', async () => {
     mockPrismaTx.financeTransaction.create.mockResolvedValue(baseTx);
     await TransactionService.createTransaction({ ...baseDto, type: 'EXPENSE', amount: 500 });
-    expect(mockPrismaTx.account.update).toHaveBeenCalledWith(
+    expect(mockPrismaTx.account.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'acc1' },
         data: expect.objectContaining({ balance: { increment: -500 } }),
@@ -152,7 +152,7 @@ describe('TransactionService.createTransaction — balance', () => {
   it('decrements account balance for INVESTMENT', async () => {
     mockPrismaTx.financeTransaction.create.mockResolvedValue({ ...baseTx, type: 'INVESTMENT' });
     await TransactionService.createTransaction({ ...baseDto, type: 'INVESTMENT', amount: 10000 });
-    expect(mockPrismaTx.account.update).toHaveBeenCalledWith(
+    expect(mockPrismaTx.account.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ balance: { increment: -10000 } }),
       }),
@@ -167,7 +167,7 @@ describe('TransactionService.createTransaction — balance', () => {
       amount: 2000,
       toAccountId: 'acc2',
     });
-    const calls = mockPrismaTx.account.update.mock.calls;
+    const calls = mockPrismaTx.account.updateMany.mock.calls;
     const fromCall = calls.find(
       (c: unknown[]) => (c[0] as { where: { id: string } }).where.id === 'acc1',
     );
@@ -190,7 +190,7 @@ describe('TransactionService.createTransaction — balance', () => {
       amount: 10000,
       toAccountId: 'demat1',
     });
-    const calls = mockPrismaTx.account.update.mock.calls;
+    const calls = mockPrismaTx.account.updateMany.mock.calls;
     const fromCall = calls.find(
       (c: unknown[]) => (c[0] as { where: { id: string } }).where.id === 'acc1',
     );
@@ -211,7 +211,7 @@ describe('TransactionService.createTransaction — balance', () => {
       type: 'COUPON_REDEMPTION',
       amount: 50,
     });
-    expect(mockPrismaTx.account.update).not.toHaveBeenCalled();
+    expect(mockPrismaTx.account.updateMany).not.toHaveBeenCalled();
   });
 
   it('throws ValidationError when fundGroupId set on EXPENSE', async () => {
@@ -271,8 +271,8 @@ describe('TransactionService.createBulk', () => {
 
   it('applies one balance delta per item, all against the same account', async () => {
     await TransactionService.createBulk(bulkDto);
-    expect(mockPrismaTx.account.update).toHaveBeenCalledTimes(3);
-    const decrements = mockPrismaTx.account.update.mock.calls.map(
+    expect(mockPrismaTx.account.updateMany).toHaveBeenCalledTimes(3);
+    const decrements = mockPrismaTx.account.updateMany.mock.calls.map(
       (c: unknown[]) => (c[0] as { data: { balance: { increment: number } } }).data.balance
         .increment,
     );
@@ -359,7 +359,7 @@ describe('TransactionService.patch — balance', () => {
 
     await TransactionService.patch('tx1', 'u1', { amount: 1500 });
 
-    const updates = mockPrismaTx.account.update.mock.calls;
+    const updates = mockPrismaTx.account.updateMany.mock.calls;
     // First call: reverse old (+1000 → -1000)
     expect(updates[0][0]).toMatchObject({ data: { balance: { increment: -1000 } } });
     // Second call: apply new (+1500)
@@ -379,9 +379,39 @@ describe('TransactionService.patch — balance', () => {
 
     await TransactionService.patch('tx1', 'u1', { type: 'EXPENSE' });
 
-    const updates = mockPrismaTx.account.update.mock.calls;
+    const updates = mockPrismaTx.account.updateMany.mock.calls;
     expect(updates[0][0]).toMatchObject({ data: { balance: { increment: -5000 } } }); // reverse income
     expect(updates[1][0]).toMatchObject({ data: { balance: { increment: -5000 } } }); // apply expense
+  });
+
+  // Regression: an Investment -> Sinking Deposit edit (or any type change between two
+  // transfer-shaped types) reverses the OLD delta before applying the new one. If the
+  // old transaction's toAccountId points at an account that's since been archived or
+  // deleted, `account.update` would throw P2025 RecordNotFound over a balance-reversal
+  // step that has no account left to reverse — failing the entire edit. updateMany
+  // matching zero rows is a safe no-op instead, so the edit still goes through.
+  it('does not throw when the old delta references an account that no longer exists', async () => {
+    vi.mocked(TransactionRepository.findById).mockResolvedValue({
+      ...baseTx,
+      type: 'INVESTMENT',
+      amount: 8000,
+      accountId: 'bank1',
+      toAccountId: 'deleted-demat-account',
+    } as never);
+    mockPrismaTx.financeTransaction.update.mockResolvedValue({
+      ...baseTx,
+      type: 'SINKING_DEPOSIT',
+    });
+    // Simulates the stale account: no document matches, so Mongo/Prisma reports 0
+    // rows touched instead of throwing.
+    mockPrismaTx.account.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(
+      TransactionService.patch('tx1', 'u1', {
+        type: 'SINKING_DEPOSIT',
+        toAccountId: 'goalwallet1',
+      }),
+    ).resolves.toBeDefined();
   });
 
   it('throws TxLockedError on a reconciled transaction', async () => {
@@ -483,7 +513,7 @@ describe('TransactionService.voidTransaction', () => {
 
     expect(result.status).toBe('VOID');
     // INCOME ₹50000 reversal → decrement 50000
-    expect(mockPrismaTx.account.update).toHaveBeenCalledWith(
+    expect(mockPrismaTx.account.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ balance: { increment: -50000 } }),
       }),
@@ -499,7 +529,7 @@ describe('TransactionService.voidTransaction', () => {
 
     await TransactionService.voidTransaction('tx1', 'u1');
 
-    const updates = mockPrismaTx.account.update.mock.calls;
+    const updates = mockPrismaTx.account.updateMany.mock.calls;
     const acc1Call = updates.find(
       (c: unknown[]) => (c[0] as { where: { id: string } }).where.id === 'acc1',
     );
@@ -531,7 +561,7 @@ describe('TransactionService.hardDelete', () => {
 
     expect(mockPrismaTx.financeTransaction.delete).toHaveBeenCalledWith({ where: { id: 'tx1' } });
     // EXPENSE ₹500 reversal → increment 500
-    expect(mockPrismaTx.account.update).toHaveBeenCalledWith(
+    expect(mockPrismaTx.account.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ balance: { increment: 500 } }),
       }),

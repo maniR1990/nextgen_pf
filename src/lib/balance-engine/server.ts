@@ -27,8 +27,17 @@ export async function applyDeltas(
   const now = new Date();
   if (delta.kind === 'none') return;
 
+  // updateMany, not update — a stale accountId (the account was since archived or
+  // deleted after this transaction was originally logged) makes `update` throw
+  // P2025 RecordNotFound, which fails the ENTIRE edit over a balance bookkeeping
+  // step that has no account left to update anyway. This is exactly the situation
+  // an edit to an old transaction's toAccountId can hit: the reversal step for a
+  // transfer-kind delta is the first place a long-untouched toAccountId gets
+  // resolved again, and it may no longer exist. updateMany matching zero rows is a
+  // silent, safe no-op instead of a hard failure — the edit itself should still go
+  // through even if the reversal has nothing left to reverse.
   if (delta.kind === 'single') {
-    await tx.account.update({
+    await tx.account.updateMany({
       where: { id: delta.accountId },
       data: { balance: { increment: delta.delta }, balanceAsOf: now },
     });
@@ -37,11 +46,11 @@ export async function applyDeltas(
 
   // transfer: update both accounts in parallel within the same db tx
   await Promise.all([
-    tx.account.update({
+    tx.account.updateMany({
       where: { id: delta.fromId },
       data: { balance: { decrement: delta.amount }, balanceAsOf: now },
     }),
-    tx.account.update({
+    tx.account.updateMany({
       where: { id: delta.toId },
       data: { balance: { increment: delta.amount }, balanceAsOf: now },
     }),

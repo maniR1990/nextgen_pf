@@ -85,5 +85,18 @@ describe('withAuth', () => {
       const body = (await res.json()) as { error: { code: string } };
       expect(body.error.code).not.toBe('UNAUTHORIZED');
     });
+
+    // This is a single-user app — surfacing the real exception message in the response
+    // is a deliberate tradeoff for being able to diagnose from the browser's network
+    // tab alone, with no server-log access needed. See the comment in withAuth.ts.
+    it('includes the real exception message, not a generic one, for an unexpected error', async () => {
+      vi.mocked(verifyAccessToken).mockResolvedValueOnce(VALID_PAYLOAD as never);
+      const handler = withAuth()(async () => {
+        throw new Error('Record to connect not found');
+      });
+      const res = await handler(reqWithToken('valid'), ctx);
+      const body = (await res.json()) as { error: { message: string } };
+      expect(body.error.message).toBe('Record to connect not found');
+    });
   });
 });

@@ -208,7 +208,14 @@ export function usePatchTransaction(id: string) {
     onSuccess: (_data, variables) => {
       invalidateAfterWrite(qc, { id, isTransfer: variables.type === 'TRANSFER' });
     },
-    onError: (err) => {
+    onError: (err, variables) => {
+      // Grouped, labeled console output — the server now returns the real error
+      // message (see withAuth.ts), so this is enough to diagnose from the browser's
+      // console alone, no Vercel log access needed.
+      console.error(`[usePatchTransaction] PATCH /api/v1/transactions/${id} failed`, {
+        requestBody: variables,
+        error: err instanceof Error ? err.message : err,
+      });
       toast.error(err instanceof Error ? err.message : 'Failed to update transaction');
     },
   });
