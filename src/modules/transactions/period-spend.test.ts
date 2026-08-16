@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { INFLOW_TYPES, OUTFLOW_TYPES, SPEND_ONLY_TYPES, getPeriodTotals } from './period-spend';
 import { TransactionRepository } from './transactions.repository';
-import { getPeriodTotals, INFLOW_TYPES, OUTFLOW_TYPES, SPEND_ONLY_TYPES } from './period-spend';
 
 vi.mock('./transactions.repository');
 

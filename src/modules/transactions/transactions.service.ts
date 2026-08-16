@@ -2,11 +2,16 @@ import {
   DuplicateDetectedError,
   ForbiddenError,
   NotFoundError,
+  ProjectClosedError,
+  ProjectForecastLineMismatchError,
+  ProjectNotFoundError,
+  ProjectVendorMismatchError,
   TxLockedError,
   ValidationError,
 } from '@/lib/api/errors';
 import { applyDeltas, getBalanceDeltas, reverseDeltas } from '@/lib/balance-engine';
 import { prisma } from '@/lib/db/prisma';
+import { ProjectsRepository } from '@/modules/projects/projects.repository';
 import { getPeriodTotals } from './period-spend';
 import { TX_INCLUDE, TransactionRepository } from './transactions.repository';
 import type {
@@ -27,6 +32,24 @@ function assertOwned(tx: { userId: string }, userId: string) {
 
 function assertNotLocked(tx: { reconciledAt: Date | null }) {
   if (tx.reconciledAt) throw new TxLockedError();
+}
+
+async function assertProjectLinkageValid(
+  userId: string,
+  projectId: string | null | undefined,
+  projectForecastLineId: string | null | undefined,
+  projectVendorId: string | null | undefined,
+) {
+  if (!projectId) return;
+  const project = await ProjectsRepository.findById(projectId);
+  if (project.userId !== userId) throw new ProjectNotFoundError();
+  if (project.status === 'COMPLETED') throw new ProjectClosedError();
+  if (projectForecastLineId && !project.forecastLines.some((l) => l.id === projectForecastLineId)) {
+    throw new ProjectForecastLineMismatchError();
+  }
+  if (projectVendorId && !project.vendors.some((v) => v.id === projectVendorId)) {
+    throw new ProjectVendorMismatchError();
+  }
 }
 
 function validateFundGroupTag(
@@ -63,6 +86,7 @@ export const TransactionService = {
       toDate,
       categoryId,
       paymentSourceId,
+      projectId,
       status,
       search,
       sort,
@@ -79,6 +103,7 @@ export const TransactionService = {
       toDate: toDate ? new Date(toDate) : undefined,
       categoryId,
       paymentSourceId,
+      projectId,
       status,
       search,
       sort,
@@ -105,8 +130,7 @@ export const TransactionService = {
       year,
       month,
     );
-    const totalInvestment =
-      (totalsByType.INVESTMENT ?? 0) + (totalsByType.SINKING_DEPOSIT ?? 0);
+    const totalInvestment = (totalsByType.INVESTMENT ?? 0) + (totalsByType.SINKING_DEPOSIT ?? 0);
     return { totalIncome, totalExpense: totalExpenseOnly, totalInvestment, net };
   },
 
@@ -122,6 +146,12 @@ export const TransactionService = {
 
   async createTransaction(dto: CreateTransactionDto) {
     validateFundGroupTag(dto.type, dto.fundGroupId, dto.fundGroupFlow);
+    await assertProjectLinkageValid(
+      dto.userId,
+      dto.projectId,
+      dto.projectForecastLineId,
+      dto.projectVendorId,
+    );
 
     const txDate = new Date(dto.date);
 
@@ -148,6 +178,10 @@ export const TransactionService = {
         fundGroupId: dto.fundGroupId,
         fundGroupFlow: dto.fundGroupFlow as never,
       }),
+      ...(dto.projectId && { project: { connect: { id: dto.projectId } } }),
+      ...(dto.projectForecastLineId && { projectForecastLineId: dto.projectForecastLineId }),
+      ...(dto.projectVendorId && { projectVendorId: dto.projectVendorId }),
+      ...(dto.projectPaymentType && { projectPaymentType: dto.projectPaymentType as never }),
       ...(dto.fundId && {
         fund: { connect: { id: dto.fundId } },
         // A sinking deposit is always money going INTO the fund; TRANSFER is the only
@@ -244,7 +278,10 @@ export const TransactionService = {
             index === 0 && dto.idempotencyKey ? dto.idempotencyKey : `${billBatchId}:${index}`,
         };
 
-        const row = await tx.financeTransaction.create({ data: txData as never, include: TX_INCLUDE });
+        const row = await tx.financeTransaction.create({
+          data: txData as never,
+          include: TX_INCLUDE,
+        });
         created.push(row);
       }
 
@@ -281,10 +318,31 @@ export const TransactionService = {
       accountId: string;
       toAccountId: string | null;
       amount: number;
+      projectId: string | null;
     };
 
     const effectiveType = dto.type ?? existingTyped.type;
     validateFundGroupTag(effectiveType, dto.fundGroupId, dto.fundGroupFlow);
+
+    if (
+      dto.projectForecastLineId !== undefined ||
+      dto.projectVendorId !== undefined ||
+      dto.projectPaymentType !== undefined
+    ) {
+      if (!existingTyped.projectId) {
+        throw new ValidationError('Transaction is not linked to a project');
+      }
+      const project = await ProjectsRepository.findById(existingTyped.projectId);
+      if (
+        dto.projectForecastLineId &&
+        !project.forecastLines.some((l) => l.id === dto.projectForecastLineId)
+      ) {
+        throw new ProjectForecastLineMismatchError();
+      }
+      if (dto.projectVendorId && !project.vendors.some((v) => v.id === dto.projectVendorId)) {
+        throw new ProjectVendorMismatchError();
+      }
+    }
 
     // Snapshot of what the transaction looks like BEFORE the edit
     const oldSnapshot = {
@@ -327,7 +385,9 @@ export const TransactionService = {
       data.category = dto.categoryId ? { connect: { id: dto.categoryId } } : { disconnect: true };
     }
     if (dto.toAccountId !== undefined) {
-      data.toAccount = dto.toAccountId ? { connect: { id: dto.toAccountId } } : { disconnect: true };
+      data.toAccount = dto.toAccountId
+        ? { connect: { id: dto.toAccountId } }
+        : { disconnect: true };
     }
     if (dto.assetClass !== undefined) data.assetClass = dto.assetClass;
     if (dto.fundName !== undefined) data.fundName = dto.fundName;
@@ -360,6 +420,16 @@ export const TransactionService = {
     if (dto.ptsRate !== undefined) data.ptsRate = dto.ptsRate;
     if (dto.fundGroupId !== undefined) data.fundGroupId = dto.fundGroupId;
     if (dto.fundGroupFlow !== undefined) data.fundGroupFlow = dto.fundGroupFlow;
+    if (dto.projectForecastLineId !== undefined) {
+      data.projectForecastLineId = dto.projectForecastLineId || null;
+    }
+    if (dto.projectPaymentType !== undefined) data.projectPaymentType = dto.projectPaymentType;
+    if (dto.projectVendorId !== undefined) {
+      data.projectVendorId = dto.projectVendorId || null;
+      // Clearing the vendor also clears the payment type — it's meaningless without one,
+      // and wins over any projectPaymentType sent in the same request.
+      if (!dto.projectVendorId) data.projectPaymentType = null;
+    }
 
     return prisma.$transaction(async (tx) => {
       const updated = await tx.financeTransaction.update({

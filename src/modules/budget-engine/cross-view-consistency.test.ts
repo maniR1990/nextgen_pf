@@ -1,3 +1,6 @@
+import { getPeriodTotals } from '@/modules/transactions/period-spend';
+import { TransactionRepository } from '@/modules/transactions/transactions.repository';
+import { TransactionService } from '@/modules/transactions/transactions.service';
 // This file exists because unit tests alone didn't catch the bug that prompted it: each
 // of the Dashboard summary, Transactions page, Calendar widget, and Budget page computed
 // "spend for this period" independently, and each was individually correct in isolation
@@ -12,9 +15,6 @@
 // Dashboard/Calendar/Subscriptions widgets' source), and BudgetEngineService (the Budget
 // page's source) all reconcile against each other for that fixture.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TransactionRepository } from '@/modules/transactions/transactions.repository';
-import { TransactionService } from '@/modules/transactions/transactions.service';
-import { getPeriodTotals } from '@/modules/transactions/period-spend';
 import { BudgetEngineRepository } from './budget-engine.repository';
 import { BudgetEngineService } from './budget-engine.service';
 
@@ -94,9 +94,7 @@ describe('period-spend cross-view consistency', () => {
       { type: 'EXPENSE', _sum: { amount: 5000 } },
       { type: 'INVESTMENT', _sum: { amount: 3000 } },
     ] as never);
-    vi.mocked(TransactionRepository.sumUncategorizedByTypeForPeriod).mockResolvedValue(
-      [] as never,
-    );
+    vi.mocked(TransactionRepository.sumUncategorizedByTypeForPeriod).mockResolvedValue([] as never);
     vi.mocked(BudgetEngineRepository.findCategoriesForUser).mockResolvedValue([
       EXPENSE_GROUP,
       GROCERIES,

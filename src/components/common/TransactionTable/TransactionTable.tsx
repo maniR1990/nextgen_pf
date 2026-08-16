@@ -21,8 +21,6 @@ export interface TransactionRow {
   merchant: string;
   amount: number;
   amountSign: 'debit' | 'credit' | 'neutral';
-  category: string;
-  status: 'cleared' | 'pending' | 'voided';
 }
 
 export interface TransactionTableProps {
@@ -36,14 +34,8 @@ export interface TransactionTableProps {
   pageSize?: number;
 }
 
-type SortKey = 'date' | 'merchant' | 'category' | 'amount' | 'status';
+type SortKey = 'date' | 'merchant' | 'amount';
 type SortDir = 'asc' | 'desc';
-
-const STATUS_LABELS: Record<TransactionRow['status'], string> = {
-  cleared: '● Cleared',
-  pending: '◌ Pending',
-  voided: '✕ Voided',
-};
 
 function formatAmount(row: TransactionRow) {
   const prefix = row.amountSign === 'debit' ? '−' : row.amountSign === 'credit' ? '+' : '';
@@ -113,12 +105,7 @@ export function TransactionTable({
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (!q) return rows;
-    return rows.filter(
-      (r) =>
-        r.merchant.toLowerCase().includes(q) ||
-        r.category.toLowerCase().includes(q) ||
-        r.status.toLowerCase().includes(q),
-    );
+    return rows.filter((r) => r.merchant.toLowerCase().includes(q));
   }, [rows, search]);
 
   const sorted = useMemo(() => {
@@ -126,9 +113,7 @@ export function TransactionTable({
       let cmp = 0;
       if (sortKey === 'date') cmp = a.date.localeCompare(b.date);
       else if (sortKey === 'merchant') cmp = a.merchant.localeCompare(b.merchant);
-      else if (sortKey === 'category') cmp = a.category.localeCompare(b.category);
       else if (sortKey === 'amount') cmp = a.amount - b.amount;
-      else if (sortKey === 'status') cmp = a.status.localeCompare(b.status);
       return sortDir === 'asc' ? cmp : -cmp;
     });
   }, [filtered, sortKey, sortDir]);
@@ -151,8 +136,6 @@ export function TransactionTable({
     { key: 'date', label: 'Date' },
     { key: 'merchant', label: 'Merchant' },
     { key: 'amount', label: 'Amount', align: 'right' },
-    { key: 'category', label: 'Category' },
-    { key: 'status', label: 'Status' },
   ];
 
   return (
@@ -177,7 +160,7 @@ export function TransactionTable({
         <Search size={14} className="tx-crud__search-icon" aria-hidden />
         <input
           type="text"
-          placeholder="Search by merchant, category…"
+          placeholder="Search by merchant…"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -259,12 +242,6 @@ export function TransactionTable({
                     <td className={`tx-crud__amount tx-crud__amount--${row.amountSign}`}>
                       {formatAmount(row)}
                     </td>
-                    <td className="tx-crud__category">{row.category}</td>
-                    <td>
-                      <span className={`tx-crud__status tx-crud__status--${row.status}`}>
-                        {STATUS_LABELS[row.status]}
-                      </span>
-                    </td>
                     {(onEdit || onDelete) && (
                       <td onClick={(e) => e.stopPropagation()}>
                         <div className="tx-crud__actions">
@@ -326,8 +303,7 @@ export function TransactionTable({
                 </div>
                 <div className="tx-crud__card-row tx-crud__card-row--meta">
                   <div className="tx-crud__card-meta">
-                    <span>{row.category}</span>
-                    <span>· {formatDate(row.date)}</span>
+                    <span>{formatDate(row.date)}</span>
                   </div>
                   {(onEdit || onDelete) && (
                     <div className="tx-crud__card-actions" onClick={(e) => e.stopPropagation()}>

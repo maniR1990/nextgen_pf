@@ -31,6 +31,7 @@ export interface ListWithCursorQuery {
   toDate?: string;
   categoryId?: string;
   paymentSourceId?: string;
+  projectId?: string;
   status?: FinanceTransactionStatus;
   search?: string;
   sort?: TransactionSort;
@@ -87,6 +88,9 @@ export interface PatchTransactionDto {
   };
   fundGroupId?: string | null;
   fundGroupFlow?: 'IN' | 'OUT' | null;
+  projectForecastLineId?: string;
+  projectVendorId?: string;
+  projectPaymentType?: 'ADVANCE' | 'MILESTONE' | 'FINAL' | 'REFUND';
 }
 
 export interface FraudFacts {

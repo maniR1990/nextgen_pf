@@ -47,19 +47,40 @@ export async function readV1Json<T>(res: Response): Promise<T> {
   return json.data;
 }
 
+// Shared across every concurrent 401 — a page mounting several data hooks at once
+// (e.g. Project detail: forecast lines, ledger, form options, account/category/fund
+// lookups) previously fired one /api/auth/refresh PER request the instant the session
+// went stale, all racing each other. One in-flight refresh now serves all of them.
+let refreshPromise: Promise<boolean> | null = null;
+let loggedOut = false;
+
+function refreshSession(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' })
+      .then((res) => res.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+}
+
 export async function fetchWithSession(path: string, init?: RequestInit): Promise<Response> {
   const options: RequestInit = { credentials: 'include', ...init };
   const res = await fetch(path, options);
   if (res.status !== 401) return res;
 
-  const refreshed = await fetch('/api/auth/refresh', {
-    method: 'POST',
-    credentials: 'include',
-  });
+  const ok = await refreshSession();
 
-  if (!refreshed.ok) {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    window.dispatchEvent(new CustomEvent('auth:session-expired'));
+  if (!ok) {
+    // Same dedup reasoning — every caller that lost the refresh race would otherwise
+    // independently log out and re-dispatch the expired-session event.
+    if (!loggedOut) {
+      loggedOut = true;
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      window.dispatchEvent(new CustomEvent('auth:session-expired'));
+    }
     return res;
   }
 

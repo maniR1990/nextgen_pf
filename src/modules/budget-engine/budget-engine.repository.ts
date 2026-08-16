@@ -29,9 +29,7 @@ export const BudgetEngineRepository = {
       prisma.category.findMany({ where: { userId: null, isSystem: true }, select: SELECT }),
     ]);
 
-    return [...userRows, ...systemRows].sort(
-      (a, b) => a.level - b.level || a.order - b.order,
-    );
+    return [...userRows, ...systemRows].sort((a, b) => a.level - b.level || a.order - b.order);
   },
 
   /**
@@ -128,9 +126,16 @@ export const BudgetEngineRepository = {
         // (e.g. a sinking-fund contribution) would silently inflate "Actual Spent".
         // Transfers are tracked separately via a category's linked Fund balance instead.
         type: { not: 'TRANSFER' },
-        // MongoDB stores absent fields differently from explicit null.
-        // isSet: false matches documents where voidedAt was never written.
-        OR: [{ voidedAt: null }, { voidedAt: { isSet: false } }],
+        // MongoDB stores absent fields differently from explicit null — isSet: false
+        // matches documents where the field was never written. Two independent OR
+        // groups must be combined via AND, not two `OR` object keys (the second would
+        // silently overwrite the first in a plain object literal).
+        AND: [
+          { OR: [{ voidedAt: null }, { voidedAt: { isSet: false } }] },
+          // A project draws from savings, not this month's budget — its spend must
+          // never inflate "Actual Spent" against a monthly category envelope.
+          { OR: [{ projectId: null }, { projectId: { isSet: false } }] },
+        ],
       },
       _sum: { amount: true },
     });

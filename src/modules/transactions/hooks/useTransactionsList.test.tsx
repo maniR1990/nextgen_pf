@@ -1,8 +1,8 @@
+import { fetchWithSession } from '@/lib/query/fetcher';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchWithSession } from '@/lib/query/fetcher';
 import { useTransactionsList } from './useTransactionsList';
 
 // Regression coverage: this hook used to call the global `fetch` directly, bypassing the

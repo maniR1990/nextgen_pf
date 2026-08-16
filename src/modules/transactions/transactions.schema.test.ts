@@ -88,7 +88,10 @@ describe('BulkCreateTransactionSchema', () => {
   });
 
   it('rejects an invalid paymentMethod value', () => {
-    const result = BulkCreateTransactionSchema.safeParse({ ...validPayload, paymentMethod: 'BITCOIN' });
+    const result = BulkCreateTransactionSchema.safeParse({
+      ...validPayload,
+      paymentMethod: 'BITCOIN',
+    });
     expect(result.success).toBe(false);
   });
 
@@ -189,6 +192,39 @@ describe('CreateTransactionSchema — SINKING_DEPOSIT destination', () => {
       toAccountId: 'goalwallet1',
       fundId: 'fund1',
     });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('CreateTransactionSchema — EXPENSE category requirement', () => {
+  const base = {
+    type: 'EXPENSE' as const,
+    date: '2026-07-19',
+    budgetPeriodYear: 2026,
+    budgetPeriodMonth: 7,
+    amount: 1000,
+    merchant: 'Sharma Interiors',
+    paymentSourceId: 'acc1',
+    paymentMethod: 'UPI' as const,
+    isPlanned: true,
+    isRecurring: false,
+  };
+
+  it('rejects a plain EXPENSE with no category and no project', () => {
+    const result = CreateTransactionSchema.safeParse(base);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some((i) => i.path[0] === 'categoryId')).toBe(true);
+    }
+  });
+
+  it('accepts a plain EXPENSE with a category', () => {
+    const result = CreateTransactionSchema.safeParse({ ...base, categoryId: 'cat1' });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a project-tagged EXPENSE with no category — the project forecast is the budget breakdown', () => {
+    const result = CreateTransactionSchema.safeParse({ ...base, projectId: 'p1' });
     expect(result.success).toBe(true);
   });
 });

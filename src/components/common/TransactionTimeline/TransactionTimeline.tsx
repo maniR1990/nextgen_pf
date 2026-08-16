@@ -20,6 +20,8 @@ export interface TimelineTransaction {
   notes?: string;
   status?: string;
   txType?: string;
+  projectId?: string;
+  projectName?: string;
 }
 
 export interface TimelineGroup {
@@ -39,9 +41,12 @@ export interface TimelineSummary {
 // totalExpenseOnly vs totalExpense split for the same distinction server-side.
 const INVESTMENT_TX_TYPES = new Set(['INVESTMENT', 'SINKING_DEPOSIT']);
 
-type ColorVariant = 'credit' | 'debit' | 'investment' | 'neutral';
+type ColorVariant = 'credit' | 'debit' | 'investment' | 'neutral' | 'project';
 
+// Project-tagged spend gets its own accent regardless of type — it's funded from
+// savings, not this month's income, so it shouldn't read as regular expense red.
 function colorVariant(tx: TimelineTransaction): ColorVariant {
+  if (tx.projectId) return 'project';
   if (tx.type === 'debit' && tx.txType && INVESTMENT_TX_TYPES.has(tx.txType)) return 'investment';
   return tx.type;
 }
@@ -209,8 +214,8 @@ export function TransactionTimeline({
           </div>
 
           <p className="tx-timeline__summary-formula">
-            Net = income − expense − investment. Investment includes sinking-fund transfers —
-            money saved, not spent.
+            Net = income − expense − investment. Investment includes sinking-fund transfers — money
+            saved, not spent.
           </p>
           <div className="tx-timeline__legend">
             <span className="tx-timeline__legend-item">
@@ -299,7 +304,11 @@ export function TransactionTimeline({
                     // calendar month happens to be "now" — a transaction misassigned to
                     // the wrong budget period (the common reason to open it) has to stay
                     // editable regardless of today's date or which period is being viewed.
-                    const showActions = Boolean(onEditClick || onDeleteClick);
+                    // Project-tagged rows are the exception — they're owned by the
+                    // project's own ledger (Project > Ledger tab), so edit/delete here
+                    // would risk drifting out of sync with the project's forecast lines
+                    // and vendor balances.
+                    const showActions = Boolean((onEditClick || onDeleteClick) && !tx.projectId);
                     const variant = colorVariant(tx);
 
                     return (
@@ -331,7 +340,14 @@ export function TransactionTimeline({
                           aria-hidden
                         />
                         <div className="tx-timeline__card-body">
-                          <span className="tx-timeline__card-merchant">{tx.merchant}</span>
+                          <span className="tx-timeline__card-merchant-row">
+                            <span className="tx-timeline__card-merchant">{tx.merchant}</span>
+                            {tx.projectName && (
+                              <span className="chip tx-timeline__card-project-chip">
+                                {tx.projectName}
+                              </span>
+                            )}
+                          </span>
                           <span className="tx-timeline__card-subtitle">
                             {tx.txType === 'TRANSFER'
                               ? [tx.category, tx.method].filter(Boolean).join(' · ')

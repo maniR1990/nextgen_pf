@@ -34,6 +34,8 @@ export function mapRowToTimelineTransaction(row: FinanceTransactionRow) {
     notes: row.notes,
     status: row.status,
     txType: row.type,
+    projectId: row.projectId,
+    projectName: row.projectName,
   };
 }
 

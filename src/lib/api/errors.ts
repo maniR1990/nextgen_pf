@@ -210,3 +210,65 @@ export class DeleteNotConfirmedError extends ApiError {
     super('X-Confirm-Delete header missing or not true', 400, 'DELETE_NOT_CONFIRMED');
   }
 }
+
+// ─── Projects ────────────────────────────────────────────────────────────────
+
+export class ProjectNotFoundError extends NotFoundError {
+  constructor() {
+    super('Project not found');
+    Object.assign(this, { code: 'PROJECT_NOT_FOUND' });
+  }
+}
+
+/** Mirrors TxLockedError — a closed project must be reopened before it can be modified. */
+export class ProjectClosedError extends ApiError {
+  constructor() {
+    super('Project is closed. Reopen it before making changes.', 423, 'PROJECT_CLOSED');
+  }
+}
+
+export class ProjectForecastLineNotFoundError extends NotFoundError {
+  constructor() {
+    super('Forecast line not found on this project');
+    Object.assign(this, { code: 'PROJECT_FORECAST_LINE_NOT_FOUND' });
+  }
+}
+
+/** projectForecastLineId doesn't belong to the given projectId's forecastLines[] —
+ *  the integrity check from the Slice 3 test plan. */
+export class ProjectForecastLineMismatchError extends ApiError {
+  constructor() {
+    super('Forecast line does not belong to this project', 400, 'PROJECT_FORECAST_LINE_MISMATCH');
+  }
+}
+
+export class ProjectVendorNotFoundError extends NotFoundError {
+  constructor() {
+    super('Vendor not found on this project');
+    Object.assign(this, { code: 'PROJECT_VENDOR_NOT_FOUND' });
+  }
+}
+
+/** Mirrors AccountGroupHasAccountsError — a vendor with logged payments can't be
+ *  deleted out from under that history. */
+export class ProjectVendorHasTransactionsError extends ConflictError {
+  constructor() {
+    super('Cannot delete a vendor with logged transactions');
+    Object.assign(this, { code: 'PROJECT_VENDOR_HAS_TRANSACTIONS' });
+  }
+}
+
+/** projectVendorId doesn't belong to the given projectId's vendors[] — same
+ *  integrity check as ProjectForecastLineMismatchError, for vendors. */
+export class ProjectVendorMismatchError extends ApiError {
+  constructor() {
+    super('Vendor does not belong to this project', 400, 'PROJECT_VENDOR_MISMATCH');
+  }
+}
+
+export class ProjectActivityItemNotFoundError extends NotFoundError {
+  constructor() {
+    super('Activity item not found on this project');
+    Object.assign(this, { code: 'PROJECT_ACTIVITY_ITEM_NOT_FOUND' });
+  }
+}

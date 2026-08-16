@@ -136,6 +136,15 @@ export interface CreateFinanceTransactionDto {
   // Fund group tagging
   fundGroupId?: string | null;
   fundGroupFlow?: 'IN' | 'OUT' | null;
+
+  // Project linkage (Slice 3) — projectForecastLineId requires projectId to also be
+  // set, enforced in the schema's superRefine, not just here.
+  projectId?: string;
+  projectForecastLineId?: string;
+  // Vendor and payment type (Slice 4) — projectPaymentType requires projectVendorId,
+  // same superRefine pattern.
+  projectVendorId?: string;
+  projectPaymentType?: 'ADVANCE' | 'MILESTONE' | 'FINAL' | 'REFUND';
 }
 
 export interface FinanceTransactionRow {
@@ -147,6 +156,8 @@ export interface FinanceTransactionRow {
   categoryLabel?: string;
   sourceLabel?: string;
   toAccountName?: string;
+  projectId?: string;
+  projectName?: string;
   method: string;
   status: string;
   isPlanned: boolean;

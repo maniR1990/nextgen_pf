@@ -66,6 +66,13 @@ export const queryKeys = {
     all: ['budget'] as const,
     summary: (year: number, month: number) => ['budget', 'summary', year, month] as const,
   },
+  projects: {
+    all: ['projects'] as const,
+    lists: () => [...queryKeys.projects.all, 'list'] as const,
+    list: (filters: Record<string, unknown>) => [...queryKeys.projects.lists(), filters] as const,
+    detail: (id: string) => [...queryKeys.projects.all, 'detail', id] as const,
+    ledger: (id: string) => [...queryKeys.projects.all, 'ledger', id] as const,
+  },
   dashboard: {
     all: ['dashboard'] as const,
     calendar: (year: number, month: number) =>

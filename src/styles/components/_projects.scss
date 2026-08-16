@@ -1,0 +1,1094 @@
+@use '../mixins' as m;
+
+// ─── Projects list ─────────────────────────────────────────────────────────
+
+.projects-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-4);
+
+  @include m.respond-to(md) {
+    padding: var(--space-6);
+  }
+}
+
+.projects-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.projects-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.projects-page__section-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.projects-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+// ─── Project card ────────────────────────────────────────────────────────────
+
+.project-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--comp-card-bg);
+  border: var(--border-width) solid var(--comp-card-border);
+  border-radius: var(--comp-card-radius);
+  padding: var(--comp-card-padding);
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition-fast);
+  min-height: 44px;
+
+  &:hover {
+    border-color: var(--color-brand);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.project-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.project-card__name {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-md);
+}
+
+.project-card__description {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.project-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+// ─── Project detail / overview ───────────────────────────────────────────────
+
+.project-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+
+  // Shared by every tab under this page (Activity and Reports both reuse
+  // .project-activity__section / .project-vendor-row directly) — defined
+  // once here, on the actual common ancestor, rather than on .project-activity
+  // where only that one tab could see them.
+  --project-activity-divider: color-mix(in srgb, var(--color-border) 45%, var(--color-text-muted) 55%);
+  --project-activity-rule: color-mix(in srgb, var(--color-border) 15%, var(--color-text-muted) 85%);
+
+  // Was 720px, then 1040px — kept climbing as the grid-based tabs (Activity,
+  // Budget forecast) needed more room to not look pinched next to a widened
+  // page. 1280px matches the design system's own `xl` breakpoint (see
+  // tokens/_breakpoints.scss) rather than another arbitrary number.
+  //
+  // Left-anchored, not centered — `margin: 0 auto` put equal empty gutters on
+  // both sides on desktop, floating the page as a centered island instead of
+  // starting flush with the rest of the dashboard's content (which isn't
+  // itself centered). No effect on mobile either way, since max-width already
+  // exceeds the viewport there.
+  max-width: 1280px;
+  margin: 0;
+  padding: var(--space-4);
+
+  @include m.respond-to(md) {
+    padding: var(--space-6);
+  }
+}
+
+.project-overview {
+  display: flex;
+  flex-direction: column;
+  // Tightened per the Overview UX review — every block used to carry its own
+  // independent margin on top of this; one consistent rhythm instead.
+  gap: var(--space-3);
+}
+
+.project-overview__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.project-overview__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.project-overview__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+
+  // Status used to live here too — it's now the single badge/select up in the
+  // header, so only three fields remain.
+  @include m.respond-to(md) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.project-overview__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+
+.project-overview__field-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+// Status pill, now editable in place — the select IS the badge, not a second
+// field duplicating it. Wears the same .badge.badge--<variant> classes as
+// every other status pill in the app; this just resets native select chrome
+// and re-adds a pointer cursor when it's actually interactive.
+.project-overview__status-select {
+  appearance: none;
+  border-style: solid;
+  font: inherit;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}
+
+.project-overview__bar-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.project-overview__bar-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.project-overview__todo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: fit-content;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border: var(--border-width) solid color-mix(in srgb, var(--color-warning) 30%, transparent);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-warning) 18%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}
+
+.project-detail__nav {
+  display: flex;
+}
+
+.project-detail__tabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.project-detail__tabs {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+// ─── Overview stats ───────────────────────────────────────────────────────────
+
+.project-overview__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+.project-overview__stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.project-overview__stat-amount {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+}
+
+.project-overview__bar {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-subtle);
+  overflow: hidden;
+}
+
+.project-overview__bar-fill {
+  height: 100%;
+  background: var(--color-brand);
+  border-radius: var(--radius-full);
+}
+
+// ─── Log project expense modal ───────────────────────────────────────────────
+
+.log-project-expense__progress {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.log-project-expense__match {
+  font-size: var(--font-size-xs);
+  color: var(--color-brand);
+  background: color-mix(in srgb, var(--color-brand) 8%, transparent);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  margin: var(--space-2) 0 0;
+}
+
+// Paid to — free-text-or-pick-a-vendor combobox
+.log-project-expense__combo {
+  position: relative;
+}
+
+.log-project-expense__suggest {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--color-bg-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.18));
+  overflow: hidden;
+}
+
+.log-project-expense__suggest-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    background: var(--color-bg-subtle);
+  }
+}
+
+.log-project-expense__suggest-balance {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.log-project-expense__suggest-empty {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+// Linked-vendor confirmation chip
+.log-project-expense__linked {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  border: var(--border-width) solid color-mix(in srgb, var(--color-success) 30%, transparent);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  margin-top: var(--space-2);
+
+  svg {
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+  }
+
+  button {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+  }
+}
+
+// Two-up field pairing — Amount+Date, Forecast line+Account
+.log-project-expense__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+// Budget / Contract groupings
+.log-project-expense__section {
+  border: var(--border-width) dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.log-project-expense__section-title {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-brand);
+  margin-bottom: var(--space-2);
+}
+
+.log-project-expense__section--contract {
+  border-color: color-mix(in srgb, var(--color-warning) 40%, var(--color-border));
+
+  .log-project-expense__section-title {
+    color: var(--color-warning);
+  }
+}
+
+.log-project-expense__paytype-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.log-project-expense__paytype {
+  font-size: var(--font-size-xs);
+  padding: var(--space-1-5) var(--space-3);
+  border-radius: var(--radius-full);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-bg-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: var(--transition-fast);
+
+  &:hover {
+    border-color: var(--color-brand);
+  }
+
+  &[aria-pressed='true'] {
+    background: var(--color-warning);
+    border-color: var(--color-warning);
+    color: white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}
+
+// ─── Forecast line row ────────────────────────────────────────────────────────
+
+.project-forecast-line-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+
+  &--editing {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3);
+  }
+}
+
+.project-forecast-line-row__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.project-forecast-line-row__top-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.project-forecast-line-row__label {
+  display: flex;
+  flex-direction: column;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+}
+
+.project-forecast-line-row__description {
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.project-forecast-line-row__amount-input {
+  max-width: 140px;
+}
+
+.project-forecast-line-row__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-error);
+    background: var(--color-bg-subtle);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.project-forecast-line-row__status {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+
+  &--on-track {
+    color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  }
+
+  &--over {
+    color: var(--color-error);
+    background: color-mix(in srgb, var(--color-error) 12%, transparent);
+  }
+
+  &--unused {
+    color: var(--color-text-muted);
+    background: var(--color-bg-subtle);
+  }
+}
+
+.project-forecast-line-row__bar {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-subtle);
+  overflow: hidden;
+}
+
+.project-forecast-line-row__bar-fill {
+  height: 100%;
+  background: var(--color-brand);
+  border-radius: var(--radius-full);
+}
+
+.project-forecast-line-row__amounts {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+// ─── Budget forecast tab ──────────────────────────────────────────────────────
+
+.project-budget-forecast {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.project-budget-forecast__total {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.project-budget-forecast__total-amount {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+}
+
+.project-budget-forecast__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.project-budget-forecast__add-row,
+.project-form-wizard__forecast-add-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.project-budget-forecast__add-row--with-vendor {
+  grid-template-columns: 1fr 1fr 1fr auto;
+}
+
+.project-budget-forecast__add-amount {
+  max-width: none;
+}
+
+.project-form-wizard__forecast-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+// ─── Vendors ───────────────────────────────────────────────────────────────
+
+.project-overview__vendors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.project-vendor-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+// Optional — only the Overview vendor list renders one (it's the only
+// .project-vendor-row usage with a paid/contract ratio worth showing).
+// `flex: 1 0 100%` on a flex-wrap row forces it onto its own line below the
+// name/amounts, without needing a wrapper element around the rest of the row
+// for the three other places this class is reused (Reference details,
+// Reports' forecast-line and vendor rows) where no bar is rendered at all.
+.project-vendor-row__bar {
+  flex: 1 0 100%;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-subtle);
+  overflow: hidden;
+}
+
+.project-vendor-row__bar-fill {
+  height: 100%;
+  background: var(--color-brand);
+  border-radius: var(--radius-full);
+}
+
+.project-vendor-row__name {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+}
+
+.project-vendor-row__link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--color-brand);
+  margin-top: 2px;
+}
+
+.project-vendor-row__amounts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+}
+
+.project-vendor-row__balance {
+  color: var(--color-text-muted);
+}
+
+// Groups the edit/remove buttons into one flex item — without this,
+// .project-vendor-row's `justify-content: space-between` spreads every
+// direct child evenly, which would push edit and remove apart from each
+// other instead of keeping them together as one action cluster.
+.project-vendor-row__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-0-5);
+}
+
+// ─── Summary report ───────────────────────────────────────────────────────────
+
+.project-summary-report {
+  display: flex;
+  flex-direction: column;
+  // Matches .project-activity's rhythm — both reuse .project-activity__section
+  // for their headings now, including its own top-rule + padding between
+  // sections, so the outer gap has to match or the two tabs get a different
+  // amount of space between sections for no reason.
+  gap: var(--space-3);
+}
+
+// ─── Activity ──────────────────────────────────────────────────────────────
+
+.project-activity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  // Timeline is the section the tab is named after — unbounded, read
+  // chronologically. Checklist and Reference are small and bounded, glanced
+  // at rather than scanned. Below `lg` there isn't room for two columns, so
+  // this stays the plain stacked order defined by the markup (Checklist,
+  // Timeline, Reference). At `lg`+, Timeline gets promoted to a wide primary
+  // column with the other two rebuilt as a narrower rail beside it — via
+  // grid-area, not by reordering the markup, so the stacked order above
+  // still matches what a screen reader or a narrow viewport sees.
+  @include m.respond-to(lg) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'timeline checklist'
+      'timeline reference';
+    align-items: start;
+    gap: var(--space-3) var(--space-5);
+  }
+
+  // Inputs/selects in the add-rows below borrow `.select-field__control` for
+  // consistent form-control styling, but its default (--comp-input-min-height,
+  // space-2/space-3 padding) is sized for full forms — too roomy for a dense
+  // activity log. Scoped down here only, so Budget forecast / the form wizard
+  // elsewhere keep the regular control size.
+  .select-field__control {
+    min-height: var(--space-8);
+    padding: var(--space-1-5) var(--space-2-5);
+    font-size: var(--font-size-sm);
+  }
+}
+
+// .project-overview__field-label is reused for two different roles: a caption
+// under one big number (Overview's Forecast/Spent/Remaining, Budget
+// forecast's Total forecast) — correctly small and muted — and a section
+// heading (Activity's Checklist/Timeline/Reference, Reports' three sections),
+// where muted-and-small reads as disabled rather than as a heading. The
+// distinguishing structural fact is that a heading is always the first thing
+// in a .project-activity__section; a caption never is (it's nested inside a
+// .project-overview__stat). Targeting on structure rather than "which page"
+// means this fixes Reports for free — it reuses the exact same section markup.
+.project-activity__section > .project-overview__field-label {
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.project-activity__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+
+  // Marks where a new section starts — without it, the flat list style below
+  // (no per-row cards) left nothing to distinguish "new section" from "next
+  // item in the same list." Skipped on the first section; the tab header
+  // above already closes off the page. Below `lg` all three sections are
+  // still in one stacked column, so this plain top-rule is correct for all
+  // of them as written.
+  & + & {
+    padding-top: var(--space-3);
+    border-top: var(--border-width) solid var(--project-activity-rule);
+  }
+
+  &--timeline {
+    grid-area: timeline;
+  }
+
+  &--checklist {
+    grid-area: checklist;
+  }
+
+  // At `lg`+ Timeline becomes its own column, so the top-rule `& + &` gave it
+  // (it's second in the markup) no longer makes sense — nothing sits above it
+  // in that column. Checklist and Reference are still genuinely stacked
+  // within the sidebar column, so Reference keeps its top-rule; both instead
+  // gain a left-rule marking the sidebar as a whole apart from Timeline.
+  &--reference {
+    grid-area: reference;
+  }
+
+  @include m.respond-to(lg) {
+    &--timeline {
+      padding-top: 0;
+      border-top: none;
+    }
+
+    &--checklist,
+    &--reference {
+      padding-left: var(--space-4);
+      border-left: var(--border-width) solid var(--project-activity-rule);
+    }
+  }
+}
+
+.project-activity__section-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin: calc(-1 * var(--space-1)) 0 0;
+}
+
+// Rows are divided by a hairline, not boxed individually — a bordered card
+// per to-do/note/reference reads as a generic dashboard-template list and
+// fights the ledger identity the rest of the Projects feature uses. One rule
+// per row, no gap between them, is both calmer and denser.
+.project-activity__list {
+  display: flex;
+  flex-direction: column;
+}
+
+// "N completed" / "Show earlier activity" — plain text toggles, not buttons
+// styled to look like actions, since they only reveal what's already there.
+.project-activity__disclosure {
+  align-self: flex-start;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-0-5) 0;
+
+  &:hover {
+    color: var(--color-brand);
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.project-activity__todo-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-1);
+  border-bottom: var(--border-width) solid var(--project-activity-divider);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.project-activity__todo-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0;
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.project-activity__todo-text {
+  flex: 1;
+  font-size: var(--font-size-sm);
+
+  &--done {
+    text-decoration: line-through;
+    color: var(--color-text-muted);
+  }
+}
+
+.project-activity__timeline-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+// Reuses .chip (compounded, same reasoning as the note-tag chips above) for
+// consistent pill sizing, but this is a control, not a label — the active
+// state needs to read as "currently selected" rather than "this note's kind,"
+// so it gets the app's brand color rather than the neutral/decision palette
+// the tag chips themselves use.
+.project-activity__timeline-filter.chip {
+  min-height: auto;
+  padding: var(--space-0-5) var(--space-2);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  border: var(--border-width) solid transparent;
+  --chip-bg: var(--color-bg-subtle);
+  --chip-border: var(--color-border);
+  --chip-text: var(--color-text-muted);
+
+  &:hover {
+    --chip-text: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+
+  &.project-activity__timeline-filter--active {
+    --chip-bg: color-mix(in srgb, var(--color-brand) 12%, var(--color-bg-surface));
+    --chip-border: var(--color-brand);
+    --chip-text: var(--color-brand);
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+// One header per day, entries for that day underneath — mirrors the monthly
+// Transactions timeline's date-grouping, without its hour-level timestamps or
+// pagination: a project's activity log never reaches that volume.
+.project-activity__timeline {
+  display: flex;
+  flex-direction: column;
+  // Wider than the gap inside a group (below) — the difference in spacing
+  // itself signals "new date" vs "next note, same date."
+  gap: var(--space-3);
+}
+
+.project-activity__timeline-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
+// Was plain xs muted text — same weight and case as ordinary body copy, so it
+// read as another line of content rather than a group header. Matches the
+// bold/uppercase/tracked convention the monthly Transactions timeline already
+// uses for its date labels, just without that view's color/track-line, which
+// would be more chrome than a project's much shorter activity log needs.
+.project-activity__timeline-date {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.project-activity__note-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  padding: var(--space-1-5) var(--space-1);
+  border-bottom: var(--border-width) solid var(--project-activity-divider);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.project-activity__note-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+// Compounded with .chip (not a bare modifier class) so this reliably outranks
+// .chip's own base rule regardless of SCSS partial import order — same
+// reasoning as the project-tagged chip in _transactiontimeline.scss. Also
+// shrinks the chip itself — .chip's default min-height (--comp-chip-min-height:
+// space-10, 40px) is sized for a standalone pill, way oversized for a tag
+// packed into a dense timeline row.
+//
+// Deliberately NOT hue-coded per tag. The app's 4 semantic hues already carry
+// fixed meaning elsewhere (info = Investment category, accent = project-tagged
+// transaction in the Ledger, success/error = income/expense) — reusing them
+// here as arbitrary category colors recreated the exact collision the
+// Transactions-timeline project chip was fixed for earlier: purple meaning
+// "linked to a project" in one tab and "this note is a decision" in another.
+// Instead: one neutral style for ordinary notes, one inverted (dark-fill)
+// style reserved for Decision — the one note kind actually worth being able
+// to spot at a glance later, without borrowing a color that means something
+// else elsewhere in the app.
+.project-activity__note-tag.chip {
+  min-height: auto;
+  padding: 1px var(--space-2);
+  font-size: var(--font-size-xs);
+
+  &.project-activity__note-tag--progress,
+  &.project-activity__note-tag--delivery,
+  &.project-activity__note-tag--misc,
+  &.project-activity__note-tag--return {
+    --chip-bg: var(--color-bg-subtle);
+    --chip-border: var(--color-border);
+    --chip-text: var(--color-text-muted);
+  }
+
+  &.project-activity__note-tag--decision {
+    --chip-bg: var(--color-text);
+    --chip-border: var(--color-text);
+    --chip-text: var(--color-bg-surface);
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+// The remove button's default 28×28 touch target (shared with Vendor/Forecast
+// rows elsewhere) reads as oversized next to a shrunk chip in this dense list.
+.project-activity__note-meta .project-forecast-line-row__remove,
+.project-activity__todo-row .project-forecast-line-row__remove {
+  width: 22px;
+  height: 22px;
+}
+
+.project-activity__note-text {
+  font-size: var(--font-size-sm);
+  margin: 0;
+  // Timeline's column got wider along with the rest of the page; capping the
+  // line length keeps a one-sentence note from stretching edge to edge just
+  // because the container can — width for the layout, not for every line.
+  max-width: 62ch;
+}
+
+.project-activity__ref-value {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+// Reference rows (Activity) and the forecast-line/vendor rows (Reports) all
+// reuse .project-vendor-row inside a plain .project-activity__list — restyled
+// to the same hairline-divided row so every read-only record list in this
+// feature shares one visual system instead of each tab inventing its own.
+// Targeted on that structural pairing, not on a specific page, so Reports
+// (which reuses .project-activity__list directly) gets this for free.
+// Overview's own vendor list uses a different wrapper (.project-overview__vendors)
+// and deliberately keeps its boxed-card style — it's the one place these rows
+// carry a progress bar, which reads better as a contained card than a bare line.
+.project-activity__list .project-vendor-row {
+  padding: var(--space-1-5) var(--space-1);
+  border: none;
+  border-radius: 0;
+  border-bottom: var(--border-width) solid var(--project-activity-divider);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .project-forecast-line-row__remove {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+// A shared tinted band across all three "add new" rows — reads as a compose
+// zone distinct from the read-only list above it, which the flat divided-row
+// list (no per-row cards) otherwise gave no way to tell apart from another
+// list entry.
+.project-activity__add-row,
+.project-activity__note-add,
+.project-activity__ref-add {
+  margin-top: var(--space-1);
+  padding: var(--space-1-5) var(--space-1);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+}
+
+.project-activity__add-row {
+  display: flex;
+  gap: var(--space-1-5);
+  align-items: center;
+}
+
+.project-activity__note-add {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: var(--space-1-5);
+  align-items: center;
+}
+
+// Own layout, not shared with Timeline's add-row above — that one's always
+// exactly 3 fields; this one is 3 or 4 depending on whether the project has
+// any vendors yet. A fixed 3-column grid silently broke once vendors existed
+// (the 4th field had nowhere to go but its own row) — flex-wrap reflows
+// correctly either way instead of assuming a fixed field count.
+.project-activity__ref-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+  align-items: center;
+
+  input,
+  select {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+
+  button {
+    flex: 0 0 auto;
+  }
+}

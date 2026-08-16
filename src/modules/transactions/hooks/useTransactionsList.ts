@@ -23,6 +23,7 @@ interface ApiTxRow {
   account?: { id: string; name: string; type: string } | null;
   toAccount?: { id: string; name: string } | null;
   paymentSource?: { id: string; name: string; type: string } | null;
+  project?: { id: string; name: string } | null;
   paymentMethod: string;
   status: string;
   isPlanned: boolean;
@@ -44,6 +45,8 @@ function mapApiRow(row: ApiTxRow): FinanceTransactionRow {
     categoryLabel: row.category?.name ?? row.category?.label,
     sourceLabel: row.account?.name ?? row.paymentSource?.name,
     toAccountName: row.toAccount?.name,
+    projectId: row.project?.id,
+    projectName: row.project?.name,
     method: row.paymentMethod,
     status: row.status,
     isPlanned: row.isPlanned,

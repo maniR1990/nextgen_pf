@@ -87,6 +87,12 @@ export interface TransactionBody {
     count?: number;
     endDate?: string;
   };
+  // Project linkage — projectForecastLineId requires projectId to also be set.
+  projectId?: string;
+  projectForecastLineId?: string;
+  // Vendor and payment type — projectPaymentType requires projectVendorId.
+  projectVendorId?: string;
+  projectPaymentType?: 'ADVANCE' | 'MILESTONE' | 'FINAL' | 'REFUND';
 }
 
 export interface BulkTransactionItemBody {

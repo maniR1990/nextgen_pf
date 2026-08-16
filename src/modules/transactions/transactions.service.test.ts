@@ -1,10 +1,15 @@
 import {
   DuplicateDetectedError,
   NotFoundError,
+  ProjectClosedError,
+  ProjectForecastLineMismatchError,
+  ProjectNotFoundError,
+  ProjectVendorMismatchError,
   TxLockedError,
   ValidationError,
 } from '@/lib/api/errors';
 import { prisma } from '@/lib/db/prisma';
+import { ProjectsRepository } from '@/modules/projects/projects.repository';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransactionRepository } from './transactions.repository';
 import { TransactionService } from './transactions.service';
@@ -12,6 +17,7 @@ import { TransactionService } from './transactions.service';
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 vi.mock('./transactions.repository');
+vi.mock('@/modules/projects/projects.repository');
 
 // Prisma mock: $transaction executes the callback immediately with a mock client.
 // Each test can override individual methods on mockPrismaTx as needed.
@@ -62,9 +68,7 @@ describe('TransactionService.getPeriodSummary', () => {
       { type: 'EXPENSE', _sum: { amount: 24399.68 } },
       { type: 'INCOME', _sum: { amount: 85000 } },
     ] as never);
-    vi.mocked(TransactionRepository.sumUncategorizedByTypeForPeriod).mockResolvedValue(
-      [] as never,
-    );
+    vi.mocked(TransactionRepository.sumUncategorizedByTypeForPeriod).mockResolvedValue([] as never);
 
     const result = await TransactionService.getPeriodSummary('u1', 2026, 7);
 
@@ -83,9 +87,7 @@ describe('TransactionService.getPeriodSummary', () => {
       { type: 'SINKING_DEPOSIT', _sum: { amount: 2000 } },
       { type: 'INCOME', _sum: { amount: 42000 } },
     ] as never);
-    vi.mocked(TransactionRepository.sumUncategorizedByTypeForPeriod).mockResolvedValue(
-      [] as never,
-    );
+    vi.mocked(TransactionRepository.sumUncategorizedByTypeForPeriod).mockResolvedValue([] as never);
 
     const result = await TransactionService.getPeriodSummary('u1', 2026, 7);
 
@@ -227,6 +229,126 @@ describe('TransactionService.createTransaction — balance', () => {
   });
 });
 
+// ── createTransaction — project linkage ─────────────────────────────────────
+
+describe('TransactionService.createTransaction — project linkage', () => {
+  const baseDto = {
+    userId: 'u1',
+    date: '2026-07-01',
+    budgetPeriodYear: 2026,
+    budgetPeriodMonth: 7,
+    paymentSourceId: 'acc1',
+    paymentMethod: 'UPI',
+    type: 'EXPENSE',
+    amount: 500,
+  } as const;
+
+  const mockProject = {
+    id: 'p1',
+    userId: 'u1',
+    forecastLines: [{ id: 'line1', description: 'Tiling', forecastAmount: 80000 }],
+    vendors: [{ id: 'v1', name: 'Sharma Interiors', contractAmount: 450000, notes: null }],
+  };
+
+  it('throws ProjectNotFoundError when the project belongs to another user', async () => {
+    vi.mocked(ProjectsRepository.findById).mockResolvedValue({
+      ...mockProject,
+      userId: 'other',
+    } as never);
+    await expect(
+      TransactionService.createTransaction({ ...baseDto, projectId: 'p1' }),
+    ).rejects.toThrow(ProjectNotFoundError);
+  });
+
+  it('throws ProjectClosedError when the project is COMPLETED', async () => {
+    vi.mocked(ProjectsRepository.findById).mockResolvedValue({
+      ...mockProject,
+      status: 'COMPLETED',
+    } as never);
+    await expect(
+      TransactionService.createTransaction({ ...baseDto, projectId: 'p1' }),
+    ).rejects.toThrow(ProjectClosedError);
+  });
+
+  it('throws ProjectForecastLineMismatchError when the line is not on the project', async () => {
+    vi.mocked(ProjectsRepository.findById).mockResolvedValue(mockProject as never);
+    await expect(
+      TransactionService.createTransaction({
+        ...baseDto,
+        projectId: 'p1',
+        projectForecastLineId: 'not-a-real-line',
+      }),
+    ).rejects.toThrow(ProjectForecastLineMismatchError);
+  });
+
+  it('creates the transaction with projectId and projectForecastLineId when valid', async () => {
+    vi.mocked(ProjectsRepository.findById).mockResolvedValue(mockProject as never);
+    mockPrismaTx.financeTransaction.create.mockResolvedValue({
+      ...baseTx,
+      projectId: 'p1',
+      projectForecastLineId: 'line1',
+    });
+
+    await TransactionService.createTransaction({
+      ...baseDto,
+      projectId: 'p1',
+      projectForecastLineId: 'line1',
+    });
+
+    expect(mockPrismaTx.financeTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          project: { connect: { id: 'p1' } },
+          projectForecastLineId: 'line1',
+        }),
+      }),
+    );
+  });
+
+  it('does not look up a project when projectId is absent', async () => {
+    mockPrismaTx.financeTransaction.create.mockResolvedValue(baseTx);
+    await TransactionService.createTransaction({ ...baseDto });
+    expect(ProjectsRepository.findById).not.toHaveBeenCalled();
+  });
+
+  it('throws ProjectVendorMismatchError when the vendor is not on the project', async () => {
+    vi.mocked(ProjectsRepository.findById).mockResolvedValue(mockProject as never);
+    await expect(
+      TransactionService.createTransaction({
+        ...baseDto,
+        projectId: 'p1',
+        projectVendorId: 'not-a-real-vendor',
+      }),
+    ).rejects.toThrow(ProjectVendorMismatchError);
+  });
+
+  it('creates the transaction with projectVendorId and projectPaymentType when valid', async () => {
+    vi.mocked(ProjectsRepository.findById).mockResolvedValue(mockProject as never);
+    mockPrismaTx.financeTransaction.create.mockResolvedValue({
+      ...baseTx,
+      projectId: 'p1',
+      projectVendorId: 'v1',
+      projectPaymentType: 'ADVANCE',
+    });
+
+    await TransactionService.createTransaction({
+      ...baseDto,
+      projectId: 'p1',
+      projectVendorId: 'v1',
+      projectPaymentType: 'ADVANCE',
+    });
+
+    expect(mockPrismaTx.financeTransaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          projectVendorId: 'v1',
+          projectPaymentType: 'ADVANCE',
+        }),
+      }),
+    );
+  });
+});
+
 // ── createBulk — one bill, many items ───────────────────────────────────────
 
 describe('TransactionService.createBulk', () => {
@@ -291,7 +413,7 @@ describe('TransactionService.createBulk', () => {
     expect(created[2].idempotencyKey).not.toBe('key-1');
   });
 
-  it('never omits idempotencyKey on any row — a missing field is treated as null by Mongo\'s unique index and would collide across rows', async () => {
+  it("never omits idempotencyKey on any row — a missing field is treated as null by Mongo's unique index and would collide across rows", async () => {
     const created = await TransactionService.createBulk({ ...bulkDto, idempotencyKey: 'key-1' });
     for (const row of created as Array<{ idempotencyKey: unknown }>) {
       expect(row.idempotencyKey).toBeTruthy();
@@ -564,6 +686,87 @@ describe('TransactionService.patch — clearing a relation with an empty string'
     const call = mockPrismaTx.financeTransaction.update.mock.calls[0][0];
     expect(call.data.category).toBeUndefined();
     expect(call.data.toAccount).toBeUndefined();
+  });
+});
+
+describe('TransactionService.patch — project linkage', () => {
+  const projectTx = { ...baseTx, projectId: 'p1' };
+  const mockProject = {
+    id: 'p1',
+    userId: 'u1',
+    forecastLines: [{ id: 'line1', description: 'Tiling', forecastAmount: 80000 }],
+    vendors: [{ id: 'v1', name: 'Sharma Interiors', contractAmount: 450000, notes: null }],
+  };
+
+  it('throws ValidationError when the transaction has no project', async () => {
+    vi.mocked(TransactionRepository.findById).mockResolvedValue(baseTx as never);
+    await expect(
+      TransactionService.patch('tx1', 'u1', { projectForecastLineId: 'line1' }),
+    ).rejects.toThrow(ValidationError);
+    expect(ProjectsRepository.findById).not.toHaveBeenCalled();
+  });
+
+  it('throws ProjectForecastLineMismatchError when the line does not belong to the project', async () => {
+    vi.mocked(TransactionRepository.findById).mockResolvedValue(projectTx as never);
+    vi.mocked(ProjectsRepository.findById).mockResolvedValue(mockProject as never);
+    await expect(
+      TransactionService.patch('tx1', 'u1', { projectForecastLineId: 'not-a-real-line' }),
+    ).rejects.toThrow(ProjectForecastLineMismatchError);
+  });
+
+  it('throws ProjectVendorMismatchError when the vendor does not belong to the project', async () => {
+    vi.mocked(TransactionRepository.findById).mockResolvedValue(projectTx as never);
+    vi.mocked(ProjectsRepository.findById).mockResolvedValue(mockProject as never);
+    await expect(
+      TransactionService.patch('tx1', 'u1', { projectVendorId: 'not-a-real-vendor' }),
+    ).rejects.toThrow(ProjectVendorMismatchError);
+  });
+
+  it('updates the forecast line and vendor/payment type when both are valid', async () => {
+    vi.mocked(TransactionRepository.findById).mockResolvedValue(projectTx as never);
+    vi.mocked(ProjectsRepository.findById).mockResolvedValue(mockProject as never);
+    mockPrismaTx.financeTransaction.update.mockResolvedValue(projectTx);
+
+    await TransactionService.patch('tx1', 'u1', {
+      projectForecastLineId: 'line1',
+      projectVendorId: 'v1',
+      projectPaymentType: 'ADVANCE',
+    });
+
+    const call = mockPrismaTx.financeTransaction.update.mock.calls[0][0];
+    expect(call.data.projectForecastLineId).toBe('line1');
+    expect(call.data.projectVendorId).toBe('v1');
+    expect(call.data.projectPaymentType).toBe('ADVANCE');
+  });
+
+  it('clears the forecast line, vendor, and payment type when sent as empty strings', async () => {
+    vi.mocked(TransactionRepository.findById).mockResolvedValue(projectTx as never);
+    vi.mocked(ProjectsRepository.findById).mockResolvedValue(mockProject as never);
+    mockPrismaTx.financeTransaction.update.mockResolvedValue(projectTx);
+
+    await TransactionService.patch('tx1', 'u1', {
+      projectForecastLineId: '',
+      projectVendorId: '',
+    });
+
+    const call = mockPrismaTx.financeTransaction.update.mock.calls[0][0];
+    expect(call.data.projectForecastLineId).toBeNull();
+    expect(call.data.projectVendorId).toBeNull();
+    expect(call.data.projectPaymentType).toBeNull();
+  });
+
+  it('clearing the vendor wins over an explicit projectPaymentType in the same request', async () => {
+    vi.mocked(TransactionRepository.findById).mockResolvedValue(projectTx as never);
+    vi.mocked(ProjectsRepository.findById).mockResolvedValue(mockProject as never);
+    mockPrismaTx.financeTransaction.update.mockResolvedValue(projectTx);
+
+    await TransactionService.patch('tx1', 'u1', {
+      projectVendorId: '',
+      projectPaymentType: 'ADVANCE',
+    });
+
+    const call = mockPrismaTx.financeTransaction.update.mock.calls[0][0];
+    expect(call.data.projectPaymentType).toBeNull();
   });
 });
 

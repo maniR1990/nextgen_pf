@@ -114,8 +114,35 @@ export const CreateTransactionSchema = z
 
     // Recurring
     recSchedule: recScheduleSchema.optional(),
+
+    // Project linkage
+    projectId: z.string().optional(),
+    projectForecastLineId: z.string().optional(),
+    projectVendorId: z.string().optional(),
+    projectPaymentType: z.enum(['ADVANCE', 'MILESTONE', 'FINAL', 'REFUND']).optional(),
   })
   .superRefine((data, ctx) => {
+    if (data.projectForecastLineId && !data.projectId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'projectId is required when projectForecastLineId is set',
+        path: ['projectId'],
+      });
+    }
+    if (data.projectVendorId && !data.projectId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'projectId is required when projectVendorId is set',
+        path: ['projectId'],
+      });
+    }
+    if (data.projectPaymentType && !data.projectVendorId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'projectVendorId is required when projectPaymentType is set',
+        path: ['projectVendorId'],
+      });
+    }
     const requiredMerchant = [
       'EXPENSE',
       'INCOME',
@@ -133,7 +160,10 @@ export const CreateTransactionSchema = z
       });
     }
 
-    if (data.type === 'EXPENSE' && !data.categoryId) {
+    // Project-tagged expenses are exempt — a project's own forecast lines are the
+    // budget breakdown now, not the monthly category tree, so forcing a category
+    // pick here would just be friction with no reporting payoff.
+    if (data.type === 'EXPENSE' && !data.categoryId && !data.projectId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Please select a category',
@@ -154,7 +184,9 @@ export const CreateTransactionSchema = z
     // other money movement. fundId (below) stays optional: linking it to a Fund's
     // progress tracking is enrichment, not a prerequisite for logging the deposit.
     if (
-      (data.type === 'TRANSFER' || data.type === 'ATM_WITHDRAWAL' || data.type === 'SINKING_DEPOSIT') &&
+      (data.type === 'TRANSFER' ||
+        data.type === 'ATM_WITHDRAWAL' ||
+        data.type === 'SINKING_DEPOSIT') &&
       !data.toAccountId
     ) {
       ctx.addIssue({
@@ -188,6 +220,7 @@ export const ListTransactionsQuerySchema = z.object({
   toDate: z.string().optional(),
   categoryId: z.string().optional(),
   paymentSourceId: z.string().optional(),
+  projectId: z.string().optional(),
   status: z.string().optional(),
   search: z.string().max(100).optional(),
   sort: z.enum(['date_desc', 'date_asc']).default('date_desc'),
@@ -257,6 +290,11 @@ export const PatchTransactionSchema = z.object({
   ptsSpent: z.number().positive().optional(),
   ptsRate: z.number().positive().optional(),
   recSchedule: recScheduleSchema.optional(),
+  // Project linkage — projectId itself is deliberately not patchable (a transaction
+  // doesn't move between projects); these just reclassify it within its own project.
+  projectForecastLineId: z.string().optional(),
+  projectVendorId: z.string().optional(),
+  projectPaymentType: z.enum(['ADVANCE', 'MILESTONE', 'FINAL', 'REFUND']).optional(),
 });
 
 // ── check-duplicate ───────────────────────────────────────────────────────────

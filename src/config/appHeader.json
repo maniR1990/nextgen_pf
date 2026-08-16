@@ -8,6 +8,7 @@
     { "id": "dashboard", "label": "Dashboard", "href": "/dashboard" },
     { "id": "budget", "label": "Budget", "href": "/dashboard/budget" },
     { "id": "transactions", "label": "Transactions", "href": "/dashboard/transactions" },
+    { "id": "projects", "label": "Projects", "href": "/dashboard/projects" },
     { "id": "goals", "label": "Goals", "href": "/dashboard/goals" },
     { "id": "reports", "label": "Reports", "href": "/dashboard/reports" }
   ],
@@ -73,10 +74,16 @@
   "mobile": {
     "tabBar": [
       { "id": "home", "label": "Home", "icon": "home", "href": "/dashboard" },
-      { "id": "transactions", "label": "Transactions", "icon": "receipt-text", "href": "/dashboard/transactions" },
+      {
+        "id": "transactions",
+        "label": "Transactions",
+        "icon": "receipt-text",
+        "href": "/dashboard/transactions"
+      },
       { "id": "fab", "label": "", "icon": "plus", "isFab": true },
       { "id": "budget", "label": "Budget", "icon": "bar-chart", "href": "/dashboard/budget" },
-      { "id": "reports", "label": "Reports", "icon": "pie-chart", "href": "/dashboard/reports" }
+      { "id": "reports", "label": "Reports", "icon": "pie-chart", "href": "/dashboard/reports" },
+      { "id": "projects", "label": "Projects", "icon": "briefcase", "href": "/dashboard/projects" }
     ],
     "fabRadial": {
       "radiusPx": 80,

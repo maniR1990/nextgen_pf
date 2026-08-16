@@ -1,8 +1,8 @@
 import { BudgetPeriodInvalidError, CategoryNotFoundError } from '@/lib/api/errors';
 import { isDueInMonth } from '@/lib/utils/recurringFrequency';
-import type { RecurringFrequency } from '@prisma/client';
 import { FundsRepository } from '@/modules/funds/funds.repository';
 import { TransactionRepository } from '@/modules/transactions/transactions.repository';
+import type { RecurringFrequency } from '@prisma/client';
 import { BudgetEngineRepository } from './budget-engine.repository';
 import type { BudgetCategoryNode, BudgetGroup, BudgetSummaryResponse } from './budget-engine.types';
 
@@ -159,18 +159,24 @@ export const BudgetEngineService = {
       ),
     ];
 
-    const [spendRows, lastMonthSpendRows, uncategorizedRows, lastMonthUncategorizedRows, fundBalances, fundTargets] =
-      await Promise.all([
-        BudgetEngineRepository.findSpendByCategory(userId, categoryIds, year, month),
-        BudgetEngineRepository.findSpendByCategory(userId, categoryIds, prevYear, prevMonth),
-        // Lives on TransactionRepository, not here — "which transactions have no
-        // category, by type" is a transactions-domain query every caller shares.
-        TransactionRepository.sumUncategorizedByTypeForPeriod(userId, year, month),
-        TransactionRepository.sumUncategorizedByTypeForPeriod(userId, prevYear, prevMonth),
-        // Lifetime net saved toward each linked Fund — feeds the Transferred column.
-        TransactionRepository.sumTransfersByFund(userId, linkedFundIds),
-        FundsRepository.findTargetAmountsByIds(userId, linkedFundIds),
-      ]);
+    const [
+      spendRows,
+      lastMonthSpendRows,
+      uncategorizedRows,
+      lastMonthUncategorizedRows,
+      fundBalances,
+      fundTargets,
+    ] = await Promise.all([
+      BudgetEngineRepository.findSpendByCategory(userId, categoryIds, year, month),
+      BudgetEngineRepository.findSpendByCategory(userId, categoryIds, prevYear, prevMonth),
+      // Lives on TransactionRepository, not here — "which transactions have no
+      // category, by type" is a transactions-domain query every caller shares.
+      TransactionRepository.sumUncategorizedByTypeForPeriod(userId, year, month),
+      TransactionRepository.sumUncategorizedByTypeForPeriod(userId, prevYear, prevMonth),
+      // Lifetime net saved toward each linked Fund — feeds the Transferred column.
+      TransactionRepository.sumTransfersByFund(userId, linkedFundIds),
+      FundsRepository.findTargetAmountsByIds(userId, linkedFundIds),
+    ]);
 
     const planMap = new Map(budgetPlans.map((p) => [p.categoryId, p]));
     const spendMap = new Map(spendRows.map((r) => [r.categoryId!, r._sum.amount ?? 0]));

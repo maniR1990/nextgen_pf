@@ -60,6 +60,8 @@ model User {
 
   categories              Category[]
 
+  projects                Project[]
+
   funds                   Fund[]
 
   fundGroups              FundGroup[]
@@ -247,6 +249,37 @@ type FundAllocation {
   value     Float // 0.40 = 40% OR fixed INR amount
 
   priority  Int   @default(0)
+
+}
+
+
+
+// Embedded, not a top-level model — same choice as FundAllocation/Milestone above:
+// always accessed as part of one Project, never queried independently. `id` is a
+// plain string (like FinanceTransaction.billBatchId, not @db.ObjectId) generated
+// in the service layer, so a forecast line can still be individually addressed —
+// e.g. FinanceTransaction.projectForecastLineId in Slice 3 — without needing a
+// real Prisma relation into a composite type, which isn't supported.
+type ProjectForecastLine {
+
+  id String
+
+  // Free-text budget line item (e.g. "Tiling", "Electrical work") — not tied to
+  // the monthly-budget category tree, which doesn't map cleanly onto a one-off
+  // project's own breakdown.
+  description String
+
+  forecastAmount Float
+
+  // Optional — most budget lines in practice are one specific contractor's
+  // commitment ("Flooring" is Sharma Interiors' line item). References a
+  // ProjectVendor.id on the same Project; plain string, not a real relation,
+  // same reasoning as FinanceTransaction.projectVendorId. Lets Log Expense
+  // resolve the vendor+contract from the forecast line alone, instead of
+  // asking the user to name the same vendor twice.
+  vendorId String?
+
+  createdAt DateTime @default(now())
 
 }
 
@@ -575,6 +608,8 @@ model Account {
 
   recurringToAccounts  RecurringTemplate[]  @relation("RecurringTemplateToAccount")
 
+  fundedProjects       Project[]            @relation("ProjectFundingAccount")
+
 
 
   @@unique([userId, code])
@@ -819,6 +854,8 @@ model Fund {
 
   taggedTransactions FinanceTransaction[] @relation("TransactionFund")
 
+  fundedProjects     Project[]            @relation("ProjectFundingFund")
+
 
 
   @@index([userId])
@@ -828,6 +865,180 @@ model Fund {
   @@index([userId, groupId])
 
   @@index([userId, archivedAt])
+
+}
+
+
+
+// ─── Project — large one-off spend-down tracking (e.g. home renovation),───────
+// distinct from Fund (build-up savings). Funding is a plain reference to an
+// existing Account or Fund, not a separate allocation table — see plan doc
+// "cut #2": promote to a real multi-source model only if a genuine split need
+// shows up, don't build it speculatively.
+
+enum ProjectStatus {
+
+  PLANNING
+
+  ACTIVE
+
+  ON_HOLD
+
+  COMPLETED
+
+  ARCHIVED
+
+}
+
+// Display tag only, not a netting relationship — see plan doc "cut #1". Vendor
+// balance is always contractAmount minus the sum of non-REFUND transactions
+// against it; no transaction references which advance it "resolves".
+enum ProjectPaymentType {
+
+  ADVANCE
+
+  MILESTONE
+
+  FINAL
+
+  REFUND
+
+}
+
+// Embedded, same reasoning as ProjectForecastLine above — a vendor is always
+// accessed as part of one Project, 0-to-many, and needs a stable id purely so
+// FinanceTransaction.projectVendorId can reference it (plain string, not
+// @db.ObjectId, generated in the service layer).
+type ProjectVendor {
+
+  id String
+
+  name String
+
+  contractAmount Float
+
+  notes String?
+
+  createdAt DateTime @default(now())
+
+}
+
+// ─── Activity — non-financial, deliberately separate from the Ledger ────────
+// Three lightweight lists, not one polymorphic type — each has a genuinely
+// different shape (a to-do resolves, a note is a dated log entry, a reference
+// is a fact you look up). No assignees/dependencies/reminders — see plan doc
+// "feedback_scope-guardrail-personal-finance": stays a checklist and a
+// timeline, not a task-management system.
+
+enum ProjectNoteTag {
+
+  PROGRESS
+
+  DECISION
+
+  DELIVERY
+
+  RETURN
+
+  MISC
+
+}
+
+type ProjectTodo {
+
+  id String
+
+  text String
+
+  done Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+}
+
+type ProjectNote {
+
+  id String
+
+  text String
+
+  tag ProjectNoteTag
+
+  date DateTime @default(now())
+
+  // Required when tag == RETURN — links back to the original Ledger transaction.
+  // Does NOT auto-create a refund transaction; that's a separate, deliberate
+  // action — see plan doc "cut #3".
+  returnOfTransactionId String?
+
+  createdAt DateTime @default(now())
+
+}
+
+type ProjectReference {
+
+  id String
+
+  key String
+
+  value String
+
+  // Optional — references ProjectVendor.id, plain string, same reasoning as
+  // FinanceTransaction.projectVendorId.
+  vendorId String?
+
+  createdAt DateTime @default(now())
+
+}
+
+model Project {
+
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @db.ObjectId
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String
+
+  description String?
+
+  status      ProjectStatus @default(PLANNING)
+
+  startDate            DateTime?
+
+  targetCompletionDate DateTime?
+
+  completedAt          DateTime?
+
+  notes String?
+
+  forecastLines ProjectForecastLine[]
+
+  vendors ProjectVendor[]
+
+  todos         ProjectTodo[]
+  activityNotes ProjectNote[]
+  references    ProjectReference[]
+
+  transactions FinanceTransaction[] @relation("ProjectTransactions")
+
+  // Exactly one of these should be set, never both (enforced in projects.schema.ts).
+  fundingAccountId String?  @db.ObjectId
+
+  fundingAccount   Account? @relation("ProjectFundingAccount", fields: [fundingAccountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  fundingFundId String?  @db.ObjectId
+
+  fundingFund   Fund?    @relation("ProjectFundingFund", fields: [fundingFundId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+
+  @@index([userId, status])
 
 }
 
@@ -874,6 +1085,22 @@ model FinanceTransaction {
   categoryId String?   @db.ObjectId // leaf category (level 2 preferred)
 
   category   Category? @relation("TransactionCategory", fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  projectId String?  @db.ObjectId
+
+  project   Project? @relation("ProjectTransactions", fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // References ProjectForecastLine.id, an embedded composite type's own plain-string
+  // id (see the type's doc comment) — not @db.ObjectId, and not a real Prisma relation,
+  // same reasoning as billBatchId below. Reconciled against project.forecastLines[]
+  // in the service layer.
+  projectForecastLineId String?
+
+  // Same reasoning — references ProjectVendor.id, a plain string, reconciled against
+  // project.vendors[] in the service layer.
+  projectVendorId String?
+
+  projectPaymentType ProjectPaymentType?
 
 
 
@@ -984,6 +1211,10 @@ model FinanceTransaction {
   @@index([fundGroupId])
 
   @@index([userId, fundGroupId])
+
+  @@index([projectId])
+
+  @@index([userId, projectId])
 
   @@index([fundId])
 

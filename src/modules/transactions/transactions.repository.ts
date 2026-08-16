@@ -6,6 +6,7 @@ export const TX_INCLUDE = {
   category: { select: { id: true, name: true, path: true } },
   account: { select: { id: true, name: true, type: true } },
   toAccount: { select: { id: true, name: true } },
+  project: { select: { id: true, name: true } },
   attachmentFiles: {
     where: { deletedAt: null },
     select: {
@@ -39,6 +40,7 @@ export const TransactionRepository = {
       toDate?: Date;
       categoryId?: string;
       paymentSourceId?: string;
+      projectId?: string;
       status?: FinanceTransactionStatus;
       search?: string;
       sort?: 'date_desc' | 'date_asc';
@@ -55,6 +57,7 @@ export const TransactionRepository = {
       toDate,
       categoryId,
       paymentSourceId,
+      projectId,
       status,
       search,
       sort = 'date_desc',
@@ -69,6 +72,7 @@ export const TransactionRepository = {
       ...(budgetPeriodMonth != null && { budgetPeriodMonth }),
       ...(categoryId && { categoryId }),
       ...(paymentSourceId && { accountId: paymentSourceId }),
+      ...(projectId && { projectId }),
       ...(status && { status }),
       ...(fromDate || toDate
         ? { date: { ...(fromDate && { gte: fromDate }), ...(toDate && { lte: toDate }) } }
@@ -264,6 +268,10 @@ export const TransactionRepository = {
         budgetPeriodYear: year,
         budgetPeriodMonth: month,
         status: { not: 'VOID' },
+        // A project is funded from savings, not this month's income — its spend must
+        // never count against the monthly budget/Pulse Strip figures this function
+        // feeds. MongoDB stores absent fields differently from explicit null.
+        OR: [{ projectId: null }, { projectId: { isSet: false } }],
       },
       _sum: { amount: true },
     }),

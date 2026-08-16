@@ -366,6 +366,9 @@
     &--debit      { border-left-color: var(--color-error); }
     &--investment { border-left-color: var(--color-info); }
     &--neutral    { border-left-color: var(--color-text-muted); }
+    // Accent (purple), deliberately not --color-brand — brand is a near-identical
+    // blue to --color-info/investment and read as the same color at a glance.
+    &--project    { border-left-color: var(--color-accent); }
 
     &--clickable {
       cursor: pointer;
@@ -426,6 +429,7 @@
     &--debit      { background: var(--color-error); }
     &--investment { background: var(--color-info); }
     &--neutral    { background: var(--color-text-muted); }
+    &--project    { background: var(--color-accent); }
   }
 
   &__card-body {
@@ -433,6 +437,29 @@
     flex: 1;
     min-width: 0;
     gap: 2px;
+  }
+
+  &__card-merchant-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1-5);
+    min-width: 0;
+  }
+
+  // Compound with .chip (not just the bare class) so this reliably outranks
+  // .chip's own base rule — which sets these same custom properties to the
+  // brand tint — regardless of SCSS partial import order.
+  &__card-project-chip.chip {
+    // Same formula the .chip component uses for its own color variants — accent
+    // (purple), not brand, so it doesn't read as the same blue as Investment.
+    --chip-bg: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-surface));
+    --chip-border: color-mix(in srgb, var(--color-accent) 40%, transparent);
+    --chip-text: var(--color-accent);
+
+    flex-shrink: 0;
+    min-height: auto;
+    padding: 1px var(--space-1-5);
+    font-size: 10px;
   }
 
   &__card-merchant {
@@ -497,6 +524,7 @@
     &--credit     { color: var(--color-success); }
     &--investment { color: var(--color-info); }
     &--neutral    { color: var(--color-text-muted); }
+    &--project    { color: var(--color-accent); }
   }
 
   // Invisible trigger for infinite scroll — sized so IntersectionObserver has something

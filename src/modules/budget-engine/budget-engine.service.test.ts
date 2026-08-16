@@ -260,7 +260,13 @@ describe('BudgetEngineService.getMonthlySummary', () => {
       { ...GROCERIES, linkedFundId: 'fund1' },
     ] as never);
     vi.mocked(BudgetEngineRepository.findBudgetPlans).mockResolvedValue([
-      { categoryId: 'cat1', plannedAmount: 500, isRecurring: true, frequency: 'HALF_YEARLY', months: [1, 7] },
+      {
+        categoryId: 'cat1',
+        plannedAmount: 500,
+        isRecurring: true,
+        frequency: 'HALF_YEARLY',
+        months: [1, 7],
+      },
     ] as never);
     vi.mocked(BudgetEngineRepository.findSpendByCategory).mockResolvedValue([] as never);
     vi.mocked(TransactionRepository.sumTransfersByFund).mockResolvedValue(
@@ -299,7 +305,15 @@ describe('BudgetEngineService.getMonthlySummary', () => {
 describe('BudgetEngineService.seedRecurring', () => {
   it('seeds a MONTHLY plan into the next month regardless of frequency', async () => {
     vi.mocked(BudgetEngineRepository.findRecurringPlans).mockResolvedValue([
-      { categoryId: 'cat1', plannedAmount: 3000, frequency: 'MONTHLY', months: [], isUnplanned: false, dueDay: null, carryOverEnabled: false },
+      {
+        categoryId: 'cat1',
+        plannedAmount: 3000,
+        frequency: 'MONTHLY',
+        months: [],
+        isUnplanned: false,
+        dueDay: null,
+        carryOverEnabled: false,
+      },
     ] as never);
     vi.mocked(BudgetEngineRepository.existingPlanCategoryIds).mockResolvedValue(new Set());
 
@@ -317,7 +331,15 @@ describe('BudgetEngineService.seedRecurring', () => {
 
   it('does not seed a HALF_YEARLY plan into a month outside its due months', async () => {
     vi.mocked(BudgetEngineRepository.findRecurringPlans).mockResolvedValue([
-      { categoryId: 'cat1', plannedAmount: 500, frequency: 'HALF_YEARLY', months: [1, 7], isUnplanned: false, dueDay: null, carryOverEnabled: false },
+      {
+        categoryId: 'cat1',
+        plannedAmount: 500,
+        frequency: 'HALF_YEARLY',
+        months: [1, 7],
+        isUnplanned: false,
+        dueDay: null,
+        carryOverEnabled: false,
+      },
     ] as never);
     vi.mocked(BudgetEngineRepository.existingPlanCategoryIds).mockResolvedValue(new Set());
 
@@ -329,7 +351,15 @@ describe('BudgetEngineService.seedRecurring', () => {
 
   it('seeds a HALF_YEARLY plan into a month that is in its due months', async () => {
     vi.mocked(BudgetEngineRepository.findRecurringPlans).mockResolvedValue([
-      { categoryId: 'cat1', plannedAmount: 500, frequency: 'HALF_YEARLY', months: [1, 7], isUnplanned: false, dueDay: null, carryOverEnabled: false },
+      {
+        categoryId: 'cat1',
+        plannedAmount: 500,
+        frequency: 'HALF_YEARLY',
+        months: [1, 7],
+        isUnplanned: false,
+        dueDay: null,
+        carryOverEnabled: false,
+      },
     ] as never);
     vi.mocked(BudgetEngineRepository.existingPlanCategoryIds).mockResolvedValue(new Set());
 
@@ -340,7 +370,15 @@ describe('BudgetEngineService.seedRecurring', () => {
 
   it('does not seed a non-monthly plan with no due months configured yet (fail safe)', async () => {
     vi.mocked(BudgetEngineRepository.findRecurringPlans).mockResolvedValue([
-      { categoryId: 'cat1', plannedAmount: 1200, frequency: 'QUARTERLY', months: [], isUnplanned: false, dueDay: null, carryOverEnabled: false },
+      {
+        categoryId: 'cat1',
+        plannedAmount: 1200,
+        frequency: 'QUARTERLY',
+        months: [],
+        isUnplanned: false,
+        dueDay: null,
+        carryOverEnabled: false,
+      },
     ] as never);
     vi.mocked(BudgetEngineRepository.existingPlanCategoryIds).mockResolvedValue(new Set());
 

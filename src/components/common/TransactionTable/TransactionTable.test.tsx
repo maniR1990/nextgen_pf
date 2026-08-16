@@ -7,42 +7,10 @@ import type { TransactionRow } from './TransactionTable';
 afterEach(() => cleanup());
 
 const ROWS: TransactionRow[] = [
-  {
-    id: '1',
-    date: '2026-06-13',
-    merchant: 'Zepto',
-    amount: 890,
-    amountSign: 'debit',
-    category: 'Groceries',
-    status: 'cleared',
-  },
-  {
-    id: '2',
-    date: '2026-06-12',
-    merchant: 'HDFC Salary',
-    amount: 85000,
-    amountSign: 'credit',
-    category: 'Income',
-    status: 'cleared',
-  },
-  {
-    id: '3',
-    date: '2026-06-11',
-    merchant: 'Swiggy',
-    amount: 320,
-    amountSign: 'debit',
-    category: 'Dining',
-    status: 'pending',
-  },
-  {
-    id: '4',
-    date: '2026-06-10',
-    merchant: 'Old Charge',
-    amount: 150,
-    amountSign: 'debit',
-    category: 'Misc',
-    status: 'voided',
-  },
+  { id: '1', date: '2026-06-13', merchant: 'Zepto', amount: 890, amountSign: 'debit' },
+  { id: '2', date: '2026-06-12', merchant: 'HDFC Salary', amount: 85000, amountSign: 'credit' },
+  { id: '3', date: '2026-06-11', merchant: 'Swiggy', amount: 320, amountSign: 'debit' },
+  { id: '4', date: '2026-06-10', merchant: 'Old Charge', amount: 150, amountSign: 'debit' },
 ];
 
 describe('TransactionTable', () => {
@@ -61,16 +29,6 @@ describe('TransactionTable', () => {
     it('shows credit amount with plus sign', () => {
       render(<TransactionTable rows={ROWS} />);
       expect(screen.getAllByText('+₹85,000').length).toBeGreaterThan(0);
-    });
-
-    it('shows pending status', () => {
-      render(<TransactionTable rows={ROWS} />);
-      expect(screen.getAllByText(/pending/i).length).toBeGreaterThan(0);
-    });
-
-    it('shows voided status', () => {
-      render(<TransactionTable rows={ROWS} />);
-      expect(screen.getAllByText(/voided/i).length).toBeGreaterThan(0);
     });
 
     it('renders empty state when no rows', () => {
