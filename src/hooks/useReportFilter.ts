@@ -25,6 +25,10 @@ export interface ReportFilterTypeBreakdown {
    *  "Actual Invested"). */
   investmentActual?: number;
   sinkingActual?: number;
+  /** EXPENSE/INVESTMENT only — `actual / days elapsed`, same formula the dashboard
+   *  header's own Pace figure uses, scoped to this one flow type. Null for INCOME and
+   *  null outside the month currently in progress. */
+  pacePerDay: number | null;
 }
 
 export interface ReportFilterResult {
@@ -44,6 +48,8 @@ export interface ReportFilterResult {
   /** Set only when `type=INVESTMENT` is selected directly (byType is null in that case). */
   investmentActual?: number;
   sinkingActual?: number;
+  /** Set only when `type=EXPENSE` or `type=INVESTMENT` is selected directly. */
+  pacePerDay?: number | null;
 }
 
 function buildQuery(params: ReportFilterParams): string {

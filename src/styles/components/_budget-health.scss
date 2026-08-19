@@ -77,6 +77,14 @@
   font-variant-numeric: tabular-nums;
   color: var(--color-text);
   text-align: right;
+
+  // Income's Variance row when no Planned Target is set — a plain prompt instead of a
+  // colored figure, since there's nothing real to compare against yet.
+  &--muted {
+    font-weight: var(--font-variation-regular);
+    font-style: italic;
+    color: var(--color-text-muted);
+  }
 }
 
 // "of which Investment ₹X · Sinking ₹Y" — the split behind "Actual Invested", indented

@@ -55,6 +55,10 @@ interface CardProps {
    *  this it would silently be invisible here despite counting toward "Actual Invested". */
   investmentActual?: number;
   sinkingActual?: number;
+  /** Expenses/Investments only — see ReportFilterTypeBreakdown.pacePerDay. Null/undefined
+   *  (a past/future month, or the Income card) simply omits the row rather than showing
+   *  a rate that isn't actually live. */
+  pacePerDay?: number | null;
 }
 
 function HealthCard({
@@ -66,6 +70,7 @@ function HealthCard({
   unplannedSpend,
   investmentActual,
   sinkingActual,
+  pacePerDay,
 }: CardProps) {
   const labels = type ? ROW_LABELS[type] : GENERIC_LABELS;
   // Expenses' 3rd row is a plain "how much is left" (planned minus spent) — formatINR's
@@ -91,6 +96,12 @@ function HealthCard({
         <span className="budget-health__label">{labels.actual}</span>
         <span className="budget-health__value">{formatINR(actual, 2)}</span>
       </div>
+      {pacePerDay !== null && pacePerDay !== undefined && (
+        <div className="budget-health__subrow">
+          <span>Pace</span>
+          <span className="budget-health__subrow-value">{formatINR(pacePerDay, 0)}/day</span>
+        </div>
+      )}
       {type === 'INVESTMENT' && investmentActual !== undefined && sinkingActual !== undefined && (
         <>
           <div className="budget-health__subrow">
@@ -104,23 +115,36 @@ function HealthCard({
         </>
       )}
       {type === 'EXPENSE' && unplannedSpend !== undefined && (
-        <div className="budget-health__row">
-          <span className="budget-health__label">Unplanned Spend</span>
-          <span className="budget-health__value">{formatINR(unplannedSpend, 2)}</span>
+        // Sub-row, not a full row — Unplanned is a breakdown of Actual Spent above (every
+        // unplanned rupee is already counted in it), not a 4th step toward Remaining. Full
+        // row weight implied "Planned → Actual → Unplanned → Remaining" math that doesn't
+        // happen; Remaining is Planned minus Actual only.
+        <div className="budget-health__subrow">
+          <span>Unplanned</span>
+          <span className="budget-health__subrow-value">{formatINR(unplannedSpend, 2)}</span>
         </div>
       )}
       <div className="budget-health__row">
         <span className="budget-health__label">{labels.variance}</span>
-        <span
-          className="budget-health__value"
-          style={{ color: variance === null ? undefined : varianceColor(type, variance) }}
-        >
-          {rowValue === null
-            ? 'N/A'
-            : showAsRemaining
-              ? formatINR(rowValue, 2)
-              : formatSigned(rowValue)}
-        </span>
+        {type === 'INCOME' && planned === 0 ? (
+          // A variance against a target that was never set isn't a real signal — it was
+          // just restating the full received amount and coloring it green. Once a target
+          // exists this falls through to the normal colored variance below as usual.
+          <span className="budget-health__value budget-health__value--muted">
+            set a target to compare
+          </span>
+        ) : (
+          <span
+            className="budget-health__value"
+            style={{ color: variance === null ? undefined : varianceColor(type, variance) }}
+          >
+            {rowValue === null
+              ? 'N/A'
+              : showAsRemaining
+                ? formatINR(rowValue, 2)
+                : formatSigned(rowValue)}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -138,6 +162,7 @@ function byTypeCard(b: ReportFilterTypeBreakdown, unplannedSpend?: number) {
       unplannedSpend={b.type === 'EXPENSE' ? unplannedSpend : undefined}
       investmentActual={b.investmentActual}
       sinkingActual={b.sinkingActual}
+      pacePerDay={b.pacePerDay}
     />
   );
 }
@@ -153,7 +178,11 @@ export interface BudgetHealthGridInnerProps {
   unplannedSpend?: number;
 }
 
-export function BudgetHealthGridInner({ data, selectedType, unplannedSpend }: BudgetHealthGridInnerProps) {
+export function BudgetHealthGridInner({
+  data,
+  selectedType,
+  unplannedSpend,
+}: BudgetHealthGridInnerProps) {
   if (data.count === 0) {
     return <p className="budget-health__empty">No transactions match these filters.</p>;
   }
@@ -185,6 +214,7 @@ export function BudgetHealthGridInner({ data, selectedType, unplannedSpend }: Bu
         variance={data.variance}
         investmentActual={data.investmentActual}
         sinkingActual={data.sinkingActual}
+        pacePerDay={data.pacePerDay}
       />
     </div>
   );
@@ -198,7 +228,13 @@ export interface BudgetHealthGridProps {
   categoryIds: string[];
 }
 
-export function BudgetHealthGrid({ year, month, type, accountId, categoryIds }: BudgetHealthGridProps) {
+export function BudgetHealthGrid({
+  year,
+  month,
+  type,
+  accountId,
+  categoryIds,
+}: BudgetHealthGridProps) {
   const { data, isLoading } = useReportFilter({
     year,
     month,

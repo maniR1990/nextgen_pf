@@ -15,7 +15,15 @@ const BY_TYPE_RESULT: ReportFilterResult = {
   pctOfIncome: null,
   incomeForPeriod: 260991,
   byType: [
-    { type: 'INCOME', actual: 260991, recurringActual: 0, count: 6, planned: 0, variance: 260991, pctOfIncome: 100 },
+    {
+      type: 'INCOME',
+      actual: 260991,
+      recurringActual: 0,
+      count: 6,
+      planned: 0,
+      variance: 260991,
+      pctOfIncome: 100,
+    },
     {
       type: 'EXPENSE',
       actual: 74829.72,
@@ -25,7 +33,15 @@ const BY_TYPE_RESULT: ReportFilterResult = {
       variance: -14648.28,
       pctOfIncome: 28.7,
     },
-    { type: 'INVESTMENT', actual: 0, recurringActual: 0, count: 1, planned: 63500, variance: -63500, pctOfIncome: 0 },
+    {
+      type: 'INVESTMENT',
+      actual: 0,
+      recurringActual: 0,
+      count: 1,
+      planned: 63500,
+      variance: -63500,
+      pctOfIncome: 0,
+    },
   ],
 };
 
@@ -79,11 +95,25 @@ describe('BudgetHealthGridInner', () => {
     expect(shortfall).toHaveStyle({ color: 'var(--color-error)' });
   });
 
-  it("shows Income's surplus with an explicit plus sign, in green", () => {
-    render(<BudgetHealthGridInner data={BY_TYPE_RESULT} selectedType="all" />);
-    const surplus = screen.getByText('+₹2,60,991.00');
+  it("shows Income's surplus with an explicit plus sign, in green, once a real target is set", () => {
+    const withTarget: ReportFilterResult = {
+      ...BY_TYPE_RESULT,
+      byType: BY_TYPE_RESULT.byType!.map((b) =>
+        b.type === 'INCOME' ? { ...b, planned: 200000, variance: 260991 - 200000 } : b,
+      ),
+    };
+    render(<BudgetHealthGridInner data={withTarget} selectedType="all" />);
+    const surplus = screen.getByText('+₹60,991.00');
     expect(surplus).toBeInTheDocument();
     expect(surplus).toHaveStyle({ color: 'var(--color-success)' });
+  });
+
+  it('shows a plain prompt instead of a numeric variance when no Planned Target is set', () => {
+    // BY_TYPE_RESULT's INCOME entry has planned: 0 — the same "no target configured" case
+    // the Planned Target row itself renders as "Not set", not a real zero-rupee target.
+    render(<BudgetHealthGridInner data={BY_TYPE_RESULT} selectedType="all" />);
+    expect(screen.getByText('set a target to compare')).toBeInTheDocument();
+    expect(screen.queryByText('+₹2,60,991.00')).not.toBeInTheDocument();
   });
 
   it('always shows exactly 2 decimal places, even for whole-rupee amounts', () => {
@@ -99,20 +129,20 @@ describe('BudgetHealthGridInner', () => {
   });
 
   describe('unplanned spend row', () => {
-    it("shows Unplanned Spend on the Expenses card only, when the figure is provided", () => {
+    it('shows Unplanned on the Expenses card only, when the figure is provided', () => {
       render(
         <BudgetHealthGridInner data={BY_TYPE_RESULT} selectedType="all" unplannedSpend={5200} />,
       );
 
-      expect(screen.getByText('Unplanned Spend')).toBeInTheDocument();
+      expect(screen.getByText('Unplanned')).toBeInTheDocument();
       expect(screen.getByText('₹5,200.00')).toBeInTheDocument();
       // Only one such row — not duplicated onto Income/Investment.
-      expect(screen.getAllByText('Unplanned Spend')).toHaveLength(1);
+      expect(screen.getAllByText('Unplanned')).toHaveLength(1);
     });
 
     it('omits the row entirely when no unplanned figure is supplied', () => {
       render(<BudgetHealthGridInner data={BY_TYPE_RESULT} selectedType="all" />);
-      expect(screen.queryByText('Unplanned Spend')).not.toBeInTheDocument();
+      expect(screen.queryByText('Unplanned')).not.toBeInTheDocument();
     });
 
     it('does not show the row on the single-card narrowed view, even for type=EXPENSE', () => {
@@ -130,11 +160,11 @@ describe('BudgetHealthGridInner', () => {
       render(
         <BudgetHealthGridInner data={singleResult} selectedType="EXPENSE" unplannedSpend={5200} />,
       );
-      expect(screen.queryByText('Unplanned Spend')).not.toBeInTheDocument();
+      expect(screen.queryByText('Unplanned')).not.toBeInTheDocument();
     });
   });
 
-  it('renders a single card, adopting the selected type\'s labels, once a type filter narrows the result', () => {
+  it("renders a single card, adopting the selected type's labels, once a type filter narrows the result", () => {
     const singleResult: ReportFilterResult = {
       count: 42,
       actual: 12000,

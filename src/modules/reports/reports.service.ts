@@ -30,6 +30,14 @@ export interface ReportFilterTypeBreakdown {
    *  savings it is. See getFilteredReport. */
   investmentActual?: number;
   sinkingActual?: number;
+  /** EXPENSE/INVESTMENT only — `actual / days elapsed so far`, same formula the
+   *  dashboard header's "Pace: ₹X/day" already uses, just scoped to this one flow type
+   *  instead of blended total outflow. Null for INCOME (a pace framing doesn't apply to
+   *  money coming in) and null whenever the selected month isn't the one currently in
+   *  progress — a past month has no more pace left to reach, a future month has no
+   *  transactions yet, so showing a rate in either case would misleadingly imply an
+   *  in-progress projection that isn't happening. See getFilteredReport. */
+  pacePerDay: number | null;
 }
 
 export interface ReportFilterResult {
@@ -67,6 +75,9 @@ export interface ReportFilterResult {
    *  — same Investment/Sinking split as ReportFilterTypeBreakdown, see there for why. */
   investmentActual?: number;
   sinkingActual?: number;
+  /** Set only when `type=EXPENSE` or `type=INVESTMENT` is selected directly (byType is
+   *  null in that case) — same pace figure as ReportFilterTypeBreakdown, see there. */
+  pacePerDay?: number | null;
 }
 
 export interface BudgetFlagCategory {
@@ -161,10 +172,7 @@ export const ReportsService = {
     };
   },
 
-  async getFilteredReport(
-    userId: string,
-    filters: ReportFilterQuery,
-  ): Promise<ReportFilterResult> {
+  async getFilteredReport(userId: string, filters: ReportFilterQuery): Promise<ReportFilterResult> {
     // A selected category almost never has transactions tagged with its own id directly
     // — real spend lives on the leaf categories underneath it ("Groceries" itself is
     // rarely picked at entry time; "Supermarket" under it is). So picking "Groceries" in
@@ -185,10 +193,13 @@ export const ReportsService = {
     const hasCategory = !!filters.categoryIds && filters.categoryIds.length > 0;
     const hasPeriod = filters.year !== undefined && filters.month !== undefined;
 
-    const summary = hasPeriod && !filters.accountId
-      ? await BudgetEngineService.getMonthlySummary(userId, filters.year!, filters.month!)
+    const summary =
+      hasPeriod && !filters.accountId
+        ? await BudgetEngineService.getMonthlySummary(userId, filters.year!, filters.month!)
+        : null;
+    const periodTotals = hasPeriod
+      ? await getPeriodTotals(userId, filters.year!, filters.month!)
       : null;
-    const periodTotals = hasPeriod ? await getPeriodTotals(userId, filters.year!, filters.month!) : null;
 
     function plannedFor(type: 'EXPENSE' | 'INCOME' | 'INVESTMENT' | undefined): number | null {
       if (!summary) return null;
@@ -219,6 +230,22 @@ export const ReportsService = {
     }
 
     const incomeForPeriod = periodTotals ? periodTotals.totalIncome : null;
+
+    // `actual / days elapsed so far` — only meaningful for the month currently in
+    // progress. A past month has no more pace left to reach (it's over); a future month
+    // has no transactions yet. Both would render a rate that looks live but isn't, so
+    // this returns null outside the current real-world month rather than showing one.
+    const now = new Date();
+    const isCurrentMonth =
+      hasPeriod && filters.year === now.getFullYear() && filters.month === now.getMonth() + 1;
+    const dayOfMonth = now.getDate();
+    function pacePerDayFor(
+      type: 'EXPENSE' | 'INCOME' | 'INVESTMENT',
+      actual: number,
+    ): number | null {
+      if (type === 'INCOME' || !isCurrentMonth || dayOfMonth <= 0) return null;
+      return Math.round(actual / dayOfMonth);
+    }
 
     // Sinking Deposit isn't a selectable report `type` (it's tracked via Funds, not
     // categories — see ReportFilterTypeBreakdown's doc comment), but it's savings just
@@ -256,7 +283,11 @@ export const ReportsService = {
           const { actual, count, recurringActual, investmentActual, sinkingActual } =
             type === 'INVESTMENT'
               ? await investmentPlusSinking(base)
-              : { ...(await TransactionRepository.sumFiltered(userId, { ...base, type })), investmentActual: undefined, sinkingActual: undefined };
+              : {
+                  ...(await TransactionRepository.sumFiltered(userId, { ...base, type })),
+                  investmentActual: undefined,
+                  sinkingActual: undefined,
+                };
           const planned = plannedFor(type);
           return {
             type,
@@ -268,6 +299,7 @@ export const ReportsService = {
             pctOfIncome: pctOfIncomeFor(actual),
             investmentActual,
             sinkingActual,
+            pacePerDay: pacePerDayFor(type, actual),
           };
         }),
       );
@@ -285,15 +317,32 @@ export const ReportsService = {
       };
     }
 
-    const base = { year: filters.year, month: filters.month, accountId: filters.accountId, categoryIds };
+    const base = {
+      year: filters.year,
+      month: filters.month,
+      accountId: filters.accountId,
+      categoryIds,
+    };
     const { actual, count, recurringActual, investmentActual, sinkingActual } =
       filters.type === 'INVESTMENT'
         ? await investmentPlusSinking(base)
-        : { ...(await TransactionRepository.sumFiltered(userId, { ...base, type: filters.type })), investmentActual: undefined, sinkingActual: undefined };
+        : {
+            ...(await TransactionRepository.sumFiltered(userId, { ...base, type: filters.type })),
+            investmentActual: undefined,
+            sinkingActual: undefined,
+          };
 
     const planned = plannedFor(filters.type);
     const variance = planned !== null ? actual - planned : null;
-    const pctOfPlanned = planned !== null && planned > 0 ? Math.round((actual / planned) * 100) : null;
+    const pctOfPlanned =
+      planned !== null && planned > 0 ? Math.round((actual / planned) * 100) : null;
+    // Only a concrete EXPENSE/INVESTMENT type filter anchors pace to one flow — "a
+    // category selected, no type" can span more than one type, same reasoning as
+    // plannedFor/pctOfPlanned not being computed in that case either.
+    const pacePerDay =
+      filters.type === 'EXPENSE' || filters.type === 'INVESTMENT'
+        ? pacePerDayFor(filters.type, actual)
+        : null;
 
     return {
       actual,
@@ -307,6 +356,7 @@ export const ReportsService = {
       byType: null,
       investmentActual,
       sinkingActual,
+      pacePerDay,
     };
   },
 };

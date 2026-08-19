@@ -211,6 +211,13 @@ export const TransactionRepository = {
     const where: Prisma.FinanceTransactionWhereInput = {
       userId,
       status: { not: 'VOID' },
+      // Same reasoning as sumByTypeForPeriod below: a project is funded from savings,
+      // not this month's income, so its spend must never count toward a monthly-budget
+      // "actual" figure. This backs the Reports filter tool / Budget Health Grid, which
+      // was previously missing this filter entirely — its "Actual Spent"/"Actual
+      // Invested" disagreed with the KPI strip's "Total Expenses" by exactly the
+      // period's project-tagged spend.
+      OR: [{ projectId: null }, { projectId: { isSet: false } }],
       ...(filters.year !== undefined &&
         filters.month !== undefined && {
           budgetPeriodYear: filters.year,
