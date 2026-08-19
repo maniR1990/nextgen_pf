@@ -36,7 +36,15 @@ export interface VendorSummary {
   createdAt: string;
 }
 
-export type ProjectNoteTag = 'PROGRESS' | 'DECISION' | 'DELIVERY' | 'RETURN' | 'MISC';
+export type ProjectNoteTag =
+  | 'PROGRESS'
+  | 'DECISION'
+  | 'DELIVERY'
+  | 'ON_HOLD'
+  | 'ISSUE'
+  | 'CONTACT'
+  | 'RETURN'
+  | 'MISC';
 
 export interface TodoSummary {
   id: string;

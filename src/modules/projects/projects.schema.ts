@@ -76,7 +76,16 @@ export const UpdateVendorSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
-const NOTE_TAGS = ['PROGRESS', 'DECISION', 'DELIVERY', 'RETURN', 'MISC'] as const;
+const NOTE_TAGS = [
+  'PROGRESS',
+  'DECISION',
+  'DELIVERY',
+  'ON_HOLD',
+  'ISSUE',
+  'CONTACT',
+  'RETURN',
+  'MISC',
+] as const;
 
 export const CreateActivityItemSchema = z
   .discriminatedUnion('kind', [

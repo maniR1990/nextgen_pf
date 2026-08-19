@@ -5,12 +5,16 @@
 .projects-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  // Tighter on mobile, same reasoning as .project-detail's own mobile
+  // tightening — a single stacked column doesn't need desktop-card spacing.
+  gap: var(--space-3);
   max-width: 720px;
-  margin: 0 auto;
-  padding: var(--space-4);
+  margin: 0;
+  padding: 0;
 
   @include m.respond-to(md) {
+    gap: var(--space-6);
+    margin: 0 auto;
     padding: var(--space-6);
   }
 }
@@ -25,7 +29,7 @@
 .projects-page__section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-1-5);
 }
 
 .projects-page__section-label {
@@ -39,7 +43,7 @@
 .projects-page__list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-1-5);
 }
 
 // ─── Project card ────────────────────────────────────────────────────────────
@@ -47,11 +51,14 @@
 .project-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
   background: var(--comp-card-bg);
   border: var(--border-width) solid var(--comp-card-border);
-  border-radius: var(--comp-card-radius);
-  padding: var(--comp-card-padding);
+  border-radius: var(--radius-md);
+  // Was --comp-card-padding (space-6/24px) — the shared token for a big
+  // feature card, way roomier than a dense list row needs. Scoped down here
+  // only; other cards using that token elsewhere are untouched.
+  padding: var(--space-2) var(--space-3);
   text-decoration: none;
   color: inherit;
   transition: var(--transition-fast);
@@ -70,24 +77,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .project-card__name {
   font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-sm);
 }
 
 .project-card__description {
   color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   margin: 0;
 }
 
 .project-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1) var(--space-4);
+  gap: var(--space-0-5) var(--space-3);
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
@@ -97,7 +104,15 @@
 .project-detail {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  // Tighter on mobile — the same space-4 rhythm that's right for a wide
+  // desktop layout reads as excess air once everything's stacked in one
+  // narrow column (nav → tabs → Log expense → tab content, each getting a
+  // full 16px gap even though there's no competing content beside them).
+  gap: var(--space-2);
+
+  @include m.respond-to(md) {
+    gap: var(--space-4);
+  }
 
   // Shared by every tab under this page (Activity and Reports both reuse
   // .project-activity__section / .project-vendor-row directly) — defined
@@ -118,7 +133,7 @@
   // exceeds the viewport there.
   max-width: 1280px;
   margin: 0;
-  padding: var(--space-4);
+  padding: 0;
 
   @include m.respond-to(md) {
     padding: var(--space-6);
@@ -130,7 +145,13 @@
   flex-direction: column;
   // Tightened per the Overview UX review — every block used to carry its own
   // independent margin on top of this; one consistent rhythm instead.
-  gap: var(--space-3);
+  // Tighter still on mobile — the same 12px rhythm right for a wide desktop
+  // column reads as excess air stacked one block per screen-width row.
+  gap: var(--space-1-5);
+
+  @include m.respond-to(md) {
+    gap: var(--space-3);
+  }
 }
 
 .project-overview__header {
@@ -138,13 +159,36 @@
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-1-5);
+
+  @include m.respond-to(md) {
+    gap: var(--space-3);
+  }
 }
 
 .project-overview__header-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
+
+  @include m.respond-to(md) {
+    gap: var(--space-2);
+  }
+
+  // Reopen/Edit inherit the shared Button component's full padding
+  // (--comp-btn-padding: space-2/space-4) and touch-target min-height,
+  // right for a standalone action button but oversized sitting in a row
+  // next to the status pill on a narrow phone screen. Scoped to this row
+  // only — the shared Button component elsewhere is untouched.
+  .btn {
+    padding: var(--space-1) var(--space-2);
+    min-height: auto;
+
+    @include m.respond-to(md) {
+      padding: var(--comp-btn-padding);
+      min-height: var(--btn-min-height);
+    }
+  }
 }
 
 .project-overview__grid {
@@ -231,19 +275,51 @@
 
 .project-detail__nav {
   display: flex;
+
+  // The shared Button "ghost" variant still carries an outline
+  // (--comp-btn-ghost-border: var(--color-brand)) — right for an actual
+  // button, wrong for a "go back" link that should read as plain text with
+  // an icon, not a boxed control. Scoped to this back-link only; other ghost
+  // buttons elsewhere (e.g. "+ Add vendor") keep their outline.
+  .btn {
+    border: none;
+    background: transparent;
+    padding: var(--space-1) 0;
+    min-height: auto;
+
+    &:hover {
+      background: transparent;
+      text-decoration: underline;
+    }
+  }
 }
 
 .project-detail__tabs-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-2);
   flex-wrap: wrap;
+
+  @include m.respond-to(md) {
+    gap: var(--space-3);
+  }
 }
 
-.project-detail__tabs {
+// `.segment-chip-tabs`'s own default is `flex-wrap: wrap` — fine when there's
+// vertical room to spare, but on a narrow phone width it wrapped "Reports"
+// onto its own second line instead of using the horizontal scroll this class
+// already sets up (`overflow-x: auto`). `nowrap` + `flex-shrink: 0` on each
+// chip keeps all five tabs on one row and lets that row scroll sideways
+// instead, so the tab bar never grows a second line.
+.segment-chip-tabs.project-detail__tabs {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  flex-wrap: nowrap;
+
+  .segment-chip-tabs__chip {
+    flex-shrink: 0;
+  }
 }
 
 // ─── Overview stats ───────────────────────────────────────────────────────────
@@ -251,21 +327,38 @@
 .project-overview__stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-3);
+  gap: var(--space-1-5);
+
+  @include m.respond-to(md) {
+    gap: var(--space-3);
+  }
 }
 
 .project-overview__stat {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-0-5);
   background: var(--color-bg-subtle);
   border-radius: var(--radius-md);
-  padding: var(--space-3);
+  padding: var(--space-1-5);
+
+  @include m.respond-to(md) {
+    gap: var(--space-1);
+    padding: var(--space-3);
+  }
 }
 
 .project-overview__stat-amount {
-  font-size: var(--font-size-lg);
+  // 16px read noticeably larger than the 12px tab bar above it on a phone
+  // screen — still the most prominent text on the card at 14px (its xs
+  // caption stays smallest, tabs stay in between), just not oversized
+  // relative to the page's own navigation.
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
+
+  @include m.respond-to(md) {
+    font-size: var(--font-size-lg);
+  }
 }
 
 .project-overview__bar {
@@ -577,8 +670,13 @@
 }
 
 .project-budget-forecast__total-amount {
-  font-size: var(--font-size-lg);
+  // Same reasoning as .project-overview__stat-amount above.
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
+
+  @include m.respond-to(md) {
+    font-size: var(--font-size-lg);
+  }
 }
 
 .project-budget-forecast__list {
@@ -591,8 +689,41 @@
 .project-form-wizard__forecast-add-row {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
-  gap: var(--space-2);
+  gap: var(--space-1);
   align-items: center;
+
+  @include m.respond-to(md) {
+    gap: var(--space-2);
+  }
+
+  // 3-4 fields sharing one row already leaves little width each; the shared
+  // .select-field__control's normal size (space-2/space-3 padding, ~15px
+  // font) was clipping placeholder text ("Forecast an…", "No vend…") on a
+  // narrow phone. Scoped to this row only — Overview/Reference/other forms
+  // elsewhere keep the regular control size.
+  .select-field__control {
+    padding: var(--space-1) var(--space-1-5);
+    font-size: var(--font-size-xs);
+    min-height: auto;
+
+    @include m.respond-to(md) {
+      padding: var(--comp-input-padding);
+      font-size: var(--comp-input-font-size, 0.9375rem);
+      min-height: var(--comp-input-min-height);
+    }
+  }
+
+  .btn {
+    padding: var(--space-1) var(--space-1-5);
+    font-size: var(--font-size-xs);
+    min-height: auto;
+
+    @include m.respond-to(md) {
+      padding: var(--comp-btn-padding);
+      font-size: var(--btn-font-size);
+      min-height: var(--btn-min-height);
+    }
+  }
 }
 
 .project-budget-forecast__add-row--with-vendor {
@@ -983,6 +1114,9 @@
 
   &.project-activity__note-tag--progress,
   &.project-activity__note-tag--delivery,
+  &.project-activity__note-tag--on-hold,
+  &.project-activity__note-tag--issue,
+  &.project-activity__note-tag--contact,
   &.project-activity__note-tag--misc,
   &.project-activity__note-tag--return {
     --chip-bg: var(--color-bg-subtle);

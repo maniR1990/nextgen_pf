@@ -19,16 +19,22 @@ const NOTE_TAG_LABEL: Record<ProjectNoteTag, string> = {
   PROGRESS: 'progress',
   DECISION: 'decision',
   DELIVERY: 'delivery',
+  ON_HOLD: 'on hold',
+  ISSUE: 'issue',
+  CONTACT: 'contact',
   RETURN: 'return',
   MISC: 'misc',
 };
 
-// Lowercased so it doubles as the CSS modifier suffix
-// (project-activity__note-row--progress, --decision, ...).
+// Lowercased/kebab-cased so it doubles as the CSS modifier suffix
+// (project-activity__note-row--progress, --on-hold, ...).
 const NOTE_TAG_VARIANT: Record<ProjectNoteTag, string> = {
   PROGRESS: 'progress',
   DECISION: 'decision',
   DELIVERY: 'delivery',
+  ON_HOLD: 'on-hold',
+  ISSUE: 'issue',
+  CONTACT: 'contact',
   RETURN: 'return',
   MISC: 'misc',
 };

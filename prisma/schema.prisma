@@ -938,6 +938,12 @@ enum ProjectNoteTag {
 
   DELIVERY
 
+  ON_HOLD
+
+  ISSUE
+
+  CONTACT
+
   RETURN
 
   MISC
