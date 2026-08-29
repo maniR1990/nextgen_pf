@@ -3,7 +3,7 @@ import { asRouteHandler } from '@/lib/api/middleware';
 import { v1FromApiError, v1Ok } from '@/lib/api/v1/envelope';
 import { prisma } from '@/lib/db/prisma';
 import { BudgetEngineService } from '@/modules/budget-engine';
-import { getPeriodTotals, INFLOW_TYPES, OUTFLOW_TYPES } from '@/modules/transactions/period-spend';
+import { INFLOW_TYPES, OUTFLOW_TYPES, getPeriodTotals } from '@/modules/transactions/period-spend';
 
 // The investment-only slice of OUTFLOW_TYPES — everything debit except day-to-day
 // EXPENSE. Derived rather than hand-typed so it can't drift from OUTFLOW_TYPES itself.
@@ -62,8 +62,11 @@ const handleReportsKpi = compose(withAuth())(async (req, ctx) => {
       (sum, type) => sum + (periodTotals.totalsByType[type] ?? 0),
       0,
     );
-    const atmWithdrawn = periodTotals.totalsByType.ATM_WITHDRAWAL ?? 0;
-    const accountBalance = totalIncome - expensesSpent - invested - atmWithdrawn;
+    // ATM_WITHDRAWAL is deliberately excluded here — it's a MOVEMENT type (cash pulled
+    // from one owned account into another form, same as TRANSFER), not money leaving the
+    // household. Subtracting it manufactured a false "Deficit" for cash withdrawn from
+    // savings to fund something (e.g. a Project), even though nothing was actually spent.
+    const accountBalance = totalIncome - expensesSpent - invested;
 
     // "Salary + Gift" etc. — built from totalsByType instead of a separate groupBy
     // query. INFLOW_TYPES' order already puts INCOME first (it mirrors TX_TYPE_META's

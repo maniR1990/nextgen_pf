@@ -24,7 +24,6 @@ export const CashflowReportService = {
 
     const totalIncome = periodTotals.totalIncome;
     const expensesTotal = periodTotals.totalExpenseOnly;
-    const atmTotal = periodTotals.totalsByType.ATM_WITHDRAWAL ?? 0;
 
     const totalSavings = savingsRaw.reduce((s, r) => s + r.totalAmount, 0);
     const totalFundUsed = fundUsedRaw.reduce((s, r) => s + r.totalAmount, 0);
@@ -32,7 +31,11 @@ export const CashflowReportService = {
     // denominator = income + fund used (handles zero-income withdrawal months)
     const denominator = totalIncome + totalFundUsed;
 
-    const remaining = denominator - totalSavings - expensesTotal - atmTotal;
+    // ATM_WITHDRAWAL is a MOVEMENT type (cash pulled from one owned account into another
+    // form, same as TRANSFER) — it must not be deducted here, or cash withdrawn from
+    // savings to fund something outside this report (e.g. a Project) manufactures a false
+    // shortfall even though nothing was actually spent.
+    const remaining = denominator - totalSavings - expensesTotal;
 
     const savingsPct = safePct(totalSavings, denominator);
     const expensesPct = safePct(expensesTotal, denominator);

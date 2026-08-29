@@ -30,6 +30,10 @@ function node(overrides: Partial<Record<string, unknown>> = {}) {
     settledTransactionId: null,
     planned: 5000,
     actual: 4200,
+    // Mirrors planned/actual by default — true for every leaf, since there's nothing to
+    // roll up. Override explicitly for a node meant to have children with its own data.
+    ownPlanned: overrides.planned ?? 5000,
+    ownActual: overrides.actual ?? 4200,
     lastMonthActual: 0,
     variance: 0,
     variancePct: 0,
@@ -53,7 +57,10 @@ const SUMMARY = {
       variance: 0,
       variancePct: 0,
       progressPct: 0,
-      categories: [node({ id: 'cat1', planned: 5000 }), node({ id: 'cat2', name: 'Utilities', planned: 4500 })],
+      categories: [
+        node({ id: 'cat1', planned: 5000 }),
+        node({ id: 'cat2', name: 'Utilities', planned: 4500 }),
+      ],
     },
     {
       id: 'g-income',
@@ -105,7 +112,9 @@ describe('ReportsService.getFilteredReport', () => {
       groups: [
         {
           ...SUMMARY.groups[0],
-          categories: [node({ id: 'parent', planned: 1000, children: [node({ id: 'child', planned: 300 })] })],
+          categories: [
+            node({ id: 'parent', planned: 1000, children: [node({ id: 'child', planned: 300 })] }),
+          ],
         },
       ],
     };
@@ -416,7 +425,13 @@ describe('ReportsService.getBudgetFlags', () => {
             // Neither — under budget, not flagged.
             node({ id: 'utilities', name: 'Utilities', planned: 4500, actual: 4000 }),
             // The synthetic Uncategorized row — never a real report row.
-            node({ id: 'uncategorized', name: 'Uncategorized', isVirtual: true, planned: 0, actual: 900 }),
+            node({
+              id: 'uncategorized',
+              name: 'Uncategorized',
+              isVirtual: true,
+              planned: 0,
+              actual: 900,
+            }),
           ],
         },
         {
@@ -430,7 +445,9 @@ describe('ReportsService.getBudgetFlags', () => {
           variancePct: 0,
           progressPct: 0,
           // Over its own plan and unplanned — must never leak into an EXPENSE-only report.
-          categories: [node({ id: 'bonus', name: 'Bonus', planned: 80000, actual: 90000, isUnplanned: true })],
+          categories: [
+            node({ id: 'bonus', name: 'Bonus', planned: 80000, actual: 90000, isUnplanned: true }),
+          ],
         },
       ],
     };
@@ -545,5 +562,83 @@ describe('ReportsService.getBudgetFlags', () => {
       { id: 'gadget', name: 'Gadget', parentName: null, amount: 3000 },
     ]);
     expect(result.unplannedTotal).toBe(3000);
+  });
+
+  it('surfaces a transaction tagged directly to a category that also has a subcategory, without double-counting the subcategory', async () => {
+    // Real bug this covers: "Household > Misc" already had a transaction tagged
+    // directly to it (isPlanned: false), then later grew a child ("Grinding") with its
+    // own separate spend. Before this fix, collectLeaves treated "Misc" as a pure
+    // folder the instant it had any child and never looked at its own data again — the
+    // parent's own ₹21,083 unplanned transaction silently vanished from every
+    // per-category report while still counting fine in whole-month totals above it.
+    const summaryWithDataOnParent = {
+      year: 2026,
+      month: 8,
+      groups: [
+        {
+          id: 'g-expense',
+          name: 'Expenses',
+          type: 'EXPENSE',
+          planned: 0,
+          actual: 0,
+          lastMonthActual: 0,
+          variance: 0,
+          variancePct: 0,
+          progressPct: 0,
+          categories: [
+            node({
+              id: 'misc',
+              name: 'Misc',
+              planned: 2000,
+              actual: 23083, // rolled up: own 21083 + child's 2000
+              ownPlanned: 2000,
+              ownActual: 21083,
+              isUnplanned: false,
+              children: [
+                node({
+                  id: 'grinding',
+                  name: 'Grinding',
+                  planned: 1500,
+                  actual: 2000,
+                  ownPlanned: 1500,
+                  ownActual: 2000,
+                }),
+              ],
+            }),
+          ],
+        },
+      ],
+    };
+    vi.mocked(BudgetEngineService.getMonthlySummary).mockResolvedValue(
+      summaryWithDataOnParent as never,
+    );
+    vi.mocked(TransactionRepository.sumUnplannedByCategory).mockResolvedValue([
+      { categoryId: 'misc', _sum: { amount: 21083 } },
+    ] as never);
+
+    const result = await ReportsService.getBudgetFlags('u1', 2026, 8);
+
+    // "Misc" shows its own ₹21,083 — not the rolled-up ₹23,083 that would double-count
+    // Grinding, which is separately over budget on its own (₹2,000 actual > ₹1,500 planned).
+    expect(result.unplanned).toEqual([
+      { id: 'misc', name: 'Misc', parentName: null, amount: 21083 },
+    ]);
+    expect(result.unplannedTotal).toBe(21083);
+
+    expect(result.overBudget.map((o) => o.id)).toEqual(['misc', 'grinding']);
+    expect(result.overBudget.find((o) => o.id === 'misc')).toMatchObject({
+      planned: 2000,
+      amount: 21083,
+      over: 19083,
+    });
+    expect(result.overBudget.find((o) => o.id === 'grinding')).toMatchObject({
+      parentName: 'Misc',
+      planned: 1500,
+      amount: 2000,
+      over: 500,
+    });
+    // 19083 (misc) + 500 (grinding) — never the rolled-up 23083-2000=21083 a naive
+    // parent-only or child-only read would have produced.
+    expect(result.overBudgetTotal).toBe(19083 + 500);
   });
 });

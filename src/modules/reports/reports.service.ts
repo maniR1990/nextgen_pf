@@ -137,11 +137,15 @@ export const ReportsService = {
       .filter((g) => g.type === 'EXPENSE')
       .flatMap((g) => collectLeaves(g.categories));
 
+    // ownActual/ownPlanned, not actual/planned — a leaf's own figures equal its rolled-up
+    // ones anyway (nothing to roll up), but a node collectLeaves included *despite* having
+    // children (see there) would double-count its children's own entries below it if this
+    // read the rolled-up total instead of just what's tagged to this category directly.
     const unplanned = leaves
       .map(({ node, parentName }) => ({
         node,
         parentName,
-        amount: node.isUnplanned ? node.actual : (unplannedTxAmount.get(node.id) ?? 0),
+        amount: node.isUnplanned ? node.ownActual : (unplannedTxAmount.get(node.id) ?? 0),
       }))
       .filter(({ amount }) => amount > 0)
       .map(({ node, parentName, amount }) => ({
@@ -153,14 +157,14 @@ export const ReportsService = {
       .sort((a, b) => b.amount - a.amount);
 
     const overBudget = leaves
-      .filter(({ node }) => node.planned > 0 && node.actual > node.planned)
+      .filter(({ node }) => node.ownPlanned > 0 && node.ownActual > node.ownPlanned)
       .map(({ node, parentName }) => ({
         id: node.id,
         name: node.name,
         parentName,
-        amount: node.actual,
-        planned: node.planned,
-        over: node.actual - node.planned,
+        amount: node.ownActual,
+        planned: node.ownPlanned,
+        over: node.ownActual - node.ownPlanned,
       }))
       .sort((a, b) => b.over - a.over);
 

@@ -213,6 +213,10 @@ export const BudgetEngineService = {
         fundTargetAmount: cat.linkedFundId ? (fundTargetMap.get(cat.linkedFundId) ?? null) : null,
         planned: plan?.plannedAmount ?? 0,
         actual: spendMap.get(cat.id) ?? 0,
+        // Captured here, before rollupNode overwrites planned/actual with self+children —
+        // see BudgetCategoryNode.ownActual for why this has to survive that mutation.
+        ownPlanned: plan?.plannedAmount ?? 0,
+        ownActual: spendMap.get(cat.id) ?? 0,
         lastMonthActual: lastMonthSpendMap.get(cat.id) ?? 0,
         variance: 0,
         variancePct: 0,
@@ -264,6 +268,10 @@ export const BudgetEngineService = {
         fundTargetAmount: null,
         planned: 0,
         actual,
+        // Never read — collectLeaves skips isVirtual nodes outright — but the field is
+        // non-optional on BudgetCategoryNode, so it needs a value here too.
+        ownPlanned: 0,
+        ownActual: actual,
         lastMonthActual,
         variance: 0,
         variancePct: 0,

@@ -34,6 +34,18 @@ export interface BudgetCategoryNode {
   planned: number;
   /** Rolled-up actual spend for this period. */
   actual: number;
+  /** This node's own directly-tagged plan/spend, untouched by rollup — `planned`/`actual`
+   *  above are overwritten with self+children the moment this node has children (see
+   *  rollupNode), which silently loses any plan or spend attached to the node itself.
+   *  Nothing prevents a transaction (or a Budget plan) from being attached to a category
+   *  that has subcategories — the category picker doesn't restrict selection to leaves,
+   *  and a category can grow a child well after transactions already point at it. Any
+   *  feature that needs "what belongs to THIS category, not its descendants" (Unplanned
+   *  Expenses, Over-Budget Breakdown, the recurring-cost widget — see collectLeaves) must
+   *  read these, not `planned`/`actual`, or it will double-count once the child's own
+   *  spend is also reported separately. */
+  ownPlanned: number;
+  ownActual: number;
   /** Actual spend in the previous calendar month — used for trend comparison. */
   lastMonthActual: number;
   /** actual - planned */

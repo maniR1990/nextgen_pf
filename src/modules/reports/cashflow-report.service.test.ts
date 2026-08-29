@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getPeriodTotals } from '@/modules/transactions/period-spend';
 import type { PeriodTotals } from '@/modules/transactions/period-spend';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CashflowReportRepository } from './cashflow-report.repository';
 import { CashflowReportService } from './cashflow-report.service';
 
@@ -74,9 +74,12 @@ describe('CashflowReportService.getMonthlyReport', () => {
     });
   });
 
-  it('computes remaining = (income + fundUsed) - savings - expenses - ATM', async () => {
+  it('computes remaining = (income + fundUsed) - savings - expenses, ignoring ATM withdrawals', async () => {
     // income=100000, savingsIN=25000, fundUsedOUT=20000, expenses=30000, ATM=5000
-    // remaining = (100000 + 20000) - 25000 - 30000 - 5000 = 60000
+    // ATM_WITHDRAWAL is a MOVEMENT type (cash pulled from savings), not spend — it must
+    // not be deducted, or a withdrawal funding something outside this report (e.g. a
+    // Project) manufactures a false shortfall.
+    // remaining = (100000 + 20000) - 25000 - 30000 = 65000
     mockPeriodTotals({
       totalIncome: 100000,
       totalExpenseOnly: 30000,
@@ -93,7 +96,7 @@ describe('CashflowReportService.getMonthlyReport', () => {
     );
 
     const report = await CashflowReportService.getMonthlyReport('u1', 2026, 6);
-    expect(report.remaining).toBe(60000);
+    expect(report.remaining).toBe(65000);
   });
 
   it('returns remaining=0 and null percentages when income=0 and fundUsed=0', async () => {
