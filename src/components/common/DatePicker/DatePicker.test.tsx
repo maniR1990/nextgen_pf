@@ -93,6 +93,35 @@ describe('DatePicker', () => {
     });
   });
 
+  describe('desktop popover portal (escapes clipping scroll containers like a modal body)', () => {
+    it('renders the popover outside the picker container, on document.body', () => {
+      const { container } = render(<DatePicker hideTrigger open onOpenChange={vi.fn()} />);
+      const popover = screen.getByRole('dialog', { name: /date picker/i });
+      expect(container.contains(popover)).toBe(false);
+      expect(popover.parentElement).toBe(document.body);
+    });
+
+    it('positions the popover with fixed coordinates', () => {
+      render(<DatePicker hideTrigger open onOpenChange={vi.fn()} />);
+      const popover = screen.getByRole('dialog', { name: /date picker/i });
+      expect(popover.style.position).toBe('fixed');
+    });
+
+    it('does not treat a mousedown inside the portalled popover as an outside click', () => {
+      const onOpenChange = vi.fn();
+      render(<DatePicker hideTrigger open onOpenChange={onOpenChange} />);
+      fireEvent.mouseDown(screen.getByRole('button', { name: /previous month/i }));
+      expect(onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it('closes on a mousedown outside both the trigger and the popover', () => {
+      const onOpenChange = vi.fn();
+      render(<DatePicker hideTrigger open onOpenChange={onOpenChange} />);
+      fireEvent.mouseDown(document.body);
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+  });
+
   describe('range mode', () => {
     it('shows range placeholder in range mode', () => {
       render(<DatePicker mode="range" placeholder="Select range" />);

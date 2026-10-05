@@ -13,7 +13,7 @@ import {
   startOfDay,
 } from 'date-fns';
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 export interface DatePickerProps {
@@ -60,6 +60,23 @@ function useIsMobile() {
   return mobile;
 }
 
+const POPOVER_GAP = 4;
+const VIEWPORT_MARGIN = 8;
+
+/** Fixed-position coords for the portalled desktop popover: below the anchor,
+ *  flipped above when it won't fit, and clamped inside the viewport. */
+function computePopoverPosition(anchor: DOMRect, popover: DOMRect): CSSProperties {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const below = anchor.bottom + POPOVER_GAP;
+  const above = anchor.top - POPOVER_GAP - popover.height;
+  let top = below;
+  if (below + popover.height > vh - VIEWPORT_MARGIN && above >= VIEWPORT_MARGIN) top = above;
+  top = Math.max(VIEWPORT_MARGIN, Math.min(top, vh - VIEWPORT_MARGIN - popover.height));
+  const left = Math.max(VIEWPORT_MARGIN, Math.min(anchor.left, vw - VIEWPORT_MARGIN - popover.width));
+  return { top, left };
+}
+
 export function DatePicker({
   value,
   rangeStart,
@@ -91,6 +108,8 @@ export function DatePicker({
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [popoverPos, setPopoverPos] = useState<CSSProperties | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -100,9 +119,9 @@ export function DatePicker({
   useEffect(() => {
     if (!open || isMobile) return;
     function onOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      if (containerRef.current?.contains(target) || popoverRef.current?.contains(target)) return;
+      setOpen(false);
     }
     document.addEventListener('mousedown', onOutside);
     return () => document.removeEventListener('mousedown', onOutside);
@@ -116,6 +135,31 @@ export function DatePicker({
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
+
+  // The desktop popover is portalled to <body> so scroll containers (e.g. a
+  // modal body) can't clip it — which means it has to track its anchor itself.
+  useLayoutEffect(() => {
+    if (!open || isMobile) {
+      setPopoverPos(null);
+      return;
+    }
+    function reposition() {
+      if (!containerRef.current || !popoverRef.current) return;
+      setPopoverPos(
+        computePopoverPosition(
+          containerRef.current.getBoundingClientRect(),
+          popoverRef.current.getBoundingClientRect(),
+        ),
+      );
+    }
+    reposition();
+    window.addEventListener('resize', reposition);
+    window.addEventListener('scroll', reposition, true);
+    return () => {
+      window.removeEventListener('resize', reposition);
+      window.removeEventListener('scroll', reposition, true);
+    };
+  }, [open, isMobile, mounted, viewYear, viewMonth]);
 
   const parsedValue = value && isValid(parseISO(value)) ? parseISO(value) : null;
   const parsedStart = rangeStart && isValid(parseISO(rangeStart)) ? parseISO(rangeStart) : null;
@@ -310,12 +354,26 @@ export function DatePicker({
     </div>
   );
 
-  const popover = (
-    <div className="date-picker__popover" role="dialog" aria-modal aria-label="Date picker">
-      {calendarBody}
-      {footerButtons}
-    </div>
-  );
+  const popover = mounted
+    ? createPortal(
+        <div
+          ref={popoverRef}
+          className="date-picker__popover"
+          role="dialog"
+          aria-modal
+          aria-label="Date picker"
+          // Hidden until the first measurement so it never flashes at 0,0.
+          style={{
+            position: 'fixed',
+            ...(popoverPos ?? { top: 0, left: 0, visibility: 'hidden' }),
+          }}
+        >
+          {calendarBody}
+          {footerButtons}
+        </div>,
+        document.body,
+      )
+    : null;
 
   const sheet = mounted
     ? createPortal(
