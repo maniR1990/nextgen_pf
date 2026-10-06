@@ -72,7 +72,7 @@ function makeGroups(overrides: Partial<Record<string, unknown>> = {}): BudgetGro
   ];
 }
 
-function renderPanel(groups: BudgetGroup[], todayDay = 7) {
+function renderPanel(groups: BudgetGroup[], todayDay = 7, initialSelectMode = false) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
@@ -83,6 +83,7 @@ function renderPanel(groups: BudgetGroup[], todayDay = 7) {
         month={7}
         todayDay={todayDay}
         headless
+        initialSelectMode={initialSelectMode}
       />
     </QueryClientProvider>,
   );
@@ -183,5 +184,27 @@ describe('PaymentSchedulePanel — settlement', () => {
         data: { settled: true, settledTransactionId: 'newTx1' },
       }),
     );
+  });
+});
+
+describe('PaymentSchedulePanel — select & pay', () => {
+  it('switches the list into a checklist and back', async () => {
+    const user = userEvent.setup();
+    renderPanel(makeGroups());
+
+    await user.click(await screen.findByRole('button', { name: /select & pay/i }));
+    expect(screen.getByRole('checkbox', { name: /select parents health insurance/i })).not.toBeChecked();
+    expect(screen.queryByRole('button', { name: /pay parents health insurance/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /done selecting/i }));
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /pay parents health insurance/i })).toBeInTheDocument();
+  });
+
+  it('opens straight into the checklist when initialSelectMode is set', async () => {
+    renderPanel(makeGroups(), 7, true);
+    expect(
+      await screen.findByRole('checkbox', { name: /select parents health insurance/i }),
+    ).toBeInTheDocument();
   });
 });

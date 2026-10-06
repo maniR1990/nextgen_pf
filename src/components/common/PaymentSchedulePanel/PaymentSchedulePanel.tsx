@@ -10,6 +10,8 @@ import type { PaymentSourceOption } from '@/types/finance';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { memo, useEffect, useMemo, useState } from 'react';
+import { BulkPayList } from './BulkPayList';
+import { payMethod, rememberSource } from './bulkPay';
 import {
   type DuePaymentItem,
   type PaymentStatus,
@@ -155,19 +157,6 @@ function fmt(n: number): string {
   return `₹${n.toLocaleString('en-IN')}`;
 }
 
-function payMethod(src: PaymentSourceOption) {
-  switch (src.type) {
-    case 'CREDIT_CARD':
-      return 'CREDIT_CARD';
-    case 'DEBIT_CARD':
-      return 'DEBIT_CARD';
-    case 'WALLET':
-      return 'WALLET';
-    default:
-      return 'UPI';
-  }
-}
-
 function QuickPay({
   item,
   year,
@@ -218,6 +207,7 @@ function QuickPay({
         description: `${item.name} logged from ${src?.name ?? 'account'}`,
       },
     );
+    rememberSource(item.id, fromId);
     onSuccess(result.id);
   }
 
@@ -368,6 +358,8 @@ export interface PaymentSchedulePanelProps {
   isFutureMonth?: boolean;
   /** When true, hides the header — use when the parent provides its own header (e.g. summary bar card) */
   headless?: boolean;
+  /** Open with the multi-select "Select & pay" checklist instead of the plain list. */
+  initialSelectMode?: boolean;
 }
 
 export const PaymentSchedulePanel = memo(function PaymentSchedulePanel({
@@ -378,6 +370,7 @@ export const PaymentSchedulePanel = memo(function PaymentSchedulePanel({
   todayDay = new Date().getDate(),
   isFutureMonth = false,
   headless = false,
+  initialSelectMode = false,
 }: PaymentSchedulePanelProps) {
   const [open, setOpen] = useState<boolean>(() => {
     try {
@@ -388,6 +381,7 @@ export const PaymentSchedulePanel = memo(function PaymentSchedulePanel({
   });
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [selectMode, setSelectMode] = useState(initialSelectMode);
 
   const { mutateAsync: voidTx, isPending: isVoiding } = useVoidTransaction();
   const updatePlan = useUpdateBudgetPlan(year, month);
@@ -512,7 +506,31 @@ export const PaymentSchedulePanel = memo(function PaymentSchedulePanel({
             )}
           </div>
 
-          {/* List */}
+          <div className="psp__mode-bar">
+            <button
+              type="button"
+              className={`psp__mode-btn${selectMode ? ' psp__mode-btn--on' : ''}`}
+              aria-pressed={selectMode}
+              onClick={() => {
+                setSelectMode((v) => !v);
+                setPayingId(null);
+              }}
+            >
+              {selectMode ? 'Done selecting' : 'Select & pay'}
+            </button>
+          </div>
+
+          {selectMode ? (
+            <BulkPayList
+              items={visibleItems}
+              sources={sources}
+              year={year}
+              month={month}
+              todayDay={todayDay}
+              isFutureMonth={isFutureMonth}
+              onDone={() => setSelectMode(false)}
+            />
+          ) : (
           <ul className="psp__list">
             {visibleItems.map((item) => {
               const status = statusOf(item);
@@ -638,6 +656,7 @@ export const PaymentSchedulePanel = memo(function PaymentSchedulePanel({
               </li>
             )}
           </ul>
+          )}
         </div>
       )}
     </div>

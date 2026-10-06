@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DashboardCalendarWidget } from './DashboardCalendarWidget';
 import { useDashboardCalendar } from '@/hooks/useDashboardCalendar';
@@ -6,6 +7,11 @@ import type { DashboardCalendarResponse } from '@/hooks/useDashboardCalendar';
 
 vi.mock('@/hooks/useDashboardCalendar', () => ({
   useDashboardCalendar: vi.fn(),
+}));
+
+vi.mock('./PayBillsSheet', () => ({
+  PayBillsSheet: ({ open, year, month }: { open: boolean; year: number; month: number }) =>
+    open ? <div data-testid="pay-bills-sheet">{`${year}-${month}`}</div> : null,
 }));
 
 const mockedUseDashboardCalendar = vi.mocked(useDashboardCalendar);
@@ -221,5 +227,30 @@ describe('DashboardCalendarWidget', () => {
       expect(day2.className).toContain('month-cal__day--no-spend');
       expect(container.querySelector('.month-cal__dot--debit')).toBeInTheDocument();
     });
+  });
+});
+
+describe('DashboardCalendarWidget — pay bills entry point', () => {
+  it('opens the pay-bills sheet for the shown month', async () => {
+    const user = userEvent.setup();
+    mockQuery(
+      baseData({
+        billDue: [{ day: 25, name: 'Credit card', amount: 3200, paid: false, partial: false, remaining: 3200 }],
+      }),
+    );
+    render(<DashboardCalendarWidget />);
+    expect(screen.queryByTestId('pay-bills-sheet')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /pay bills/i }));
+    expect(screen.getByTestId('pay-bills-sheet')).toHaveTextContent('2026-7');
+  });
+
+  it('hides the button once every bill is paid', () => {
+    mockQuery(
+      baseData({
+        billDue: [{ day: 5, name: 'Rent', amount: 15000, paid: true, partial: false, remaining: 0 }],
+      }),
+    );
+    render(<DashboardCalendarWidget />);
+    expect(screen.queryByRole('button', { name: /pay bills/i })).not.toBeInTheDocument();
   });
 });

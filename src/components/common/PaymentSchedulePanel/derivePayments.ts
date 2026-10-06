@@ -25,10 +25,13 @@ export interface DuePaymentItem {
   remaining: number;
   color: string | null;
   icon: string | null;
+  /** Type of the budget group this item sits under (EXPENSE | INVESTMENT | INCOME |
+   *  TRANSFER) — decides what kind of transaction paying it logs. */
+  groupType: string;
 }
 
 /** Walk the category tree and collect every node that has a dueDay set. */
-function collect(nodes: BudgetCategoryNode[], out: DuePaymentItem[]) {
+function collect(nodes: BudgetCategoryNode[], groupType: string, out: DuePaymentItem[]) {
   for (const n of nodes) {
     if (n.dueDay) {
       // An explicit settlement always wins — it's the only signal that's correct
@@ -48,9 +51,10 @@ function collect(nodes: BudgetCategoryNode[], out: DuePaymentItem[]) {
         remaining: Math.max(n.planned - n.actual, 0),
         color: n.color,
         icon: n.icon,
+        groupType,
       });
     }
-    if (n.children.length) collect(n.children, out);
+    if (n.children.length) collect(n.children, groupType, out);
   }
 }
 
@@ -58,7 +62,7 @@ function collect(nodes: BudgetCategoryNode[], out: DuePaymentItem[]) {
 export function derivePayments(groups: BudgetGroup[]): DuePaymentItem[] {
   const out: DuePaymentItem[] = [];
   for (const g of groups) {
-    for (const cat of g.categories) collect([cat], out);
+    for (const cat of g.categories) collect([cat], g.type, out);
   }
   // Sort by dueDay ASC; within same day paid items go last
   return out.sort((a, b) => a.dueDay - b.dueDay || (a.paid ? 1 : 0) - (b.paid ? 1 : 0));

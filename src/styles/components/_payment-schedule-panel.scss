@@ -377,6 +377,107 @@
 
   &__empty { padding: 10px 14px; font-size: 12px; color: var(--color-text-muted); }
 
+  // ── Select & pay — multi-select checklist ────────────────────────────────
+  &__mode-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 6px 14px 0;
+  }
+
+  &__mode-btn {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--color-brand);
+    background: none;
+    border: 1px solid color-mix(in srgb, var(--color-brand) 35%, transparent);
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    &:hover { background: color-mix(in srgb, var(--color-brand) 8%, transparent); }
+    &--on { background: color-mix(in srgb, var(--color-brand) 12%, transparent); }
+  }
+
+  &__bulk { padding: 4px 0 8px; }
+
+  &__bulk-empty { padding: 10px 14px; font-size: 12px; color: var(--color-text-muted); }
+
+  &__bulk-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px;
+  }
+
+  &__bulk-chip {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--color-text);
+    background: var(--color-bg-subtle);
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    &:hover { background: var(--color-bg-hover, var(--color-bg-subtle)); }
+  }
+
+  &__bulk-hint { font-size: 11px; color: var(--color-text-muted); }
+
+  &__bulk-list { list-style: none; margin: 0; padding: 0; }
+
+  &__bulk-row {
+    display: grid;
+    // check | day | name | account | amount
+    grid-template-columns: 16px 34px minmax(0, 1fr) 160px 110px;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px;
+    &--on { background: color-mix(in srgb, var(--color-brand) 5%, transparent); }
+  }
+
+  &__bulk-check { width: 16px; height: 16px; margin: 0; accent-color: var(--color-brand); cursor: pointer; }
+
+  &__bulk-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+
+  &__bulk-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+    background: color-mix(in srgb, var(--color-info) 12%, transparent);
+    color: var(--color-info);
+  }
+
+  &__bulk-source { max-width: none; }
+
+  &__bulk-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 6px;
+    padding: 10px 14px 2px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  &__bulk-summary { font-size: 12px; color: var(--color-text-muted); }
+
+  @media (max-width: 639px) {
+    &__bulk-row {
+      grid-template-columns: 16px 30px minmax(0, 1fr) 96px;
+      grid-template-areas:
+        'check day name amt'
+        '. . source source';
+      .psp__bulk-check { grid-area: check; }
+      .psp__row-day { grid-area: day; }
+      .psp__bulk-name { grid-area: name; }
+      .psp__bulk-amt { grid-area: amt; }
+      .psp__bulk-source { grid-area: source; }
+    }
+  }
+
   // ── Quick Pay — compact single-row form ───────────────────────────────────
   &__qp {
     padding: 10px 14px 12px;

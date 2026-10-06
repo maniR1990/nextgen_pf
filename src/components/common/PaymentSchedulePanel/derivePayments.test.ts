@@ -46,6 +46,16 @@ describe('derivePayments', () => {
     expect(items).toHaveLength(0);
   });
 
+  it("tags each item with its group's type so it can be logged as the right transaction type", () => {
+    const groups = [
+      makeGroup([makeNode({ id: 'bill', dueDay: 5, planned: 100 })]),
+      { ...makeGroup([makeNode({ id: 'sip', dueDay: 7, planned: 500 })]), type: 'INVESTMENT' },
+    ];
+    const items = derivePayments(groups);
+    expect(items.find((i) => i.id === 'bill')?.groupType).toBe('EXPENSE');
+    expect(items.find((i) => i.id === 'sip')?.groupType).toBe('INVESTMENT');
+  });
+
   it('collects a category with a dueDay, at any depth', () => {
     const child = makeNode({ id: 'child', dueDay: 10, planned: 500 });
     const parent = makeNode({ id: 'parent', children: [child] });

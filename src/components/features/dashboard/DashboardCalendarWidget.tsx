@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import type { CalendarBillDue } from '@/app/api/v1/dashboard/calendar/derive';
 import { useDashboardCalendar } from '@/hooks/useDashboardCalendar';
 import { useState } from 'react';
+import { PayBillsSheet } from './PayBillsSheet';
 
 const MONTH_LABELS = [
   'January',
@@ -133,6 +134,7 @@ export function DashboardCalendarWidget() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [payOpen, setPayOpen] = useState(false);
 
   const { data, isLoading, isError } = useDashboardCalendar(year, month);
 
@@ -211,7 +213,18 @@ export function DashboardCalendarWidget() {
 
       {data.billDue.length > 0 && (
         <div className="dashboard-calendar-widget__bills">
-          <p className="dashboard-calendar-widget__section-label">Upcoming bills</p>
+          <div className="dashboard-calendar-widget__bills-head">
+            <p className="dashboard-calendar-widget__section-label">Upcoming bills</p>
+            {data.billDue.some((b) => !b.paid) && (
+              <button
+                type="button"
+                className="btn btn--sm btn--primary"
+                onClick={() => setPayOpen(true)}
+              >
+                Pay bills
+              </button>
+            )}
+          </div>
           {groupBillsByWeek(data.billDue, data.year, data.month, monthAbbrev).map((week) => (
             <div key={week.label} className="dashboard-calendar-widget__week">
               <div className="dashboard-calendar-widget__week-head">
@@ -283,6 +296,13 @@ export function DashboardCalendarWidget() {
           setYear(y);
           setSelectedDate(null);
         }}
+      />
+
+      <PayBillsSheet
+        open={payOpen}
+        onClose={() => setPayOpen(false)}
+        year={data.year}
+        month={data.month}
       />
     </div>
   );
